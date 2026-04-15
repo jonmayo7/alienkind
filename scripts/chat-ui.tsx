@@ -260,11 +260,13 @@ async function chatCompletion(
     // Final text response — if we have a streaming callback AND content,
     // stream it character by character for the typing effect
     if (onStream && msg.content) {
+      // Batch streaming — send ~5 words at a time to reduce re-renders
       const words = msg.content.split(' ');
-      for (let i = 0; i < words.length; i++) {
-        onStream((i > 0 ? ' ' : '') + words[i]);
-        // Small delay between words for typing feel
-        await new Promise(r => setTimeout(r, 15));
+      const batchSize = 5;
+      for (let i = 0; i < words.length; i += batchSize) {
+        const batch = words.slice(i, i + batchSize).join(' ');
+        onStream((i > 0 ? ' ' : '') + batch);
+        await new Promise(r => setTimeout(r, 50));
       }
     }
 
@@ -683,6 +685,11 @@ const App = ({ provider, identity, hookCount, grounded }: {
           <Text>{streamingContent.replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1').replace(/`([^`]+)`/g, '$1').replace(/^#{1,3} /gm, '')}</Text>
         </Box>
       )}
+
+      {/* Breathing space + separator before input */}
+      <Box marginTop={1}>
+        <Text dimColor>{'─'.repeat(50)}</Text>
+      </Box>
 
       <Box>
         <Text color="cyan">  ❯ </Text>
