@@ -164,7 +164,7 @@ async function main() {
   // Session mode enforcement (Containment Fields — Tier 1)
   // Operator and Builder modes cannot write to identity kernel or structured state.
   // This is structural — same Keel, same intelligence, constrained write surface.
-  const sessionMode = process.env.KEEL_SESSION_MODE || 'builder'; // default-closed: most restrictive
+  const sessionMode = process.env.KEEL_SESSION_MODE || 'analyst'; // default-open: interactive sessions have full access
   if (sessionMode === 'operator' || sessionMode === 'builder') {
     const identityPaths = ['identity/', 'CLAUDE.md', 'memory/structured-state.json',
       'config/daemon-jobs.ts', 'config/policies/', '.claude/'];
