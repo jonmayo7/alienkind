@@ -424,8 +424,26 @@ async function main() {
       : `alias alien="cd ${ROOT} && npm run chat"`;
 
     console.log('  \x1b[1mQuick access\x1b[0m\n');
-    console.log(`  Add this to your \x1b[36m${rcFile}\x1b[0m:\n`);
-    console.log(`    \x1b[33m${aliasCmd}\x1b[0m\n`);
+    const addAlias = await ask(rl, `Add a quick-access alias to your shell so you can type "alien" from anywhere? (y/n)`, 'y');
+    const rcFilePath = rcFile.replace('~', os.homedir());
+
+    if (addAlias.toLowerCase() === 'y') {
+      try {
+        const existingRc = fs.existsSync(rcFilePath) ? fs.readFileSync(rcFilePath, 'utf8') : '';
+        if (existingRc.includes('alias alien=')) {
+          console.log(`  \x1b[33m⚠\x1b[0m Alias "alien" already exists in ${rcFile} — not overwriting`);
+        } else {
+          fs.appendFileSync(rcFilePath, `\n# Alien Kind — talk to your partner\n${aliasCmd}\n`);
+          console.log(`  \x1b[32m✓\x1b[0m Added to ${rcFile}. Run \x1b[36msource ${rcFile}\x1b[0m or open a new terminal.`);
+        }
+      } catch {
+        console.log(`  \x1b[31m✗\x1b[0m Could not write to ${rcFile}. Add this manually:\n`);
+        console.log(`    \x1b[33m${aliasCmd}\x1b[0m\n`);
+      }
+    } else {
+      console.log(`\n  Add this to your \x1b[36m${rcFile}\x1b[0m:\n`);
+      console.log(`    \x1b[33m${aliasCmd}\x1b[0m\n`);
+    }
     console.log('  Then type \x1b[36malien\x1b[0m from anywhere to talk to your partner.\n');
 
     // ================================================================
