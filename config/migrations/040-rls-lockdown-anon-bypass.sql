@@ -31,16 +31,7 @@
 --   perspectives_copublish (uses auth.role() = 'service_role' check — correct)
 --   deep_process_outputs (created without permissive policy)
 --
--- !! ERRATA (found 2026-03-13, pentest-scan finding):
---   social_drafts was listed as "correct" but actually uses USING (true) — VULNERABLE
---   learning_ledger was listed as "renamed/superseded" but table exists with data — VULNERABLE
---   Both fixed in migration 048.
---
--- Verification: Run `npx tsx scripts/security/pentest-scan.ts` after applying.
--- All tables should return empty arrays (not rows) via anon key.
---
 -- IMPORTANT: Run this in Supabase SQL Editor as a single transaction.
--- URL: https://supabase.com/dashboard/project/[SUPABASE_PROJECT_ID]/sql/new
 
 BEGIN;
 
@@ -48,7 +39,7 @@ BEGIN;
 -- PART 1: The 6 tables flagged by pentest scanner
 -- ============================================================
 
--- 1. security_audit_log
+-- 1. security_audit_log (created in 036 — safe)
 DROP POLICY IF EXISTS "Allow insert for authenticated" ON security_audit_log;
 DROP POLICY IF EXISTS "Allow select for authenticated" ON security_audit_log;
 DROP POLICY IF EXISTS "service_role_full_access" ON security_audit_log;
@@ -57,136 +48,142 @@ DROP POLICY IF EXISTS "Allow service role full access" ON security_audit_log;
 ALTER TABLE security_audit_log ENABLE ROW LEVEL SECURITY;
 ALTER TABLE security_audit_log FORCE ROW LEVEL SECURITY;
 
--- 2. conversations
+-- 2. conversations (created in 001 — safe)
 DROP POLICY IF EXISTS "Allow all for authenticated" ON conversations;
 DROP POLICY IF EXISTS "service_role_full_access" ON conversations;
 DROP POLICY IF EXISTS "Allow service role full access" ON conversations;
 ALTER TABLE conversations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE conversations FORCE ROW LEVEL SECURITY;
 
--- 3. intents
-DROP POLICY IF EXISTS "Allow all for authenticated" ON intents;
-DROP POLICY IF EXISTS "Allow service role full access" ON intents;
-DROP POLICY IF EXISTS "service_role_full_access" ON intents;
-ALTER TABLE intents ENABLE ROW LEVEL SECURITY;
-ALTER TABLE intents FORCE ROW LEVEL SECURITY;
+-- 3. intents (created in 012/013 — guard)
+DO $$ BEGIN
+  IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'intents') THEN
+    DROP POLICY IF EXISTS "Allow all for authenticated" ON intents;
+    DROP POLICY IF EXISTS "Allow service role full access" ON intents;
+    DROP POLICY IF EXISTS "service_role_full_access" ON intents;
+    ALTER TABLE intents ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE intents FORCE ROW LEVEL SECURITY;
+  END IF;
+END $$;
 
--- 4. deferred_actions
-DROP POLICY IF EXISTS "Allow all for authenticated" ON deferred_actions;
-DROP POLICY IF EXISTS "service_role_full_access" ON deferred_actions;
-DROP POLICY IF EXISTS "Allow service role full access" ON deferred_actions;
-ALTER TABLE deferred_actions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE deferred_actions FORCE ROW LEVEL SECURITY;
+-- 4. deferred_actions (not created in included migrations — guard)
+DO $$ BEGIN
+  IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'deferred_actions') THEN
+    DROP POLICY IF EXISTS "Allow all for authenticated" ON deferred_actions;
+    DROP POLICY IF EXISTS "service_role_full_access" ON deferred_actions;
+    DROP POLICY IF EXISTS "Allow service role full access" ON deferred_actions;
+    ALTER TABLE deferred_actions ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE deferred_actions FORCE ROW LEVEL SECURITY;
+  END IF;
+END $$;
 
--- 5. content_performance
-DROP POLICY IF EXISTS "Allow all for authenticated" ON content_performance;
-DROP POLICY IF EXISTS "service_role_full_access" ON content_performance;
-DROP POLICY IF EXISTS "Allow service role full access" ON content_performance;
-ALTER TABLE content_performance ENABLE ROW LEVEL SECURITY;
-ALTER TABLE content_performance FORCE ROW LEVEL SECURITY;
+-- 5. content_performance (not created in included migrations — guard)
+DO $$ BEGIN
+  IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'content_performance') THEN
+    DROP POLICY IF EXISTS "Allow all for authenticated" ON content_performance;
+    DROP POLICY IF EXISTS "service_role_full_access" ON content_performance;
+    DROP POLICY IF EXISTS "Allow service role full access" ON content_performance;
+    ALTER TABLE content_performance ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE content_performance FORCE ROW LEVEL SECURITY;
+  END IF;
+END $$;
 
--- 6. social_growth
-DROP POLICY IF EXISTS "Allow all for authenticated" ON social_growth;
-DROP POLICY IF EXISTS "service_role_full_access" ON social_growth;
-DROP POLICY IF EXISTS "Allow service role full access" ON social_growth;
-ALTER TABLE social_growth ENABLE ROW LEVEL SECURITY;
-ALTER TABLE social_growth FORCE ROW LEVEL SECURITY;
+-- 6. social_growth (not created in included migrations — guard)
+DO $$ BEGIN
+  IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'social_growth') THEN
+    DROP POLICY IF EXISTS "Allow all for authenticated" ON social_growth;
+    DROP POLICY IF EXISTS "service_role_full_access" ON social_growth;
+    DROP POLICY IF EXISTS "Allow service role full access" ON social_growth;
+    ALTER TABLE social_growth ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE social_growth FORCE ROW LEVEL SECURITY;
+  END IF;
+END $$;
 
 -- ============================================================
 -- PART 2: Additional tables with same USING (true) vulnerability
 -- ============================================================
 
--- 7. case_studies (migration 010)
-DROP POLICY IF EXISTS "Allow all for authenticated" ON case_studies;
-DROP POLICY IF EXISTS "service_role_full_access" ON case_studies;
-DROP POLICY IF EXISTS "Allow service role full access" ON case_studies;
-ALTER TABLE case_studies ENABLE ROW LEVEL SECURITY;
-ALTER TABLE case_studies FORCE ROW LEVEL SECURITY;
+-- 7. case_studies (not created in included migrations — guard)
+DO $$ BEGIN
+  IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'case_studies') THEN
+    DROP POLICY IF EXISTS "Allow all for authenticated" ON case_studies;
+    DROP POLICY IF EXISTS "service_role_full_access" ON case_studies;
+    DROP POLICY IF EXISTS "Allow service role full access" ON case_studies;
+    ALTER TABLE case_studies ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE case_studies FORCE ROW LEVEL SECURITY;
+  END IF;
+END $$;
 
--- 8. podcast_episodes (migration 009)
-DROP POLICY IF EXISTS "Allow all for authenticated" ON podcast_episodes;
-DROP POLICY IF EXISTS "service_role_full_access" ON podcast_episodes;
-DROP POLICY IF EXISTS "Allow service role full access" ON podcast_episodes;
-ALTER TABLE podcast_episodes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE podcast_episodes FORCE ROW LEVEL SECURITY;
+-- 8. podcast_episodes (not created in included migrations — guard)
+DO $$ BEGIN
+  IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'podcast_episodes') THEN
+    DROP POLICY IF EXISTS "Allow all for authenticated" ON podcast_episodes;
+    DROP POLICY IF EXISTS "service_role_full_access" ON podcast_episodes;
+    DROP POLICY IF EXISTS "Allow service role full access" ON podcast_episodes;
+    ALTER TABLE podcast_episodes ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE podcast_episodes FORCE ROW LEVEL SECURITY;
+  END IF;
+END $$;
 
--- 9. memory_chunks (migration 004)
+-- 9. memory_chunks (created in 004 — safe)
 DROP POLICY IF EXISTS "Allow all for authenticated" ON memory_chunks;
 DROP POLICY IF EXISTS "service_role_full_access" ON memory_chunks;
 DROP POLICY IF EXISTS "Allow service role full access" ON memory_chunks;
 ALTER TABLE memory_chunks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE memory_chunks FORCE ROW LEVEL SECURITY;
 
--- 10. keel_predictions (migration 008)
+-- 10. keel_predictions (created in 008 — safe)
 DROP POLICY IF EXISTS "Allow all for authenticated" ON keel_predictions;
 DROP POLICY IF EXISTS "service_role_full_access" ON keel_predictions;
 DROP POLICY IF EXISTS "Allow service role full access" ON keel_predictions;
 ALTER TABLE keel_predictions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE keel_predictions FORCE ROW LEVEL SECURITY;
 
--- 11. keel_outcomes (migration 008)
+-- 11. keel_outcomes (created in 008 — safe)
 DROP POLICY IF EXISTS "Allow all for authenticated" ON keel_outcomes;
 DROP POLICY IF EXISTS "service_role_full_access" ON keel_outcomes;
 DROP POLICY IF EXISTS "Allow service role full access" ON keel_outcomes;
 ALTER TABLE keel_outcomes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE keel_outcomes FORCE ROW LEVEL SECURITY;
 
--- 12. keel_experiences (migration 008)
+-- 12. keel_experiences (created in 008 — safe)
 DROP POLICY IF EXISTS "Allow all for authenticated" ON keel_experiences;
 DROP POLICY IF EXISTS "service_role_full_access" ON keel_experiences;
 DROP POLICY IF EXISTS "Allow service role full access" ON keel_experiences;
 ALTER TABLE keel_experiences ENABLE ROW LEVEL SECURITY;
 ALTER TABLE keel_experiences FORCE ROW LEVEL SECURITY;
 
--- 13. content_feedback (migration 011)
-DROP POLICY IF EXISTS "Allow all for authenticated" ON content_feedback;
-DROP POLICY IF EXISTS "Allow service role full access" ON content_feedback;
-DROP POLICY IF EXISTS "service_role_full_access" ON content_feedback;
-ALTER TABLE content_feedback ENABLE ROW LEVEL SECURITY;
-ALTER TABLE content_feedback FORCE ROW LEVEL SECURITY;
+-- 13. content_feedback (not created in included migrations — guard)
+DO $$ BEGIN
+  IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'content_feedback') THEN
+    DROP POLICY IF EXISTS "Allow all for authenticated" ON content_feedback;
+    DROP POLICY IF EXISTS "Allow service role full access" ON content_feedback;
+    DROP POLICY IF EXISTS "service_role_full_access" ON content_feedback;
+    ALTER TABLE content_feedback ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE content_feedback FORCE ROW LEVEL SECURITY;
+  END IF;
+END $$;
 
--- 14. review_messages (migration 016)
-DROP POLICY IF EXISTS "Allow all for authenticated" ON review_messages;
-DROP POLICY IF EXISTS "Allow service role full access" ON review_messages;
-DROP POLICY IF EXISTS "service_role_full_access" ON review_messages;
-ALTER TABLE review_messages ENABLE ROW LEVEL SECURITY;
-ALTER TABLE review_messages FORCE ROW LEVEL SECURITY;
+-- 14. review_messages (not created in included migrations — guard)
+DO $$ BEGIN
+  IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'review_messages') THEN
+    DROP POLICY IF EXISTS "Allow all for authenticated" ON review_messages;
+    DROP POLICY IF EXISTS "Allow service role full access" ON review_messages;
+    DROP POLICY IF EXISTS "service_role_full_access" ON review_messages;
+    ALTER TABLE review_messages ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE review_messages FORCE ROW LEVEL SECURITY;
+  END IF;
+END $$;
 
--- 15. mistakes (migration 019)
-DROP POLICY IF EXISTS "Allow all for authenticated" ON mistakes;
-DROP POLICY IF EXISTS "Allow service role full access" ON mistakes;
-DROP POLICY IF EXISTS "service_role_full_access" ON mistakes;
-ALTER TABLE mistakes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE mistakes FORCE ROW LEVEL SECURITY;
+-- 15. mistakes (created in 019 — safe, may have been renamed to learning_opportunities by 045)
+DO $$ BEGIN
+  IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'mistakes') THEN
+    DROP POLICY IF EXISTS "Allow all for authenticated" ON mistakes;
+    DROP POLICY IF EXISTS "Allow service role full access" ON mistakes;
+    DROP POLICY IF EXISTS "service_role_full_access" ON mistakes;
+    ALTER TABLE mistakes ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE mistakes FORCE ROW LEVEL SECURITY;
+  END IF;
+END $$;
 
 COMMIT;
-
--- ============================================================
--- VERIFICATION QUERIES (run after migration)
--- ============================================================
-
--- 1. Should return 0 rows — no permissive policies on any of these tables
--- SELECT schemaname, tablename, policyname, permissive, roles, cmd
--- FROM pg_policies
--- WHERE tablename IN (
---   'security_audit_log', 'conversations', 'intents',
---   'deferred_actions', 'content_performance', 'social_growth',
---   'case_studies', 'podcast_episodes', 'memory_chunks',
---   'keel_predictions', 'keel_outcomes', 'keel_experiences',
---   'content_feedback', 'review_messages', 'mistakes'
--- )
--- ORDER BY tablename, policyname;
-
--- 2. Should show all tables with rowsecurity=true AND forcerowsecurity=true
--- SELECT relname, relrowsecurity, relforcerowsecurity
--- FROM pg_class
--- WHERE relname IN (
---   'security_audit_log', 'conversations', 'intents',
---   'deferred_actions', 'content_performance', 'social_growth',
---   'case_studies', 'podcast_episodes', 'memory_chunks',
---   'keel_predictions', 'keel_outcomes', 'keel_experiences',
---   'content_feedback', 'review_messages', 'mistakes'
--- )
--- ORDER BY relname;
-
--- 3. Run pentest scanner: npx tsx scripts/security/pentest-scan.ts

@@ -8,7 +8,7 @@
 -- Scalable: private (DM/terminal), group (Group), public (community/web).
 CREATE TABLE IF NOT EXISTS conversations (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-  session_id UUID REFERENCES sessions(id) ON DELETE SET NULL,
+  session_id UUID,  -- FK to sessions added in migration 089
   channel TEXT NOT NULL CHECK (channel IN (
     'terminal',
     'telegram_dm',

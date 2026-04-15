@@ -80,10 +80,11 @@ interface CliArgs {
   sqlEditor: boolean;
   url: string | null;
   key: string | null;
+  dbUrl: string | null;
 }
 
 function parseArgs(argv: string[]): CliArgs {
-  const args: CliArgs = { dryRun: false, sqlEditor: false, url: null, key: null };
+  const args: CliArgs = { dryRun: false, sqlEditor: false, url: null, key: null, dbUrl: null };
   for (let i = 2; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === '--dry-run') {
@@ -94,6 +95,8 @@ function parseArgs(argv: string[]): CliArgs {
       args.url = argv[++i];
     } else if (arg === '--key' && i + 1 < argv.length) {
       args.key = argv[++i];
+    } else if (arg === '--db-url' && i + 1 < argv.length) {
+      args.dbUrl = argv[++i];
     } else if (arg === '--help' || arg === '-h') {
       log(`
 ${C.bold}AlienKind Migration Runner${C.reset}
@@ -106,6 +109,7 @@ ${C.dim}Options:${C.reset}
   --sql-editor    Force SQL Editor mode (skip psql detection)
   --url URL       Supabase URL (or reads SUPABASE_URL from .env)
   --key KEY       Service role key (or reads SUPABASE_SERVICE_KEY / SUPABASE_KEY from .env)
+  --db-url URL    Direct psql connection string (postgresql://user:pass@host:5432/db)
   --help, -h      Show this help
 `);
       process.exit(0);
@@ -556,11 +560,18 @@ async function main() {
   }
 
   // 6. Choose execution strategy
+  // Resolve connection string: --db-url flag > DB_URL in .env > derived from Supabase URL + key
+  const envFile = loadEnv(path.join(ROOT, '.env'));
+  const dbUrl = args.dbUrl || envFile.DATABASE_URL || envFile.DB_URL || envFile.SUPABASE_DB_URL || null;
   const hasPsql = !args.sqlEditor && detectPsql();
 
   if (hasPsql) {
-    info('psql detected — using direct connection');
-    const connStr = buildConnectionString(config);
+    const connStr = dbUrl || buildConnectionString(config);
+    if (dbUrl) {
+      info('psql detected — using provided database URL');
+    } else {
+      info('psql detected — deriving connection from Supabase URL (if auth fails, use --db-url)');
+    }
     const success = await runPsqlMode(config, connStr, pending, trackingTableExists);
 
     if (success) {

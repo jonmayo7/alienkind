@@ -77,16 +77,18 @@ Your partner works without Supabase — identity, memory, and conversations save
 
 **Supabase free tier covers everything.** The setup wizard walks you through creating a project and running the 59 migration files that create the full schema. This is not optional polish — it's the difference between an agent that remembers facts and a partner that evolves.
 
-## Already have an OpenClaw partner?
+## The alien eats the claw 🦞
 
-If you've been building with OpenClaw and hit the 3-6 week wall, your partnership isn't lost. The setup wizard detects your OpenClaw installation and offers to import:
+Built an agent with [OpenClaw](https://github.com/openclaw/openclaw) and hit the wall? Your work isn't lost — the alien eats it.
+
+The setup wizard detects your OpenClaw installation and consumes it:
 
 - **SOUL.md** → seeds your Alien Kind identity kernel
 - **MEMORY.md** → imports your durable facts
 - **Session history** → mines correction patterns and preferences
-- **Daily notes** → preserves your partnership's journal
+- **Daily notes** → preserves your agent's journal
 
-The relationship continues. The ceiling disappears. Run the consumption engine anytime:
+What was an agent becomes a partner. What was a ceiling becomes a floor. Run the consumption engine anytime:
 
 ```bash
 npx tsx scripts/tools/consume-openclaw.ts

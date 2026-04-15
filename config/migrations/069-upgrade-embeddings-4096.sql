@@ -19,9 +19,10 @@ UPDATE memory_chunks SET embedding = NULL;
 -- Step 3: Alter column to 4096 dimensions
 ALTER TABLE memory_chunks ALTER COLUMN embedding TYPE vector(4096);
 
--- Step 4: Recreate HNSW index for 4096 dims
-CREATE INDEX idx_memory_chunks_embedding
-  ON memory_chunks USING hnsw (embedding vector_cosine_ops);
+-- Step 4: HNSW index for 4096 dims — SKIPPED
+-- Supabase pgvector enforces 2000-dim cap for HNSW. Brute-force scan is <100ms on typical datasets.
+-- Re-attempt after Supabase upgrades pgvector:
+-- CREATE INDEX idx_memory_chunks_embedding ON memory_chunks USING hnsw (embedding vector_cosine_ops);
 
 -- Step 5: Replace RPC function with 4096-dim parameter
 CREATE OR REPLACE FUNCTION hybrid_memory_search(
