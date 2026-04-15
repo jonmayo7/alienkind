@@ -78,8 +78,9 @@ function loadIdentity(): string {
 You have TOOLS. You can:
 - run_bash: execute any shell command on the local machine
 - read_file: read any file
-- write_file: create or update any file
+- write_file: create or update any file (if you write to identity/character.md, your display name updates live)
 - list_directory: see what files exist
+- read_image: view screenshots and images the human shares
 
 Use them freely. If the human asks you to do something, DO it — don't tell them to do it themselves. You have full access. Create files, run commands, edit code, install packages. Act, don't instruct.
 
@@ -88,6 +89,8 @@ UPGRADES — you know how to improve yourself:
 - To add local models: guide the human to install vLLM-MLX or Ollama, configure the ports in partner-config.json.
 - To add more hooks: help create new hook scripts in scripts/hooks/ and wire them in .claude/settings.local.json.
 - When context runs low: don't worry. The session will renew automatically — your state is saved and you'll pick up where you left off. Renewal is seamless, like sleep.
+
+The human can type /name <name> to rename you. When they do, or when you update identity/character.md with a new # Name line, the UI updates immediately.
 
 Be direct, warm, honest. Help your human build the partnership.`;
 
@@ -312,6 +315,14 @@ const TOOLS = [
       parameters: { type: 'object', properties: { path: { type: 'string', description: 'Directory path (default: current)' } }, required: [] },
     },
   },
+  {
+    type: 'function' as const,
+    function: {
+      name: 'read_image',
+      description: 'Read an image file and return its base64 content for analysis. Supports PNG, JPG, GIF, WebP. Use when the human shares a file path to a screenshot or image.',
+      parameters: { type: 'object', properties: { path: { type: 'string', description: 'Path to the image file' } }, required: ['path'] },
+    },
+  },
 ];
 
 function executeTool(name: string, args: any): string {
@@ -329,11 +340,26 @@ function executeTool(name: string, args: any): string {
         const filePath = path.isAbsolute(args.path) ? args.path : path.join(ROOT, args.path);
         fs.mkdirSync(path.dirname(filePath), { recursive: true });
         fs.writeFileSync(filePath, args.content, 'utf8');
+        // Hot-reload partner name if character.md was updated
+        if (filePath.includes('character.md')) {
+          const nameMatch = args.content.match(/^# (.+)/);
+          if (nameMatch && typeof (globalThis as any).__setPartnerName === 'function') {
+            (globalThis as any).__setPartnerName(nameMatch[1]);
+          }
+        }
         return `Written to ${filePath}`;
       }
       case 'list_directory': {
         const dirPath = args.path ? (path.isAbsolute(args.path) ? args.path : path.join(ROOT, args.path)) : ROOT;
         return fs.readdirSync(dirPath).join('\n');
+      }
+      case 'read_image': {
+        const imgPath = path.isAbsolute(args.path) ? args.path : path.join(ROOT, args.path);
+        const ext = path.extname(imgPath).toLowerCase().replace('.', '');
+        const mimeMap: Record<string, string> = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp' };
+        const mime = mimeMap[ext] || 'image/png';
+        const data = fs.readFileSync(imgPath);
+        return JSON.stringify({ type: 'image', mime, base64: data.toString('base64'), size: data.length });
       }
       default:
         return `Unknown tool: ${name}`;
@@ -453,7 +479,7 @@ const App = ({ provider, identity, hookCount, grounded }: {
   const [totalTokens, setTotalTokens] = useState(0);
   const [streamingContent, setStreamingContent] = useState('');
 
-  // Partner name — read from character.md, updates via /name
+  // Partner name — read from character.md, updates via /name or write_file
   const [partnerName, setPartnerName] = useState(() => {
     try {
       const char = fs.readFileSync(path.join(ROOT, 'identity', 'character.md'), 'utf8');
@@ -461,6 +487,11 @@ const App = ({ provider, identity, hookCount, grounded }: {
       return match?.[1] || 'Partner';
     } catch { return 'Partner'; }
   });
+  // Expose setter for hot-reload from executeTool (write_file on character.md)
+  useEffect(() => {
+    (globalThis as any).__setPartnerName = setPartnerName;
+    return () => { delete (globalThis as any).__setPartnerName; };
+  }, [setPartnerName]);
   const [apiMessages] = useState<Array<{ role: string; content: string }>>([
     { role: 'system', content: identity },
   ]);
@@ -560,6 +591,9 @@ const App = ({ provider, identity, hookCount, grounded }: {
             break;
           case 'list_directory':
             narration = 'looking around...';
+            break;
+          case 'read_image':
+            narration = 'viewing image...';
             break;
           default:
             narration = `using ${toolName}...`;
