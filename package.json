@@ -1,0 +1,20 @@
+{
+  "name": "alien-kind",
+  "version": "0.1.0",
+  "description": "Architecture for building persistent, evolving AI partnerships on top of any LLM",
+  "license": "Apache-2.0",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "setup": "npx tsx scripts/tools/setup-wizard.ts",
+    "chat": "npx tsx scripts/chat.ts",
+    "test": "npx tsx tests/test-portable.ts && npx tsx tests/test-prompt-hook-executor.ts && npx tsx tests/test-worktree.ts && npx tsx tests/test-context-doctor.ts",
+    "doctor": "npx tsx scripts/tools/context-doctor.ts",
+    "status": "npx tsx -e \"const { getCapabilityStatus, formatCapabilityStatus } = require('./scripts/lib/portable.ts'); getCapabilityStatus().then(s => console.log(formatCapabilityStatus(s)));\""
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0"
+  }
+}

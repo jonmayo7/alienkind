@@ -1,0 +1,10 @@
+.env
+*.key
+*.pem
+*.p12
+node_modules/
+logs/
+output/
+*.log
+.DS_Store
+credentials/

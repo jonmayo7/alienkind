@@ -1,0 +1,29 @@
+-- ============================================================
+-- MIGRATION 073: ABANDONED — pgvector cannot index 4096-dim embeddings
+--
+-- All pgvector index types have hard dimension caps:
+--   - HNSW:    max 2000 dims (vector), max 4000 dims (halfvec)
+--   - IVFFlat: max 2000 dims (vector), max 2000 dims (halfvec)
+--
+-- Our Qwen3-Embedding-8B model produces 4096-dim embeddings.
+-- No pgvector index can be created at this dimensionality.
+--
+-- Options for future resolution:
+--   1. Store truncated embeddings (first 2000 dims) in a separate
+--      indexed column for approximate nearest-neighbor, keep full
+--      4096-dim for final reranking
+--   2. Use PCA/random projection to reduce to 2000 dims
+--   3. Switch to a model with <=2000 dim output
+--   4. Use Supabase Edge Functions with a different vector DB
+--
+-- Current state: hybrid_memory_search works via sequential scan.
+-- At 53K rows, query latency is acceptable (<500ms).
+-- FTS (content_tsv) handles most lookups; vector is supplemental.
+--
+-- Date: 2026-04-01 (Intent #221 — closed as won't-fix at current dims)
+-- Marked as executed 2026-04-01 to stop migration-checker retry spam.
+-- ============================================================
+
+-- No-op. This migration is intentionally empty.
+-- See header for the full analysis of why indexing is not possible.
+SELECT 1;

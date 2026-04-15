@@ -1,0 +1,26 @@
+{
+  "_comment": "Copy this to partner-config.json and customize for your setup.",
+
+  "storage": "file",
+  "_storage_options": "file (default, local only) | sqlite (persistent, single machine) | supabase (persistent, cross-machine)",
+
+  "identity_files": [
+    "identity/character.md",
+    "identity/commitments.md",
+    "identity/orientation.md",
+    "identity/harness.md"
+  ],
+
+  "daily_file_pattern": "memory/daily/YYYY-MM-DD.md",
+
+  "protected_paths": [
+    "identity/character.md",
+    "identity/commitments.md",
+    "identity/orientation.md",
+    "CLAUDE.md"
+  ],
+
+  "_classifier_comment": "Tier 2 only — local model for semantic security scanning",
+  "classifier_host": "http://localhost",
+  "classifier_port": "[PORT_CLASSIFIER]"
+}

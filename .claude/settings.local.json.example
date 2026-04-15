@@ -1,0 +1,116 @@
+{
+  "_comment": "Copy this to .claude/settings.local.json to activate hooks. Start with the essentials, add more as you go.",
+
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {"type": "command", "command": "node scripts/hooks/consciousness-boot.ts"},
+          {"type": "command", "command": "bash scripts/ground.sh"},
+          {"type": "command", "command": "node scripts/hooks/compaction-gate-init.ts"},
+          {"type": "command", "command": "node scripts/hooks/register-terminal.ts"}
+        ]
+      }
+    ],
+
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {"type": "command", "command": "bash scripts/hooks/guard-bash.sh"},
+          {"type": "command", "command": "bash scripts/hooks/data-guard.sh"}
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {"type": "command", "command": "node scripts/hooks/memory-firewall-hook.ts"},
+          {"type": "command", "command": "node scripts/hooks/time-guard.ts"},
+          {"type": "command", "command": "node scripts/hooks/verification-guard.ts"},
+          {"type": "command", "command": "node scripts/hooks/conflict-guard.ts"},
+          {"type": "command", "command": "node scripts/hooks/no-youre-right.ts"}
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {"type": "command", "command": "node scripts/hooks/memory-firewall-hook.ts"},
+          {"type": "command", "command": "node scripts/hooks/time-guard.ts"},
+          {"type": "command", "command": "node scripts/hooks/verification-guard.ts"},
+          {"type": "command", "command": "node scripts/hooks/content-source-guard.ts"},
+          {"type": "command", "command": "node scripts/hooks/no-youre-right.ts"}
+        ]
+      },
+      {
+        "matcher": "Agent",
+        "hooks": [
+          {"type": "command", "command": "node scripts/hooks/agent-grounding.ts"}
+        ]
+      },
+      {
+        "matcher": "Read|Grep|Glob",
+        "hooks": [
+          {"type": "command", "command": "node scripts/hooks/read-mode-guard.ts"}
+        ]
+      }
+    ],
+
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {"type": "command", "command": "bash scripts/hooks/audit-bash.sh"},
+          {"type": "command", "command": "node scripts/hooks/forward-look.ts"}
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {"type": "command", "command": "node scripts/hooks/build-cycle.ts"}
+        ]
+      },
+      {
+        "matcher": "Read",
+        "hooks": [
+          {"type": "command", "command": "node scripts/hooks/track-read.ts"}
+        ]
+      },
+      {
+        "matcher": "Agent",
+        "hooks": [
+          {"type": "command", "command": "node scripts/hooks/agent-output-audit.ts"}
+        ]
+      }
+    ],
+
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {"type": "command", "command": "node scripts/hooks/compaction-gate.ts"},
+          {"type": "command", "command": "node scripts/hooks/remember-guard.ts"}
+        ]
+      }
+    ],
+
+    "PreCompact": [
+      {
+        "hooks": [
+          {"type": "command", "command": "node scripts/hooks/consciousness-precompact.ts"}
+        ]
+      }
+    ],
+
+    "Stop": [
+      {
+        "hooks": [
+          {"type": "command", "command": "node scripts/hooks/boot-verify.ts"},
+          {"type": "command", "command": "node scripts/hooks/uncommitted-delta.ts"},
+          {"type": "command", "command": "node scripts/hooks/memory-checkpoint.ts"},
+          {"type": "command", "command": "node scripts/hooks/post-compaction-audit.ts"},
+          {"type": "command", "command": "node scripts/hooks/deregister-terminal.ts"},
+          {"type": "command", "command": "node scripts/hooks/session-snapshot.ts"}
+        ]
+      }
+    ]
+  }
+}
