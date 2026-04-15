@@ -53,7 +53,7 @@ require.cache[path.resolve(__dirname, '__mock_local_inference__')] = {
   },
 } as any;
 
-const { executePromptHook } = require('../lib/prompt-hook-executor.ts');
+const { executePromptHook } = require('../scripts/lib/prompt-hook-executor.ts');
 
 // ============================================================================
 // Test runner — minimal, no framework

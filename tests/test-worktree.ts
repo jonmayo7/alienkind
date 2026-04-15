@@ -14,7 +14,7 @@
  * These tests create real git worktrees and clean up after themselves.
  */
 
-const { createWorktree, listWorktrees, removeWorktree, runInWorktree, pruneWorktrees } = require('../lib/worktree.ts');
+const { createWorktree, listWorktrees, removeWorktree, runInWorktree, pruneWorktrees } = require('../scripts/lib/worktree.ts');
 const fs = require('fs');
 const path = require('path');
 

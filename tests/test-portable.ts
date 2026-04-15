@@ -26,7 +26,7 @@ const {
   tryClassifier,
   getCapabilityStatus,
   formatCapabilityStatus,
-} = require('../lib/portable.ts');
+} = require('../scripts/lib/portable.ts');
 
 let passed = 0;
 let failed = 0;

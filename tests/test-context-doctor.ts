@@ -12,7 +12,7 @@
 
 const path = require('path');
 
-const { runDiagnostic, formatReport } = require('../tools/context-doctor.ts');
+const { runDiagnostic, formatReport } = require('../scripts/tools/context-doctor.ts');
 
 let passed = 0;
 let failed = 0;
