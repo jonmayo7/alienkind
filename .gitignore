@@ -13,3 +13,6 @@ credentials/
 CLAUDE.md
 partner-config.json
 .partner/
+
+# Worktree isolation
+.keel/worktrees/
