@@ -95,7 +95,11 @@ async function run() {
 
   await test('worktree is isolated from main', () => {
     // Create a file in the worktree — it should NOT appear in main
-    const wtPath = path.join(WORKTREE_BASE, testName);
+    const list = listWorktrees();
+    const wt = list.find((w: any) => w.name === testName);
+    assertTrue(wt, 'worktree found');
+    const wtPath = wt.path;
+    assertTrue(fs.existsSync(wtPath), 'worktree path exists');
     fs.writeFileSync(path.join(wtPath, '_test_isolation_marker.txt'), 'isolated');
     assertTrue(!fs.existsSync(path.join(KEEL_DIR, '_test_isolation_marker.txt')), 'marker not in main');
   });
