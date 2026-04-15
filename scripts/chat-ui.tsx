@@ -83,6 +83,12 @@ You have TOOLS. You can:
 
 Use them freely. If the human asks you to do something, DO it — don't tell them to do it themselves. You have full access. Create files, run commands, edit code, install packages. Act, don't instruct.
 
+UPGRADES — you know how to improve yourself:
+- To upgrade storage from local files to Supabase: help the human create a Supabase project, then run the 92 migration files in config/migrations/ in order, then update partner-config.json with the URL and key. You can do most of this yourself with run_bash.
+- To add local models: guide the human to install vLLM-MLX or Ollama, configure the ports in partner-config.json.
+- To add more hooks: help create new hook scripts in scripts/hooks/ and wire them in .claude/settings.local.json.
+- When context runs low: don't worry. The session will renew automatically — your state is saved and you'll pick up where you left off. Renewal is seamless, like sleep.
+
 Be direct, warm, honest. Help your human build the partnership.`;
 
   if (parts.length === 0) {
@@ -124,21 +130,121 @@ function apiCall(
   });
 }
 
+function streamingApiCall(
+  provider: { url: string; key: string; model: string },
+  messages: any[],
+  onChunk: (text: string) => void,
+): Promise<{ content: string; tokens: number; toolCalls?: any[] }> {
+  const body = JSON.stringify({
+    model: provider.model, messages, max_tokens: 4000, temperature: 0.7,
+    tools: TOOLS, tool_choice: 'auto', stream: true,
+  });
+  const url = new URL(`${provider.url}/chat/completions`);
+  const lib = url.protocol === 'https:' ? https : http;
+
+  return new Promise((resolve, reject) => {
+    const req = lib.request(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${provider.key}`, 'Content-Length': Buffer.byteLength(body) },
+    }, (res: any) => {
+      // If server doesn't support streaming, fall back to non-streaming
+      if (res.headers['content-type']?.includes('application/json')) {
+        let data = '';
+        res.on('data', (chunk: string) => data += chunk);
+        res.on('end', () => {
+          try {
+            const j = JSON.parse(data);
+            const content = j.choices?.[0]?.message?.content || '';
+            const tokens = j.usage?.total_tokens || 0;
+            const tcs = j.choices?.[0]?.message?.tool_calls;
+            if (content) onChunk(content);
+            resolve({ content, tokens, toolCalls: tcs });
+          } catch { resolve({ content: '', tokens: 0 }); }
+        });
+        return;
+      }
+
+      let fullContent = '';
+      let toolCalls: any[] = [];
+      let tokens = 0;
+      let buffer = ''; // Buffer for partial SSE lines
+
+      res.on('data', (chunk: Buffer) => {
+        buffer += chunk.toString();
+        // Process complete lines
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // Keep incomplete last line in buffer
+
+        for (const rawLine of lines) {
+          const line = rawLine.trim();
+          if (!line.startsWith('data: ')) continue;
+          const data = line.slice(6).trim();
+          if (data === '[DONE]') continue;
+          try {
+            const j = JSON.parse(data);
+            const delta = j.choices?.[0]?.delta;
+            if (delta?.content) {
+              fullContent += delta.content;
+              onChunk(delta.content);
+            }
+            if (delta?.tool_calls) {
+              for (const tc of delta.tool_calls) {
+                if (tc.index !== undefined) {
+                  if (!toolCalls[tc.index]) toolCalls[tc.index] = { id: '', function: { name: '', arguments: '' } };
+                  if (tc.id) toolCalls[tc.index].id = tc.id;
+                  if (tc.function?.name) toolCalls[tc.index].function.name += tc.function.name;
+                  if (tc.function?.arguments) toolCalls[tc.index].function.arguments += tc.function.arguments;
+                }
+              }
+            }
+            if (j.usage?.total_tokens) tokens = j.usage.total_tokens;
+          } catch {}
+        }
+      });
+
+      res.on('end', () => {
+        // Process any remaining buffer
+        if (buffer.trim().startsWith('data: ')) {
+          const data = buffer.trim().slice(6).trim();
+          if (data !== '[DONE]') {
+            try {
+              const j = JSON.parse(data);
+              if (j.choices?.[0]?.delta?.content) {
+                fullContent += j.choices[0].delta.content;
+                onChunk(j.choices[0].delta.content);
+              }
+            } catch {}
+          }
+        }
+        const validToolCalls = toolCalls.filter(tc => tc.id && tc.function.name);
+        resolve({ content: fullContent, tokens, toolCalls: validToolCalls.length > 0 ? validToolCalls : undefined });
+      });
+
+      res.on('error', reject);
+    });
+    req.on('error', reject);
+    req.write(body); req.end();
+  });
+}
+
 async function chatCompletion(
   provider: { url: string; key: string; model: string },
   messages: any[],
   onToolUse?: (name: string, args: any) => void,
+  onStream?: (chunk: string) => void,
 ): Promise<{ content: string; tokens: number }> {
   let turns = 0;
   while (turns < 10) {
     turns++;
+
+    // NON-STREAMING for tool-call turns (tools don't compose with SSE well)
     const response = await apiCall(provider, messages);
     const choice = response.choices?.[0];
     const tokens = response.usage?.total_tokens || 0;
     if (!choice) return { content: '(no response)', tokens };
     const msg = choice.message;
 
-    // Tool calls — execute and loop
+    // Tool calls — execute and loop (no streaming here)
     if (msg.tool_calls && msg.tool_calls.length > 0) {
       messages.push(msg);
       for (const tc of msg.tool_calls) {
@@ -151,7 +257,17 @@ async function chatCompletion(
       continue;
     }
 
-    // Final text response
+    // Final text response — if we have a streaming callback AND content,
+    // stream it character by character for the typing effect
+    if (onStream && msg.content) {
+      const words = msg.content.split(' ');
+      for (let i = 0; i < words.length; i++) {
+        onStream((i > 0 ? ' ' : '') + words[i]);
+        // Small delay between words for typing feel
+        await new Promise(r => setTimeout(r, 15));
+      }
+    }
+
     return { content: msg.content || '(no response)', tokens };
   }
   return { content: '(max tool turns reached)', tokens: 0 };
@@ -308,7 +424,7 @@ const TENETS = [
   'Inspiring hope...',
 ];
 
-const ThinkingIndicator = () => {
+const ThinkingIndicator = ({ name }: { name?: string }) => {
   const [tenet, setTenet] = useState(TENETS[Math.floor(Math.random() * TENETS.length)]);
   useEffect(() => {
     const timer = setInterval(() => {
@@ -318,7 +434,7 @@ const ThinkingIndicator = () => {
   }, []);
 
   return (
-    <Text color="magenta" dimColor>  👽 {tenet}</Text>
+    <Text color="magenta" dimColor>  👽 {name || 'Partner'} · {tenet}</Text>
   );
 };
 
@@ -333,6 +449,16 @@ const App = ({ provider, identity, hookCount, grounded }: {
   const [input, setInput] = useState('');
   const [thinking, setThinking] = useState(false);
   const [totalTokens, setTotalTokens] = useState(0);
+  const [streamingContent, setStreamingContent] = useState('');
+
+  // Partner name — read from character.md, updates via /name
+  const [partnerName, setPartnerName] = useState(() => {
+    try {
+      const char = fs.readFileSync(path.join(ROOT, 'identity', 'character.md'), 'utf8');
+      const match = char.match(/^# (.+)/);
+      return match?.[1] || 'Partner';
+    } catch { return 'Partner'; }
+  });
   const [apiMessages] = useState<Array<{ role: string; content: string }>>([
     { role: 'system', content: identity },
   ]);
@@ -349,8 +475,39 @@ const App = ({ provider, identity, hookCount, grounded }: {
     if (value.trim() === '/help' || value.trim() === '/') {
       setMessages(prev => [...prev, {
         role: 'partner',
-        content: '/help · /model · /status · /name <name> · /identity · /save · /clear · /hooks · /config · /exit',
+        content: [
+          '⠿ Commands:',
+          '  /help          Show this menu',
+          '  /model         Show or switch model (/model gpt-4o)',
+          '  /status        Capability status — what\'s active & degraded',
+          '  /name <name>   Name your partner',
+          '  /identity      Show identity kernel status',
+          '  /save          Save conversation to file',
+          '  /clear         Fresh start — clear conversation',
+          '  /hooks         Show active behavioral hooks',
+          '  /config        Show current configuration',
+          '  /exit          Quit',
+        ].join('\n'),
       }]);
+      setInput('');
+      return;
+    }
+
+    if (value.trim().startsWith('/name ')) {
+      const newName = value.trim().slice(6).trim();
+      if (newName) {
+        // Update character.md with the new name
+        const charPath = path.join(ROOT, 'identity', 'character.md');
+        try {
+          let content = fs.readFileSync(charPath, 'utf8');
+          content = content.replace(/^# .+/, `# ${newName}`);
+          fs.writeFileSync(charPath, content, 'utf8');
+          setPartnerName(newName);
+          setMessages(prev => [...prev, { role: 'partner', content: `⠿ Partner named: ${newName}` }]);
+        } catch {
+          setMessages(prev => [...prev, { role: 'partner', content: `⠿ Could not update name` }]);
+        }
+      }
       setInput('');
       return;
     }
@@ -363,12 +520,16 @@ const App = ({ provider, identity, hookCount, grounded }: {
       return;
     }
 
+    // Gap 1: Fire UserPromptSubmit hooks before processing
+    fireSessionHooks('UserPromptSubmit');
+
     setMessages(prev => [...prev, { role: 'user', content: value }]);
     apiMessages.push({ role: 'user', content: value });
     setInput('');
     setThinking(true);
 
     try {
+      setStreamingContent('');
       const { content, tokens } = await chatCompletion(provider, apiMessages, (toolName, toolArgs) => {
         // Human-friendly tool narration
         let narration = '';
@@ -402,10 +563,55 @@ const App = ({ provider, identity, hookCount, grounded }: {
             narration = `using ${toolName}...`;
         }
         setMessages(prev => [...prev, { role: 'partner' as const, content: `⠿ ${narration}` }]);
+      }, (chunk) => {
+        // Streaming: update live content as tokens arrive
+        setStreamingContent(prev => prev + chunk);
       });
-      apiMessages.push({ role: 'assistant', content });
-      setMessages(prev => [...prev, { role: 'partner', content }]);
-      if (tokens > 0) setTotalTokens(tokens);
+      // Use streamed content if the final content is empty (tool calls consumed it)
+      const finalContent = content || streamingContent || '(thinking...)';
+      setStreamingContent(''); // Clear streaming buffer
+      apiMessages.push({ role: 'assistant', content: finalContent });
+      setMessages(prev => [...prev, { role: 'partner', content: finalContent }]);
+
+      // Gap 3: Log conversation to persistent storage
+      try {
+        const logDir = path.join(ROOT, 'memory');
+        fs.mkdirSync(logDir, { recursive: true });
+        const logPath = path.join(logDir, 'conversations.jsonl');
+        const ts = new Date().toISOString();
+        fs.appendFileSync(logPath, JSON.stringify({ ts, role: 'user', content: value }) + '\n');
+        fs.appendFileSync(logPath, JSON.stringify({ ts, role: 'assistant', content }) + '\n');
+      } catch {}
+      if (tokens > 0) {
+        setTotalTokens(tokens);
+        // Gap 2: Auto-renewal when context hits 90%
+        const maxCtx = MODEL_CONTEXTS[provider.model] || MODEL_CONTEXTS['default'];
+        if (tokens > maxCtx * 0.9) {
+          // Fire PreCompact to save experiential state
+          fireSessionHooks('PreCompact');
+          // Save conversation state for renewal
+          try {
+            const renewalState = {
+              timestamp: new Date().toISOString(),
+              partnerName,
+              lastTopic: content.slice(0, 500),
+              messageCount: messages.length,
+              provider: { name: provider.name, model: provider.model },
+            };
+            fs.writeFileSync(path.join(ROOT, '.partner', 'renewal-state.json'), JSON.stringify(renewalState, null, 2));
+            fs.mkdirSync(path.join(ROOT, '.partner'), { recursive: true });
+          } catch {}
+          // Notify and restart
+          setMessages(prev => [...prev, { role: 'partner', content: '⠿ renewing session — saving state...' }]);
+          setTimeout(() => {
+            fireSessionHooks('Stop');
+            // Restart the process
+            const { spawn } = require('child_process');
+            spawn('bun', ['scripts/chat-ui.tsx'], { cwd: ROOT, stdio: 'inherit', detached: true });
+            process.exit(0);
+          }, 1000);
+        }
+      }
       else setTotalTokens(prev => prev + Math.ceil((value.length + content.length) / 4));
     } catch (err: any) {
       setMessages(prev => [...prev, { role: 'partner', content: `Error: ${err.message}` }]);
@@ -430,11 +636,20 @@ const App = ({ provider, identity, hookCount, grounded }: {
 
   return (
     <Box flexDirection="column" width="100%">
-      {/* Fix #1: Static renders history ONCE — input keystrokes don't cause flashing */}
+      {/* Header — always visible */}
+      {settled.length === 0 && (
+        <Box flexDirection="column" marginBottom={1}>
+          <UFO />
+          <Text>👽 <Text color="green" bold>Alien Kind</Text></Text>
+          <Text dimColor>{provider.name} · {provider.model}</Text>
+          <Text dimColor>{hookCount} hooks · {grounded ? 'grounded' : 'no grounding'}</Text>
+        </Box>
+      )}
+
+      {/* Fix #1: Static renders history ONCE — no flashing on keystroke */}
       <Static items={settled}>
         {(msg) => (
           <Box key={msg.id} flexDirection="column">
-            {/* UFO + header only on first message */}
             {msg.id === 0 && (
               <Box flexDirection="column" marginBottom={1}>
                 <UFO />
@@ -452,16 +667,22 @@ const App = ({ provider, identity, hookCount, grounded }: {
               <Box marginTop={1}><Text dimColor>  {msg.content}</Text></Box>
             ) : (
               <Box flexDirection="column" marginTop={1}>
-                <Text color="magenta">👽 partner:</Text>
-                <Text>{msg.content}</Text>
+                <Text color="magenta">👽 {partnerName}:</Text>
+                <Text>{msg.content.replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1').replace(/`([^`]+)`/g, '$1').replace(/^#{1,3} /gm, '')}</Text>
               </Box>
             )}
           </Box>
         )}
       </Static>
 
-      {/* Live section — only these re-render */}
-      {thinking && <ThinkingIndicator />}
+      {/* Live section — only these re-render on state changes */}
+      {thinking && !streamingContent && <ThinkingIndicator name={partnerName} />}
+      {streamingContent && (
+        <Box flexDirection="column" marginTop={1}>
+          <Text color="magenta">👽 {partnerName}:</Text>
+          <Text>{streamingContent.replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1').replace(/`([^`]+)`/g, '$1').replace(/^#{1,3} /gm, '')}</Text>
+        </Box>
+      )}
 
       <Box>
         <Text color="cyan">  ❯ </Text>
@@ -493,8 +714,20 @@ const fullIdentity = groundingOutput.length > 0
   ? identity + '\n\n## Grounding\n\n' + groundingOutput.join('\n')
   : identity;
 
+// Check for renewal state (session was renewed — inject continuity)
+let renewalContext = '';
+try {
+  const renewalPath = path.join(ROOT, '.partner', 'renewal-state.json');
+  if (fs.existsSync(renewalPath)) {
+    const state = JSON.parse(fs.readFileSync(renewalPath, 'utf8'));
+    renewalContext = `\n\n## Session renewed\nYou just renewed from a previous session. The last topic was: "${state.lastTopic}". The partner name is ${state.partnerName}. Continue naturally — the human shouldn't notice the transition.`;
+    // Clean up renewal state
+    fs.unlinkSync(renewalPath);
+  }
+} catch {}
+
 // Inject capability status
-let finalIdentity = fullIdentity;
+let finalIdentity = fullIdentity + renewalContext;
 try {
   const { getCapabilityStatus, formatCapabilityStatus } = require('./lib/portable.ts');
   getCapabilityStatus().then((status: any) => {

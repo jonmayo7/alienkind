@@ -474,7 +474,7 @@ if [[ "$COMMAND" =~ git[[:space:]]commit ]]; then
   # codeFiles[] tracking. Detects staged infra files, checks daemon start
   # time vs file mtimes.
   STAGED_FILES=$(git diff --cached --name-only 2>/dev/null)
-  STAGED_INFRA=$(printf '%s\n' "$STAGED_FILES" | grep -E '(config/daemon-jobs|com\.keel\..*\.plist|scripts/lib/constants\.ts$|scripts/daemon\.ts$|scripts/lib/scheduler\.ts$|scripts/lib/job-queue\.ts$|scripts/lib/session-manager\.ts$)' | grep -v 'com\.keel\.studio2-' | tr '\n' ', ' | sed 's/,$//')
+  STAGED_INFRA=$(printf '%s\n' "$STAGED_FILES" | grep -E '(config/daemon-jobs|com\.example\..*\.plist|scripts/lib/constants\.ts$|scripts/daemon\.ts$|scripts/lib/scheduler\.ts$|scripts/lib/job-queue\.ts$|scripts/lib/session-manager\.ts$)' | grep -v 'com\.example\.studio2-' | tr '\n' ', ' | sed 's/,$//')
 
   if [ -n "$STAGED_INFRA" ]; then
     DAEMON_PID=$(launchctl list 2>/dev/null | grep com.example.daemon | awk '{print $1}')
