@@ -224,27 +224,46 @@ async function main() {
     }
 
     // ================================================================
-    // Step 4: OpenClaw detection
+    // Step 4: Existing agent import
     // ================================================================
+    divider();
     const openclawPath = path.join(os.homedir(), '.openclaw');
-    if (fs.existsSync(openclawPath)) {
-      divider();
-      console.log('  \x1b[33m🦞\x1b[0m Found an OpenClaw installation at ~/.openclaw\n');
-      const importClaw = await ask(rl, 'Import your existing partnership into Alien Kind? (y/n)', 'y');
-      if (importClaw.toLowerCase() === 'y') {
-        console.log('\n  \x1b[36mRunning consumption engine...\x1b[0m\n');
+    const hasOpenClaw = fs.existsSync(openclawPath);
+
+    const importChoice = await select(rl, 'Do you have an existing AI agent to import?', [
+      ...(hasOpenClaw ? [{ label: 'Yes — import my OpenClaw agent 🦞', value: 'openclaw' }] : []),
+      { label: 'Yes — import from a directory', value: 'directory' },
+      { label: 'No — starting fresh', value: 'skip' },
+    ]);
+
+    if (importChoice === 'openclaw') {
+      console.log('\n  \x1b[36mRunning OpenClaw consumption engine...\x1b[0m\n');
+      try {
+        execSync(`npx tsx "${path.join(ROOT, 'scripts/tools/consume-openclaw.ts')}" "${openclawPath}"`, {
+          cwd: ROOT, stdio: 'inherit',
+        });
+      } catch {
+        console.log('  \x1b[33m⚠\x1b[0m OpenClaw import had issues — you can retry later with:');
+        console.log('  \x1b[36m$ npx tsx scripts/tools/consume-openclaw.ts\x1b[0m\n');
+      }
+    } else if (importChoice === 'directory') {
+      const dirPath = await ask(rl, 'Path to your agent directory');
+      if (dirPath && fs.existsSync(dirPath)) {
+        console.log('\n  \x1b[36mScanning directory...\x1b[0m\n');
         try {
-          execSync(`npx tsx "${path.join(ROOT, 'scripts/tools/consume-openclaw.ts')}" "${openclawPath}"`, {
-            cwd: ROOT,
-            stdio: 'inherit',
+          execSync(`npx tsx "${path.join(ROOT, 'scripts/tools/consume-directory.ts')}" "${dirPath}"`, {
+            cwd: ROOT, stdio: 'inherit',
           });
         } catch {
-          console.log('  \x1b[33m⚠\x1b[0m OpenClaw import had issues — you can retry later with:');
-          console.log('  \x1b[36m$ npx tsx scripts/tools/consume-openclaw.ts\x1b[0m\n');
+          console.log('  \x1b[33m⚠\x1b[0m Directory import had issues — you can retry later with:');
+          console.log(`  \x1b[36m$ npx tsx scripts/tools/consume-directory.ts "${dirPath}"\x1b[0m\n`);
         }
       } else {
-        console.log('  \x1b[2mSkipped. You can import later: npx tsx scripts/tools/consume-openclaw.ts\x1b[0m\n');
+        console.log('  \x1b[31m✗\x1b[0m Directory not found. You can import later with:');
+        console.log('  \x1b[36m$ npx tsx scripts/tools/consume-directory.ts /path/to/agent\x1b[0m\n');
       }
+    } else {
+      console.log('\n  \x1b[32m✓\x1b[0m Fresh start. Your partner will be born new.\n');
     }
 
     // ================================================================
