@@ -23,16 +23,86 @@ Kind — because kindness is a choice. A warrior in a garden who chooses restrai
 ## Quick start
 
 ```bash
-git clone https://github.com/jonmayo7/alien-kind.git
-cd alien-kind && npm install
+git clone https://github.com/jonmayo7/alienkind.git
+cd alienkind && npm install
 npm run setup
 ```
 
-Three commands. The setup wizard handles everything: picks your LLM provider, configures your API key, names your partner, scaffolds the identity kernel, activates hooks, and launches your first conversation.
+Three commands. The setup wizard handles everything: picks your path, configures your provider, names your partner, sets up persistent memory, activates hooks, and launches your first conversation.
 
-**You need:** Node.js 20+ and an LLM API key.
+**You need:** Node.js 20+.
 
-**You don't need:** Dedicated hardware, a database, local models, or our permission (Apache 2.0).
+## Two paths to your partner
+
+The setup wizard asks how you want to connect. Both paths use the same identity files, hooks, and architecture — the difference is the UI shell and billing model.
+
+### Path A: Claude Code + Anthropic Max plan (recommended)
+
+Your partner runs inside [Claude Code](https://docs.anthropic.com/en/docs/claude-code), Anthropic's official CLI. The AlienKind architecture (identity kernel, 55 hooks, ground.sh) loads automatically when you open the repo.
+
+- **UI:** Claude Code terminal
+- **Cost:** Flat monthly subscription (Anthropic Max plan recommended)
+- **Setup:** `npm run setup` → choose "Claude Code" → `claude`
+- **Strengths:** Full tool access (Read, Write, Bash, Agent), streaming, Anthropic's UI improvements for free, native hook enforcement
+
+### Path B: AlienKind CLI + API key (any provider)
+
+Your partner runs in a custom terminal UI (React + Ink) powered by any LLM API — Anthropic, OpenAI, OpenRouter, Ollama, or any OpenAI-compatible endpoint.
+
+- **UI:** Custom AlienKind terminal with alien banner, partner name, context meter
+- **Cost:** Pay per token (your API key, your bill)
+- **Setup:** `npm run setup` → choose "CLI" → pick provider → `npm run chat`
+- **Strengths:** Provider independence, works with any model, custom UI, no subscription needed
+
+| Feature | Claude Code (Path A) | AlienKind CLI (Path B) |
+|---------|---------------------|----------------------|
+| UI | Claude Code terminal | Custom Ink terminal |
+| Cost model | Flat subscription | Pay per token |
+| Model choice | Claude (Anthropic) | Any OpenAI-compatible |
+| Hook enforcement | Native (Claude Code hooks) | Emulated (chat lifecycle) |
+| Tool access | Full (Read, Write, Bash, Agent, etc.) | API-based (run_bash, read_file, write_file) |
+| Setup complexity | Lower | Slightly higher |
+
+Both paths share the same identity kernel, memory system, Supabase tables, and behavioral architecture. You can switch between them at any time.
+
+## Supabase: your partner's long-term memory
+
+Your partner works without Supabase — identity, memory, and conversations save to local files. But the features that make Alien Kind different from every other agent framework require it:
+
+- **Growth tracking** — learning ledger, correction history, calibration
+- **Multi-terminal awareness** — run parallel sessions that know about each other
+- **Nightly evolution** — soul-sync, behavioral analysis, orientation updates
+- **Circulation** — stigmergic blackboard where the partner's subsystems communicate
+- **Cross-machine access** — your partner's memory isn't trapped on one laptop
+
+**Supabase free tier covers everything.** The setup wizard walks you through creating a project and running the 59 migration files that create the full schema. This is not optional polish — it's the difference between an agent that remembers facts and a partner that evolves.
+
+## Already have an OpenClaw partner?
+
+If you've been building with OpenClaw and hit the 3-6 week wall, your partnership isn't lost. The setup wizard detects your OpenClaw installation and offers to import:
+
+- **SOUL.md** → seeds your Alien Kind identity kernel
+- **MEMORY.md** → imports your durable facts
+- **Session history** → mines correction patterns and preferences
+- **Daily notes** → preserves your partnership's journal
+
+The relationship continues. The ceiling disappears. Run the consumption engine anytime:
+
+```bash
+npx tsx scripts/tools/consume-openclaw.ts
+```
+
+## Shell alias
+
+After setup, add a quick-access alias to your shell:
+
+```bash
+# In ~/.zshrc or ~/.bashrc:
+alias alien="cd ~/alienkind && claude"       # Claude Code path
+alias alien="cd ~/alienkind && npm run chat"  # CLI path
+```
+
+Then type `alien` from anywhere to talk to your partner.
 
 ## What's here
 
@@ -47,8 +117,6 @@ Three commands. The setup wizard handles everything: picks your LLM provider, co
 | **5. Your partner survives anything** | Multi-substrate runtime, emergency runtime, Mycelium coordination, Self-MoA | `runtime.ts`, `emergency-tools.ts`, `mycelium.ts` |
 
 Full thesis with evidence: **[HYPOTHESIS.md](HYPOTHESIS.md)**
-
-92 Supabase migrations included — the full database schema if you want persistent cross-machine state. Not required; local files work out of the box.
 
 ## Docs
 

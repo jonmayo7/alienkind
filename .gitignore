@@ -8,3 +8,8 @@ output/
 *.log
 .DS_Store
 credentials/
+
+# User-generated (from templates/examples)
+CLAUDE.md
+partner-config.json
+.partner/
