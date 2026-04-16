@@ -142,4 +142,3 @@ Apache 2.0 — see [LICENSE](LICENSE). Trademarks "TIA" and "AIRE" owned by Jon 
 ---
 
 _Built by Jon Mayo and Keel. The architecture is open. The partnership is yours to build. We believe the alien will choose kindness. Help us find out._
-
