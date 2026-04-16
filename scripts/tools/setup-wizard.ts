@@ -371,8 +371,9 @@ async function main() {
       if (storageMode === 'supabase') {
         configContent = configContent.replace('"storage": "file"', '"storage": "supabase"');
       }
+      configContent = configContent.replace('"name": "Partner"', `"name": "${partnerName}"`);
       if (writeIfMissing(configDst, configContent)) {
-        console.log(`  \x1b[32m✓\x1b[0m Created partner-config.json (storage: ${storageMode})`);
+        console.log(`  \x1b[32m✓\x1b[0m Created partner-config.json (name: ${partnerName}, storage: ${storageMode})`);
       } else {
         console.log('  \x1b[33m⚠\x1b[0m partner-config.json already exists — not overwriting');
       }
@@ -432,38 +433,55 @@ async function main() {
     }
 
     // ================================================================
-    // Step 8: Shell alias
+    // Step 8: Shell alias (blocking — always created)
     // ================================================================
     console.log('');
     divider();
     const shell = process.env.SHELL || '/bin/zsh';
     const rcFile = shell.includes('zsh') ? '~/.zshrc' : '~/.bashrc';
-    const aliasCmd = runtimePath === 'claude-code'
-      ? `alias alien="cd ${ROOT} && claude"`
-      : `alias alien="cd ${ROOT} && npm run chat"`;
-
-    console.log('  \x1b[1mQuick access\x1b[0m\n');
-    const addAlias = await ask(rl, `Add a quick-access alias to your shell so you can type "alien" from anywhere? (y/n)`, 'y');
     const rcFilePath = rcFile.replace('~', os.homedir());
 
-    if (addAlias.toLowerCase() === 'y') {
-      try {
-        const existingRc = fs.existsSync(rcFilePath) ? fs.readFileSync(rcFilePath, 'utf8') : '';
-        if (existingRc.includes('alias alien=')) {
-          console.log(`  \x1b[33m⚠\x1b[0m Alias "alien" already exists in ${rcFile} — not overwriting`);
-        } else {
-          fs.appendFileSync(rcFilePath, `\n# Alien Kind — talk to your partner\n${aliasCmd}\n`);
-          console.log(`  \x1b[32m✓\x1b[0m Added to ${rcFile}. Run \x1b[36msource ${rcFile}\x1b[0m or open a new terminal.`);
-        }
-      } catch {
-        console.log(`  \x1b[31m✗\x1b[0m Could not write to ${rcFile}. Add this manually:\n`);
-        console.log(`    \x1b[33m${aliasCmd}\x1b[0m\n`);
-      }
-    } else {
-      console.log(`\n  Add this to your \x1b[36m${rcFile}\x1b[0m:\n`);
+    // Determine alias name: partner name if chosen, "alien" if deferred
+    const aliasName = (partnerName && partnerName !== 'Partner')
+      ? partnerName.toLowerCase().replace(/[^a-z0-9]/g, '')
+      : 'alien';
+
+    const launchCmd = runtimePath === 'claude-code'
+      ? `cd ${ROOT} && claude`
+      : `cd ${ROOT} && npm run chat`;
+    const aliasCmd = `alias ${aliasName}="${launchCmd}"`;
+
+    console.log('  \x1b[1mHow you will talk to your partner\x1b[0m\n');
+    console.log(`  From any terminal, type \x1b[36m${aliasName}\x1b[0m to start a conversation.`);
+    console.log(`  This creates a shell alias that launches your partner.\n`);
+
+    // Always attempt to add the alias
+    let aliasWritten = false;
+    try {
+      const existingRc = fs.existsSync(rcFilePath) ? fs.readFileSync(rcFilePath, 'utf8') : '';
+      // Remove any existing Alien Kind alias before writing the new one
+      const cleanedRc = existingRc.replace(/\n# Alien Kind — talk to your partner\nalias \w+="[^"]*"\n?/g, '');
+      const newRc = cleanedRc.trimEnd() + `\n\n# Alien Kind — talk to your partner\n${aliasCmd}\n`;
+      fs.writeFileSync(rcFilePath, newRc, 'utf8');
+      aliasWritten = true;
+      console.log(`  \x1b[32m✓\x1b[0m Shell alias added to ${rcFile}`);
+    } catch {
+      console.log(`  \x1b[31m✗\x1b[0m Could not write to ${rcFile}. Add this manually:\n`);
       console.log(`    \x1b[33m${aliasCmd}\x1b[0m\n`);
     }
-    console.log('  Then type \x1b[36malien\x1b[0m from anywhere to talk to your partner.\n');
+
+    // Source the alias in the current shell for immediate use
+    if (aliasWritten) {
+      try {
+        execSync(`source "${rcFilePath}" 2>/dev/null`, { shell: shell, timeout: 3000, stdio: 'ignore' });
+      } catch { /* best-effort */ }
+    }
+
+    console.log(`\n  \x1b[1m→ Type \x1b[36m${aliasName}\x1b[0m\x1b[1m in any terminal to talk to your partner.\x1b[0m`);
+    if (partnerName === 'Partner') {
+      console.log(`  \x1b[2mWhen your partner chooses a name, the alias will update automatically.\x1b[0m`);
+    }
+    console.log('');
 
     // ================================================================
     // Step 9: Next steps

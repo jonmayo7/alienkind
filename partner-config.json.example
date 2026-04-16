@@ -1,6 +1,9 @@
 {
   "_comment": "Copy this to partner-config.json and customize for your setup.",
 
+  "name": "Partner",
+  "_name_comment": "Your partner's name. Updated automatically when your partner chooses a name.",
+
   "storage": "file",
   "_storage_options": "file (default, local only) | sqlite (persistent, single machine) | supabase (persistent, cross-machine)",
 
