@@ -426,17 +426,39 @@ async function main() {
     }
 
     // ================================================================
-    // Step 7: Capability Status
+    // Step 7: Capability Scorecard
     // ================================================================
     console.log('');
     divider();
+    console.log('  \x1b[1mYour partner\'s capabilities:\x1b[0m\n');
 
-    try {
-      const { getCapabilityStatus, formatCapabilityStatus } = require('../lib/portable.ts');
-      const status = await getCapabilityStatus();
-      console.log(formatCapabilityStatus(status));
-    } catch {
-      console.log('  \x1b[33m⚠\x1b[0m Could not run capability check — run `npm run status` manually');
+    const hasName = partnerName && partnerName !== 'Partner';
+    const hasSupabase = storageMode === 'supabase';
+    const didImport = importChoice !== 'skip';
+
+    const capabilities = [
+      { on: true,        label: 'Identity kernel',           detail: 'your partner knows who it is' },
+      { on: true,        label: 'Behavioral hooks (53)',     detail: 'corrections become code automatically' },
+      { on: true,        label: 'Memory (local files)',      detail: 'remembers within this machine' },
+      { on: hasName,     label: 'Named identity',            detail: hasName ? `your partner is ${partnerName}` : 'let your partner choose during first conversation' },
+      { on: didImport,   label: 'Imported experience',       detail: didImport ? 'existing partnership carried forward' : 'consume an existing partner anytime to accelerate' },
+      { on: hasSupabase, label: 'Persistent memory',         detail: hasSupabase ? 'remembers across sessions and machines' : 'add Supabase to remember across sessions' },
+      { on: hasSupabase, label: 'Growth tracking',           detail: hasSupabase ? 'corrections, learning ledger, calibration' : 'add Supabase to evolve nightly' },
+      { on: hasSupabase, label: 'Multi-terminal awareness',  detail: hasSupabase ? 'parallel sessions know about each other' : 'add Supabase to run parallel sessions' },
+    ];
+
+    let active = 0;
+    for (const cap of capabilities) {
+      const icon = cap.on ? '\x1b[32m✓\x1b[0m' : '\x1b[90m✗\x1b[0m';
+      const labelColor = cap.on ? '' : '\x1b[90m';
+      const resetColor = cap.on ? '' : '\x1b[0m';
+      console.log(`  ${icon} ${labelColor}${cap.label.padEnd(28)}${resetColor} — ${cap.on ? '' : '\x1b[90m'}${cap.detail}${cap.on ? '' : '\x1b[0m'}`);
+      if (cap.on) active++;
+    }
+
+    console.log(`\n  \x1b[1mActive: ${active}/${capabilities.length} capabilities.\x1b[0m`);
+    if (active < capabilities.length) {
+      console.log('  \x1b[2mRun npm run setup again anytime to unlock more.\x1b[0m');
     }
 
     // ================================================================
