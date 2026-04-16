@@ -471,6 +471,8 @@ async function main() {
     process.exit(0);
   }
   process.on('SIGINT', exitClean);
+  process.on('SIGTERM', exitClean);
+  process.on('SIGHUP', exitClean);
 
   const messages: Array<{ role: string; content: string }> = [
     { role: 'system', content: identity },
