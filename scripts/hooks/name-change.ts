@@ -141,13 +141,18 @@ async function main() {
     } catch { /* best effort */ }
   }
 
-  // 4. Output to the human
+  // 4. Output to the human — plain language, lowest common denominator
   console.log('');
-  console.log(`  NAME UPDATE: Your partner is now ${newName}.`);
+  console.log(`  ┌─────────────────────────────────────────────────────┐`);
+  console.log(`  │  Your partner's name is now: ${newName.padEnd(23)}│`);
   if (aliasNew !== aliasOld) {
-    console.log(`  Shell alias updated: type "${aliasNew}" in any terminal.`);
-    console.log(`  (Open a new terminal or run "source ~/.zshrc" for the change to take effect.)`);
+    console.log(`  │                                                     │`);
+    console.log(`  │  To start a conversation, open any terminal and     │`);
+    console.log(`  │  type: ${aliasNew.padEnd(46)}│`);
+    console.log(`  │                                                     │`);
+    console.log(`  │  (Open a new terminal for the change to take effect)│`);
   }
+  console.log(`  └─────────────────────────────────────────────────────┘`);
   console.log('');
 
   process.exit(0);
