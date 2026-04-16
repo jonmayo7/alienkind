@@ -60,7 +60,7 @@ async function main() {
       console.log('COMPACTION GATE CLEARED — Identity files re-read. Proceeding.');
       process.exit(0);
     }
-    emitWarning(missing);
+    emitWarning(missing, gateState);
     process.exit(0);
   }
 
@@ -103,7 +103,7 @@ async function main() {
     process.exit(0);
   }
 
-  emitWarning(missing);
+  emitWarning(missing, state);
   process.exit(0);
 }
 
@@ -164,13 +164,17 @@ function checkMissing(sessionId) {
   return missing;
 }
 
-function emitWarning(missing) {
+function emitWarning(missing, gateState) {
+  const isFreshSession = gateState && gateState.trigger && gateState.trigger.includes('fresh session');
+  const headline = isFreshSession
+    ? 'New session — grounding required before work.'
+    : 'Context compaction or session continuation detected.';
   console.log(
     `\n` +
     `╔══════════════════════════════════════════════════════════════╗\n` +
     `║  COMPACTION GATE — IDENTITY RE-GROUND REQUIRED             ║\n` +
     `╠══════════════════════════════════════════════════════════════╣\n` +
-    `║  Context compaction or session continuation detected.       ║\n` +
+    `║  ${headline.padEnd(57)}║\n` +
     `║  You MUST re-read your identity files before ANY work.      ║\n` +
     `║                                                            ║\n` +
     `║  DO THIS NOW:                                              ║\n` +

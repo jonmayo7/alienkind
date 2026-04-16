@@ -18,7 +18,7 @@ const { createWorktree, listWorktrees, removeWorktree, runInWorktree, pruneWorkt
 const fs = require('fs');
 const path = require('path');
 
-const KEEL_DIR = path.resolve(__dirname, '..', '..');
+const KEEL_DIR = path.resolve(__dirname, '..');
 const WORKTREE_BASE = path.join(KEEL_DIR, '.keel', 'worktrees');
 
 let passed = 0;
