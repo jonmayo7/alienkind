@@ -1,0 +1,18 @@
+# Force LF line endings on all text files regardless of platform.
+# Prevents CRLF issues on Windows that break bash scripts and Node hooks.
+* text=auto eol=lf
+
+# Explicitly mark shell scripts
+*.sh text eol=lf
+*.bash text eol=lf
+
+# Explicitly mark TypeScript/JavaScript
+*.ts text eol=lf
+*.js text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+
+# Binary files — don't touch
+*.png binary
+*.jpg binary
+*.ico binary
