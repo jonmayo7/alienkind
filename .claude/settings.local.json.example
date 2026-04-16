@@ -105,6 +105,7 @@
         "hooks": [
           {"type": "command", "command": "node scripts/hooks/boot-verify.ts"},
           {"type": "command", "command": "node scripts/hooks/uncommitted-delta.ts"},
+          {"type": "command", "command": "node scripts/hooks/correction-to-character.ts"},
           {"type": "command", "command": "node scripts/hooks/memory-checkpoint.ts"},
           {"type": "command", "command": "node scripts/hooks/post-compaction-audit.ts"},
           {"type": "command", "command": "node scripts/hooks/deregister-terminal.ts"},
