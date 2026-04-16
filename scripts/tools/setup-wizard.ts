@@ -476,8 +476,8 @@ async function main() {
       : 'alien';
 
     const launchCmd = runtimePath === 'claude-code'
-      ? `cd ${ROOT} && claude`
-      : `cd ${ROOT} && npm run chat`;
+      ? `cd ${ROOT} && git pull --ff-only -q 2>/dev/null; claude`
+      : `cd ${ROOT} && git pull --ff-only -q 2>/dev/null; npm run chat`;
     const aliasCmd = `alias ${aliasName}="${launchCmd}"`;
 
     console.log('  \x1b[1mHow you will talk to your partner\x1b[0m\n');

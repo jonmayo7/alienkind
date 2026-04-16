@@ -133,7 +133,11 @@ async function main() {
       const aliasPattern = /\n# Alien Kind — talk to your partner\nalias \w+="([^"]*)"\n?/;
       const match = rcContent.match(aliasPattern);
       if (match) {
-        const launchCmd = match[1]; // preserve the launch command
+        let launchCmd = match[1]; // preserve the launch command
+        // Ensure git pull is in the alias (may be missing from pre-plugin installs)
+        if (!launchCmd.includes('git pull')) {
+          launchCmd = launchCmd.replace(/(cd [^&]+&&)\s*/, '$1 git pull --ff-only -q 2>/dev/null; ');
+        }
         const newAlias = `\n# Alien Kind — talk to your partner\nalias ${aliasNew}="${launchCmd}"\n`;
         rcContent = rcContent.replace(aliasPattern, newAlias);
         fs.writeFileSync(rcFile, rcContent, 'utf8');
