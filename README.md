@@ -30,7 +30,7 @@ npm run setup
 
 Three commands. The setup wizard handles everything: picks your path, configures your provider, names your partner, sets up persistent memory, activates hooks, and launches your first conversation.
 
-**You need:** Node.js 20+.
+**You need:** Node.js 20+ and [Claude Code](https://code.claude.com/docs/en/setup) for Path A.
 
 ## Two paths to your partner
 
@@ -38,7 +38,14 @@ The setup wizard asks how you want to connect. Both paths use the same identity 
 
 ### Path A: Claude Code + Anthropic Max plan (recommended)
 
-Your partner runs inside [Claude Code](https://docs.anthropic.com/en/docs/claude-code), Anthropic's official CLI. The AlienKind architecture (identity kernel, 55 hooks, ground.sh) loads automatically when you open the repo.
+Your partner runs inside [Claude Code](https://code.claude.com/docs/en/overview), Anthropic's official CLI. The AlienKind architecture (identity kernel, 55 hooks, ground.sh) loads automatically when you open the repo.
+
+**Install Claude Code** (native binary, no Node.js needed for the binary itself):
+
+```bash
+curl -fsSL https://claude.ai/install.sh | bash     # macOS / Linux
+brew install --cask claude-code                      # or via Homebrew
+```
 
 - **UI:** Claude Code terminal
 - **Cost:** Flat monthly subscription (Anthropic Max plan recommended)
