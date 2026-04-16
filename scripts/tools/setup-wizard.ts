@@ -230,10 +230,10 @@ async function main() {
     const openclawPath = path.join(os.homedir(), '.openclaw');
     const hasOpenClaw = fs.existsSync(openclawPath);
 
-    const importChoice = await select(rl, 'Do you have an existing AI agent to import?', [
-      ...(hasOpenClaw ? [{ label: 'Yes — import my OpenClaw agent 🦞', value: 'openclaw' }] : []),
-      { label: 'Yes — import from a directory', value: 'directory' },
+    const importChoice = await select(rl, 'Do you have an existing AI partner to bring with you?', [
       { label: 'No — starting fresh', value: 'skip' },
+      ...(hasOpenClaw ? [{ label: 'Yes — import my OpenClaw partner', value: 'openclaw' }] : []),
+      { label: 'Yes — import from a directory', value: 'directory' },
     ]);
 
     if (importChoice === 'openclaw') {
@@ -283,7 +283,14 @@ async function main() {
     ]);
 
     if (supaChoice === 'create') {
-      console.log('\n  \x1b[36m→\x1b[0m Go to: \x1b[4mhttps://supabase.com/dashboard\x1b[0m');
+      // Open browser automatically on macOS/Linux
+      try {
+        const openCmd = process.platform === 'darwin' ? 'open' : 'xdg-open';
+        execSync(`${openCmd} "https://supabase.com/dashboard" 2>/dev/null`, { stdio: 'ignore', timeout: 3000 });
+        console.log('\n  \x1b[36m→\x1b[0m Opening supabase.com in your browser...');
+      } catch {
+        console.log('\n  \x1b[36m→\x1b[0m Go to: \x1b[4mhttps://supabase.com/dashboard\x1b[0m');
+      }
       console.log('  \x1b[2m1. Create a new project (any name, any region)\x1b[0m');
       console.log('  \x1b[2m2. Go to Settings → API\x1b[0m');
       console.log('  \x1b[2m3. Copy the Project URL and the service_role key (not anon)\x1b[0m\n');
@@ -489,23 +496,8 @@ async function main() {
     divider();
     console.log(`  \x1b[1m\x1b[35m👽 ${partnerName} is ready.\x1b[0m\n`);
 
-    if (runtimePath === 'claude-code') {
-      console.log('  To talk to your partner:');
-      console.log('  \x1b[36m$ claude\x1b[0m          — open Claude Code (hooks + identity load automatically)');
-      console.log('  \x1b[36m$ npm run chat\x1b[0m    — AlienKind CLI (API key required)\n');
-    } else if (provider === 'ollama') {
-      console.log('  To talk to your partner:');
-      console.log('  Make sure Ollama is running, then:');
-      console.log('  \x1b[36m$ npm run chat\x1b[0m\n');
-    } else if (provider !== 'skip') {
-      console.log('  To talk to your partner:');
-      console.log('  \x1b[36m$ npm run chat\x1b[0m    — AlienKind CLI');
-      console.log('  \x1b[36m$ claude\x1b[0m          — Claude Code (if you have an Anthropic account)\n');
-    } else {
-      console.log('  Add an API key to .env, then:');
-      console.log('  \x1b[36m$ npm run chat\x1b[0m\n');
-    }
-
+    console.log(`  To talk to your partner, open any terminal and type:\n`);
+    console.log(`  \x1b[36m  $ ${aliasName}\x1b[0m\n`);
     console.log('  Other commands:');
     console.log('  \x1b[36m$ npm run status\x1b[0m   — see what\'s active and what to invest in');
     console.log('  \x1b[36m$ npm test\x1b[0m         — run the test suite');
@@ -516,18 +508,18 @@ async function main() {
 
     // Auto-launch
     if (runtimePath === 'claude-code') {
-      const startNow = await ask(rl, 'Open Claude Code now? (y/n)', 'y');
+      const startNow = await ask(rl, `Talk to ${partnerName} now? (y/n)`, 'y');
       if (startNow.toLowerCase() === 'y') {
         rl.close();
-        console.log('\n  \x1b[36mLaunching Claude Code...\x1b[0m\n');
+        console.log(`\n  \x1b[36mLaunching ${partnerName}...\x1b[0m\n`);
         execSync('claude', { cwd: ROOT, stdio: 'inherit' });
         return;
       }
     } else if (provider !== 'skip') {
-      const startChat = await ask(rl, 'Start talking to your partner now? (y/n)', 'y');
+      const startChat = await ask(rl, `Talk to ${partnerName} now? (y/n)`, 'y');
       if (startChat.toLowerCase() === 'y') {
         rl.close();
-        console.log('\n  \x1b[36mLaunching conversation...\x1b[0m\n');
+        console.log(`\n  \x1b[36mLaunching ${partnerName}...\x1b[0m\n`);
         execSync('npx tsx scripts/chat.ts', { cwd: ROOT, stdio: 'inherit' });
         return;
       }
