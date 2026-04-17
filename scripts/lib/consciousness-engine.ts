@@ -279,7 +279,7 @@ function buildChannelPrompt(
   // Channel awareness — tells the model where it is and what's happening
   // Time injection: long-running listeners (Telegram, Discord) don't re-ground per message.
   // Without this, the model has no native time awareness and will guess wrong (ref: sev-4 wrong-day Apr 7).
-  const { getNowCT } = require('./keel-env.ts');
+  const { getNowCT } = require('./env.ts');
   const now = new Date();
   const dayName = now.toLocaleDateString('en-US', { weekday: 'long', timeZone: '${TZ:-UTC}' });
   const dateStr = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: '${TZ:-UTC}' });
@@ -297,7 +297,7 @@ function buildChannelPrompt(
   // This is what makes every response carry knowledge of what's happening organism-wide.
   // Not raw message history — decisions and open work, separated from noise.
   try {
-    const { getSessionBrief } = require('./keel-env.ts');
+    const { getSessionBrief } = require('./env.ts');
     const brief = getSessionBrief();
     if (brief && brief !== 'No decisions logged today.') {
       sections.push('--- Organism State (decisions + open work) ---', brief, '');

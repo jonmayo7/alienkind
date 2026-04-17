@@ -1,6 +1,8 @@
+// @alienkind-core
 /**
- * Environment, paths, and date utilities extracted from shared.ts.
- * Leaf module — no dependencies on other shared modules.
+ * Environment, paths, and date utilities. Leaf module — no dependencies on
+ * heavier infra. Imports: constants.ts (TIMEZONE, PATHS) + security.ts
+ * (normalizeSecretInput, hardenFilePermissions).
  */
 
 const fs = require('fs');
@@ -34,11 +36,14 @@ function getNowCT(d?: Date): string {
 
 // --- Environment Loading ---
 // Parses .env file into key-value object. Strips surrounding quotes.
+// Returns empty object if .env is missing — forkers may set env vars directly
+// (via shell, systemd, launchd) without a .env file. Callers that require
+// specific vars should use requireEnv() to validate at call time.
 function loadEnv(envPath?: string): Record<string, string> {
   const resolved = envPath || path.join(KEEL_DIR, '.env');
   const env: Record<string, string> = {};
   if (!fs.existsSync(resolved)) {
-    throw new Error('No .env file found at ' + resolved);
+    return env;
   }
   const lines = fs.readFileSync(resolved, 'utf8').split('\n');
   for (const line of lines) {
