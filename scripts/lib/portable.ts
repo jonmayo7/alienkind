@@ -1,3 +1,4 @@
+// @alienkind-core
 /**
  * Portable — Graceful degradation layer for open-source hooks.
  *
@@ -477,6 +478,25 @@ async function getCapabilityStatus(): Promise<CapabilityStatus> {
     });
   }
 
+  // --- Gateway (alternate-substrate fallback) ---
+  // Probed directly, not via registry — registry only populates when something
+  // actually tries to call the gateway.
+  const gatewayKey = process.env.AI_GATEWAY_API_KEY;
+  if (gatewayKey && gatewayKey.length > 5) {
+    capabilities.push({
+      name: 'Gateway fallback',
+      status: 'active',
+      detail: 'Alternate-substrate fallback configured (primary can fail over to GPT/Grok/Gemini)',
+    });
+  } else {
+    capabilities.push({
+      name: 'Gateway fallback',
+      status: 'unavailable',
+      detail: 'No alternate-substrate fallback configured',
+      upgrade: 'Sign up for an OpenAI-compatible gateway (Vercel AI Gateway, OpenRouter, or self-hosted LiteLLM). Set AI_GATEWAY_API_KEY in .env to enable.',
+    });
+  }
+
   // --- Local models (Tier 2) ---
   const localModelAvailable = await probeLocalModel();
   if (localModelAvailable) {
@@ -582,6 +602,73 @@ function probeLocalModel(): Promise<boolean> {
 }
 
 // ============================================================================
+// 6. Capability registry — runtime record of what's unavailable and how to enable
+// ============================================================================
+//
+// The stub pattern: every module that depends on external infrastructure (gateway
+// keys, local models, Supabase, etc.) registers itself as unavailable the first
+// time it's called without configuration. Callers wrap in try/catch and get a
+// typed CapabilityUnavailable error instead of a mystery crash.
+//
+// The partner reads this registry to answer questions like "what can you do
+// right now, and what would unlock if I set up X?". This is how the partner
+// helps you build the partner — continuously, not as a one-time setup step.
+
+interface UnavailableInfo {
+  reason: string;
+  enableWith: string;
+  docs?: string;
+  firstLoggedAt: string;
+}
+
+/**
+ * Typed error thrown when a capability is unavailable due to missing config.
+ * Callers that expect optional capabilities should wrap in try/catch and
+ * read err.enableWith to tell the human what to configure.
+ */
+class CapabilityUnavailable extends Error {
+  capability: string;
+  enableWith: string;
+  docs?: string;
+
+  constructor(capability: string, enableWith: string, docs?: string) {
+    super(`Capability '${capability}' unavailable. ${enableWith}`);
+    this.name = 'CapabilityUnavailable';
+    this.capability = capability;
+    this.enableWith = enableWith;
+    this.docs = docs;
+  }
+}
+
+const _capabilityRegistry: Map<string, UnavailableInfo> = new Map();
+
+/**
+ * Register a capability as unavailable. First call per process logs to stderr
+ * so forkers see what they're missing. Subsequent calls are silent (no spam).
+ *
+ * Usage (inside a stubbed module):
+ *   registerUnavailable('gateway', {
+ *     reason: 'No AI_GATEWAY_API_KEY configured',
+ *     enableWith: 'Set AI_GATEWAY_API_KEY in .env to enable alternate-substrate fallback',
+ *     docs: 'docs/capabilities/gateway.md',
+ *   });
+ *   throw new CapabilityUnavailable('gateway', '...');
+ */
+function registerUnavailable(capability: string, info: { reason: string; enableWith: string; docs?: string }): void {
+  if (!_capabilityRegistry.has(capability)) {
+    _capabilityRegistry.set(capability, { ...info, firstLoggedAt: new Date().toISOString() });
+    process.stderr.write(`[portable] Capability '${capability}' unavailable: ${info.reason}. Enable: ${info.enableWith}\n`);
+  }
+}
+
+/**
+ * Read the registry. The partner can call this to answer "what's missing, and how do I get it?".
+ */
+function getUnavailableCapabilities(): Array<UnavailableInfo & { capability: string }> {
+  return Array.from(_capabilityRegistry.entries()).map(([capability, info]) => ({ capability, ...info }));
+}
+
+// ============================================================================
 // Exports
 // ============================================================================
 
@@ -597,4 +684,8 @@ module.exports = {
   tryClassifier,
   getCapabilityStatus,
   formatCapabilityStatus,
+  // Capability registry — stub pattern support
+  CapabilityUnavailable,
+  registerUnavailable,
+  getUnavailableCapabilities,
 };
