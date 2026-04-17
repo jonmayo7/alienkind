@@ -29,7 +29,7 @@ try {
 } catch {
   resolveRepoRoot = () => path.resolve(__dirname, '..', '..');
 }
-const KEEL_DIR = resolveRepoRoot();
+const ALIENKIND_DIR = resolveRepoRoot();
 
 // Infrastructure deps — degrade gracefully on a fresh fork
 let getNowCT: () => string;
@@ -43,8 +43,8 @@ const CONTEXT_FRESHNESS_MS = 5 * 60 * 1000; // 5 minutes
 const SECTION_LINE_THRESHOLD = 100; // sections above this are too large for a daily file
 
 async function getContextPercentage(): Promise<number | null> {
-  if (process.env.KEEL_TEST_CONTEXT_PCT) {
-    const pct = parseFloat(process.env.KEEL_TEST_CONTEXT_PCT);
+  if (process.env.ALIENKIND_TEST_CONTEXT_PCT) {
+    const pct = parseFloat(process.env.ALIENKIND_TEST_CONTEXT_PCT);
     return isNaN(pct) ? null : pct;
   }
   try {
@@ -82,7 +82,7 @@ function checkDailyFileHygiene(): string | null {
     const yyyy = today.getFullYear();
     const mm = String(today.getMonth() + 1).padStart(2, '0');
     const dd = String(today.getDate()).padStart(2, '0');
-    const dailyPath = path.join(KEEL_DIR, 'memory', 'daily', `${yyyy}-${mm}-${dd}.md`);
+    const dailyPath = path.join(ALIENKIND_DIR, 'memory', 'daily', `${yyyy}-${mm}-${dd}.md`);
 
     if (!fs.existsSync(dailyPath)) return null;
 
@@ -180,7 +180,7 @@ async function main() {
   try { hookData = JSON.parse(input); } catch { process.exit(0); }
 
   const sessionId = hookData.session_id || 'unknown';
-  const counterFile = `/tmp/keel-memory-checkpoint-${sessionId}`;
+  const counterFile = `/tmp/alienkind-memory-checkpoint-${sessionId}`;
 
   let count = 0;
   try { count = parseInt(fs.readFileSync(counterFile, 'utf8'), 10) || 0; } catch {}
@@ -229,12 +229,12 @@ async function main() {
 
       // Write structured handoff file with current session state
       try {
-        const handoffDir = path.join(KEEL_DIR, 'memory', 'handoffs');
+        const handoffDir = path.join(ALIENKIND_DIR, 'memory', 'handoffs');
         fs.mkdirSync(handoffDir, { recursive: true });
         const handoffFile = path.join(handoffDir, `auto-${termId}-${new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-')}.md`);
 
         // Gather what we know about this session
-        const trackFile = `/tmp/keel-build-cycle-${sessionId}.json`;
+        const trackFile = `/tmp/alienkind-build-cycle-${sessionId}.json`;
         let tracking: any = {};
         try { tracking = JSON.parse(fs.readFileSync(trackFile, 'utf8')); } catch {}
 
@@ -278,7 +278,7 @@ async function main() {
 
         // Delegate uncommitted work to another terminal
         let delegateTracking: any = {};
-        try { delegateTracking = JSON.parse(fs.readFileSync(`/tmp/keel-build-cycle-${sessionId}.json`, 'utf8')); } catch {}
+        try { delegateTracking = JSON.parse(fs.readFileSync(`/tmp/alienkind-build-cycle-${sessionId}.json`, 'utf8')); } catch {}
         const uncommittedFiles = delegateTracking.codeFiles || [];
         if (uncommittedFiles.length > 0 && !delegateTracking.verifyEvidence?.test) {
           await delegateTask({

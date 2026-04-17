@@ -23,7 +23,7 @@
  * and schedules each job according to its cron or interval definition.
  */
 
-// Containment Fields mode assignments — determines KEEL_SESSION_MODE env var.
+// Containment Fields mode assignments — determines ALIENKIND_SESSION_MODE env var.
 // Default: 'operator' (principle of least privilege). Jobs that need full access
 // must be explicitly listed as 'analyst'. Jobs that only touch code/data: 'builder'.
 const MODE_OVERRIDES: Record<string, 'analyst' | 'operator' | 'builder'> = {

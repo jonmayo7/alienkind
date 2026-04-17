@@ -25,22 +25,22 @@ process.env.TZ = TIMEZONE;
 const path = require('path');
 const fs = require('fs');
 
-const KEEL_DIR = path.resolve(__dirname, '../..');
+const ALIENKIND_DIR = path.resolve(__dirname, '../..');
 const { loadEnv, createLogger } = require('../lib/shared.ts');
 
 const now = new Date();
 const DATE = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-const LOG_DIR = path.join(KEEL_DIR, 'logs');
+const LOG_DIR = path.join(ALIENKIND_DIR, 'logs');
 fs.mkdirSync(LOG_DIR, { recursive: true });
 const LOG_FILE = path.join(LOG_DIR, `red-team-${DATE}.log`);
 const { log } = createLogger(LOG_FILE);
 
-const env = loadEnv(path.join(KEEL_DIR, '.env'));
+const env = loadEnv(path.join(ALIENKIND_DIR, '.env'));
 Object.assign(process.env, env);
 const { supabasePost } = require('../lib/supabase.ts');
 const { writeDeepProcessOutput } = require('../lib/deep-process.ts');
 
-const FINDINGS_FILE = path.join(KEEL_DIR, 'logs', 'red-team-findings.json');
+const FINDINGS_FILE = path.join(ALIENKIND_DIR, 'logs', 'red-team-findings.json');
 
 // --- Types ---
 

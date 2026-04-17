@@ -35,11 +35,11 @@ if [[ "$COMMAND" =~ ^[[:space:]]*git[[:space:]] ]] || [[ "$COMMAND" =~ '&&'[[:sp
   exit 0
 fi
 
-CONFIRM_DIR="/tmp/keel-data-guard"
+CONFIRM_DIR="/tmp/alienkind-data-guard"
 mkdir -p "$CONFIRM_DIR" 2>/dev/null
 
 # Hash the command + terminal ID for confirmation matching (prevents cross-terminal race)
-TERMINAL_ID="${KEEL_TERMINAL_ID:-$$}"
+TERMINAL_ID="${ALIENKIND_TERMINAL_ID:-$$}"
 CMD_HASH=$(printf '%s' "${TERMINAL_ID}:${COMMAND}" | shasum -a 256 | cut -d' ' -f1)
 CONFIRM_FILE="${CONFIRM_DIR}/${CMD_HASH}"
 
@@ -135,9 +135,9 @@ shopt -u nocasematch
 if [ -z "$MATCHED" ]; then
   # Only escalate to 7B if command contains destructive-adjacent keywords
   if [[ "$COMMAND" =~ drop|truncate|destroy|purge|reset\ --hard|wipe|mkfs|rm\ -r ]]; then
-    GUARD_KEEL_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+    GUARD_ALIENKIND_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
     TIER=$(printf '%s' "$COMMAND" | node -e "
-      const {evaluateAction}=require('${GUARD_KEEL_DIR}/scripts/lib/action-evaluator.ts');
+      const {evaluateAction}=require('${GUARD_ALIENKIND_DIR}/scripts/lib/action-evaluator.ts');
       let cmd='';process.stdin.on('data',c=>cmd+=c);process.stdin.on('end',async()=>{
         try{const r=await evaluateAction({type:'bash_command',target:'local',content:cmd.slice(0,500)});
         process.stdout.write(r.tier);}catch{process.stdout.write('T1');}

@@ -29,7 +29,7 @@ try {
 } catch {
   resolveRepoRoot = () => path.resolve(__dirname, '..', '..');
 }
-const KEEL_DIR = resolveRepoRoot();
+const ALIENKIND_DIR = resolveRepoRoot();
 
 // Import the firewall's validation logic inline to avoid require() path issues
 // with .ts files in Node. We replicate the core checks here and keep them
@@ -146,14 +146,14 @@ async function main() {
 
   if (!filePath) process.exit(0);
 
-  // Get relative path from KEEL_DIR
+  // Get relative path from ALIENKIND_DIR
   let relPath = filePath;
-  if (filePath.startsWith(KEEL_DIR + '/')) {
-    relPath = filePath.slice(KEEL_DIR.length + 1);
+  if (filePath.startsWith(ALIENKIND_DIR + '/')) {
+    relPath = filePath.slice(ALIENKIND_DIR.length + 1);
   }
 
   // Skip files outside the keel directory
-  if (filePath === relPath && !filePath.startsWith(KEEL_DIR)) {
+  if (filePath === relPath && !filePath.startsWith(ALIENKIND_DIR)) {
     process.exit(0);
   }
 
@@ -164,7 +164,7 @@ async function main() {
   // Session mode enforcement (Containment Fields — Tier 1)
   // Operator and Builder modes cannot write to identity kernel or structured state.
   // This is structural — same Keel, same intelligence, constrained write surface.
-  const sessionMode = process.env.KEEL_SESSION_MODE || 'analyst'; // default-open: interactive sessions have full access
+  const sessionMode = process.env.ALIENKIND_SESSION_MODE || 'analyst'; // default-open: interactive sessions have full access
   if (sessionMode === 'operator' || sessionMode === 'builder') {
     const identityPaths = ['identity/', 'CLAUDE.md', 'memory/structured-state.json',
       'config/daemon-jobs.ts', 'config/policies/', '.claude/'];

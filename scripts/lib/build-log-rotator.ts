@@ -17,9 +17,9 @@
 const fs = require('fs');
 const path = require('path');
 
-const KEEL_DIR = path.resolve(__dirname, '../..');
-const BUILD_LOG = path.join(KEEL_DIR, 'BUILD_LOG.md');
-const ARCHIVE = path.join(KEEL_DIR, 'memory', 'BUILD_LOG_ARCHIVE.md');
+const ALIENKIND_DIR = path.resolve(__dirname, '../..');
+const BUILD_LOG = path.join(ALIENKIND_DIR, 'BUILD_LOG.md');
+const ARCHIVE = path.join(ALIENKIND_DIR, 'memory', 'BUILD_LOG_ARCHIVE.md');
 
 // Budget: ~300 lines ≈ 6K tokens ≈ 0.6% of 1M context
 const MAX_LINES = 300;

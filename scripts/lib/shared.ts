@@ -8,7 +8,7 @@
  * fine for daemon/listener runtimes but wasteful for lightweight CLI tools.
  *
  * Sub-modules this barrel exposes:
- *   env.ts            — KEEL_DIR, loadEnv, requireEnv, date utils, daily logger
+ *   env.ts            — ALIENKIND_DIR, loadEnv, requireEnv, date utils, daily logger
  *   keel-logger.ts    — createLogger, classifyMessage, logConversation
  *   failover.ts       — state, active/failover config dir, isRateLimited, isAuthError
  *   keel-auth.ts      — checkAuth, injectClaudeAuth
@@ -31,7 +31,7 @@ const invoke = require('./invoke-keel.ts');
 
 module.exports = {
   // env.ts
-  KEEL_DIR: env.KEEL_DIR,
+  ALIENKIND_DIR: env.ALIENKIND_DIR,
   loadEnv: env.loadEnv,
   requireEnv: env.requireEnv,
   getCDTDate: env.getCDTDate,

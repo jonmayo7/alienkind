@@ -19,7 +19,7 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
-const KEEL_DIR = path.resolve(__dirname, '..', '..');
+const ALIENKIND_DIR = path.resolve(__dirname, '..', '..');
 
 /**
  * Check if a PID is alive.
@@ -72,16 +72,16 @@ async function surfaceCrossRepoPatterns(repo: string): Promise<void> {
  * Prune committed files from build-cycle tracking.
  */
 function pruneCommittedFiles(sessionId) {
-  const trackFile = `/tmp/keel-build-cycle-${sessionId}.json`;
+  const trackFile = `/tmp/alienkind-build-cycle-${sessionId}.json`;
   try {
     if (!fs.existsSync(trackFile)) return;
     const tracking = JSON.parse(fs.readFileSync(trackFile, 'utf8'));
     if (!Array.isArray(tracking.codeFiles) || tracking.codeFiles.length === 0) return;
 
     let dirtyOutput = '';
-    try { dirtyOutput += execSync('git diff --name-only', { cwd: KEEL_DIR, encoding: 'utf8', timeout: 5000 }); } catch {}
-    try { dirtyOutput += execSync('git diff --name-only --cached', { cwd: KEEL_DIR, encoding: 'utf8', timeout: 5000 }); } catch {}
-    try { dirtyOutput += execSync('git ls-files --others --exclude-standard', { cwd: KEEL_DIR, encoding: 'utf8', timeout: 5000 }); } catch {}
+    try { dirtyOutput += execSync('git diff --name-only', { cwd: ALIENKIND_DIR, encoding: 'utf8', timeout: 5000 }); } catch {}
+    try { dirtyOutput += execSync('git diff --name-only --cached', { cwd: ALIENKIND_DIR, encoding: 'utf8', timeout: 5000 }); } catch {}
+    try { dirtyOutput += execSync('git ls-files --others --exclude-standard', { cwd: ALIENKIND_DIR, encoding: 'utf8', timeout: 5000 }); } catch {}
     const dirtyFiles = new Set(dirtyOutput.split('\n').filter(Boolean));
 
     const before = tracking.codeFiles.length;
@@ -159,16 +159,16 @@ try {
     // --- Subagent detection ---
     // Subagents (spawned by Agent tool) register with is_subagent=true for tracking.
     // They get pruned aggressively (10 min by terminal-reaper, 30 min by pruneStaleRows).
-    // Detection: keel.sh writes /tmp/keel-terminal-id-{PID}. Main terminal hooks
+    // Detection: keel.sh writes /tmp/alienkind-terminal-id-{PID}. Main terminal hooks
     // can find this marker via parent or grandparent PID. Subagent hooks can't —
     // their process ancestry goes Agent->Claude, not keel.sh->Claude.
     let isMainTerminal = false;
     try {
-      if (fs.existsSync(`/tmp/keel-terminal-id-${process.ppid}`)) {
+      if (fs.existsSync(`/tmp/alienkind-terminal-id-${process.ppid}`)) {
         isMainTerminal = true;
       } else {
         const grandPpid = execSync(`ps -o ppid= -p ${process.ppid}`, { encoding: 'utf8', timeout: 1000 }).trim();
-        if (grandPpid && fs.existsSync(`/tmp/keel-terminal-id-${grandPpid}`)) {
+        if (grandPpid && fs.existsSync(`/tmp/alienkind-terminal-id-${grandPpid}`)) {
           isMainTerminal = true;
         }
       }

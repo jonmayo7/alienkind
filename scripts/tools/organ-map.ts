@@ -16,7 +16,7 @@ const fs = require('fs');
 const path = require('path');
 const { getRelatedFiles, buildGraph } = require('../lib/import-graph.ts');
 
-const KEEL_DIR = path.resolve(__dirname, '..', '..');
+const ALIENKIND_DIR = path.resolve(__dirname, '..', '..');
 
 // Organ definitions: entry files + related patterns
 // CUSTOMIZE: Add your own organs below. Each organ is a subsystem of the organism
@@ -151,7 +151,7 @@ function getImportsFor(filePath: string): string[] {
     for (const m of matches) {
       if (m[1].startsWith('.')) {
         const resolved = path.resolve(path.dirname(filePath), m[1]);
-        const rel = path.relative(KEEL_DIR, resolved).replace(/\.(ts|js)$/, '');
+        const rel = path.relative(ALIENKIND_DIR, resolved).replace(/\.(ts|js)$/, '');
         imports.push(rel);
       }
     }
@@ -187,12 +187,12 @@ function buildOrganMap(organKey: string): OrganMap {
 
   // Add entry files
   for (const entry of organ.entryFiles) {
-    const fullPath = path.join(KEEL_DIR, entry);
+    const fullPath = path.join(ALIENKIND_DIR, entry);
     if (fs.existsSync(fullPath)) organFiles.add(entry);
   }
 
   // Add files matching patterns
-  const allTsFiles = fs.readdirSync(path.join(KEEL_DIR, 'scripts'), { recursive: true })
+  const allTsFiles = fs.readdirSync(path.join(ALIENKIND_DIR, 'scripts'), { recursive: true })
     .filter((f: string) => f.endsWith('.ts') && !f.includes('node_modules') && !f.startsWith('tests/'))
     .map((f: string) => `scripts/${f}`);
 
@@ -215,7 +215,7 @@ function buildOrganMap(organKey: string): OrganMap {
 
   const organFileList = Array.from(organFiles) as string[];
   for (const relPath of organFileList) {
-    const fullPath = path.join(KEEL_DIR, relPath);
+    const fullPath = path.join(ALIENKIND_DIR, relPath);
     if (!fs.existsSync(fullPath)) continue;
 
     const exports = getExports(fullPath);
@@ -280,7 +280,7 @@ function surveyOrgan(map: OrganMap): SurveyResult {
 
   // 1. File existence
   for (const f of map.files) {
-    const fullPath = path.join(KEEL_DIR, f.path);
+    const fullPath = path.join(ALIENKIND_DIR, f.path);
     if (!fs.existsSync(fullPath)) {
       issues.missingFiles.push(f.path);
       issues.passed = false;
@@ -289,13 +289,13 @@ function surveyOrgan(map: OrganMap): SurveyResult {
 
   // 2. Unmapped files — search for files that reference organ entry files but aren't in the map
   const organKeywords = map.files.map(f => path.basename(f.path, '.ts'));
-  const allScripts = fs.readdirSync(path.join(KEEL_DIR, 'scripts', 'lib'), { recursive: true })
+  const allScripts = fs.readdirSync(path.join(ALIENKIND_DIR, 'scripts', 'lib'), { recursive: true })
     .filter((f: string) => f.endsWith('.ts') && !f.includes('node_modules'))
     .map((f: string) => `scripts/lib/${f}`);
 
   for (const scriptPath of allScripts) {
     if (organFilePaths.includes(scriptPath)) continue;
-    const fullPath = path.join(KEEL_DIR, scriptPath);
+    const fullPath = path.join(ALIENKIND_DIR, scriptPath);
     try {
       const content = fs.readFileSync(fullPath, 'utf8');
       // Check if this file imports any of the organ's entry files
@@ -312,7 +312,7 @@ function surveyOrgan(map: OrganMap): SurveyResult {
   // 3. Consumer verification (spot check top 10 — check for ANY organ file import)
   const organBaseNames = map.files.map(f => path.basename(f.path, '.ts'));
   for (const consumer of map.externalConsumers.slice(0, 10)) {
-    const fullPath = path.join(KEEL_DIR, consumer);
+    const fullPath = path.join(ALIENKIND_DIR, consumer);
     try {
       const content = fs.readFileSync(fullPath, 'utf8');
       const importsAnyOrganFile = organBaseNames.some(name => content.includes(name));
@@ -327,7 +327,7 @@ function surveyOrgan(map: OrganMap): SurveyResult {
   // 4. Export drift — verify claimed exports exist in the actual file
   for (const f of map.files) {
     if (f.exports.length === 0) continue;
-    const fullPath = path.join(KEEL_DIR, f.path);
+    const fullPath = path.join(ALIENKIND_DIR, f.path);
     try {
       const content = fs.readFileSync(fullPath, 'utf8');
       const missing = f.exports.filter(e => !content.includes(e));

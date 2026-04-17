@@ -26,7 +26,7 @@ async function main() {
   try { hookData = JSON.parse(input); } catch { process.exit(0); }
 
   const sessionId = hookData.session_id || 'unknown';
-  const gateFile = `/tmp/keel-compaction-gate-${sessionId}.json`;
+  const gateFile = `/tmp/alienkind-compaction-gate-${sessionId}.json`;
 
   // No gate file = no compaction detected = allow everything
   let gateState;
@@ -41,8 +41,8 @@ async function main() {
 
   // Gate active — check if identity kernel files have been read since detection
   // Use same ID resolution as track-read.ts to avoid session ID mismatch
-  const terminalId = process.env.KEEL_TERMINAL_ID || sessionId;
-  const trackFile = `/tmp/keel-build-cycle-${terminalId}.json`;
+  const terminalId = process.env.ALIENKIND_TERMINAL_ID || sessionId;
+  const trackFile = `/tmp/alienkind-build-cycle-${terminalId}.json`;
   let tracking = { filesRead: [] };
   try { tracking = JSON.parse(fs.readFileSync(trackFile, 'utf8')); } catch {}
   const filesRead = tracking.filesRead || [];
@@ -75,7 +75,7 @@ async function main() {
   if (!hasDailyFile) missing.push('daily file');
 
   // Check Supabase boot queries (first-class, same enforcement as file reads)
-  const supabaseMarker = `/tmp/keel-supabase-boot-${sessionId}.json`;
+  const supabaseMarker = `/tmp/alienkind-supabase-boot-${sessionId}.json`;
   try {
     const marker = JSON.parse(fs.readFileSync(supabaseMarker, 'utf8'));
     if (!marker.conversations) missing.push('Supabase: conversations');

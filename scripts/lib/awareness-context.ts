@@ -21,8 +21,8 @@ const fs = require('fs');
 const path = require('path');
 const { TIMEZONE } = require('./constants.ts');
 
-const KEEL_DIR = path.resolve(__dirname, '..', '..');
-const CALENDAR_PATH = path.join(KEEL_DIR, 'logs', 'calendar-cache.json');
+const ALIENKIND_DIR = path.resolve(__dirname, '..', '..');
+const CALENDAR_PATH = path.join(ALIENKIND_DIR, 'logs', 'calendar-cache.json');
 
 interface AwarenessOptions {
   selfPid?: number;
@@ -79,7 +79,7 @@ function buildAwarenessContext({ selfPid, selfNodeId, staleHours = 2 }: Awarenes
 
   // --- Consciousness: what other instances are experiencing ---
   try {
-    const consciousnessPath = path.join(KEEL_DIR, 'logs', 'consciousness-recent.json');
+    const consciousnessPath = path.join(ALIENKIND_DIR, 'logs', 'consciousness-recent.json');
     if (fs.existsSync(consciousnessPath)) {
       const entries = JSON.parse(fs.readFileSync(consciousnessPath, 'utf8'));
       const staleMs = staleHours * 60 * 60 * 1000;
@@ -109,7 +109,7 @@ function buildAwarenessContext({ selfPid, selfNodeId, staleHours = 2 }: Awarenes
 
   // --- Open external threads (from thread-scanner cache) ---
   try {
-    const threadsPath = path.join(KEEL_DIR, 'logs', 'open-threads-cache.txt');
+    const threadsPath = path.join(ALIENKIND_DIR, 'logs', 'open-threads-cache.txt');
     if (fs.existsSync(threadsPath)) {
       const threadsSummary = fs.readFileSync(threadsPath, 'utf8').trim();
       if (threadsSummary) {

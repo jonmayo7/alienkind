@@ -29,9 +29,9 @@ try {
 } catch {
   resolveRepoRoot = () => path.resolve(__dirname, '..', '..');
 }
-const KEEL_DIR = resolveRepoRoot();
+const ALIENKIND_DIR = resolveRepoRoot();
 
-// Paths that trigger the guard (relative to KEEL_DIR)
+// Paths that trigger the guard (relative to ALIENKIND_DIR)
 const GUARDED_PREFIXES = [
   'output/drafts/',
   'output/articles/',
@@ -57,8 +57,8 @@ async function main() {
 
   // Get relative path
   let relPath = filePath;
-  if (filePath.startsWith(KEEL_DIR + '/')) {
-    relPath = filePath.slice(KEEL_DIR.length + 1);
+  if (filePath.startsWith(ALIENKIND_DIR + '/')) {
+    relPath = filePath.slice(ALIENKIND_DIR.length + 1);
   }
 
   // Only guard article output paths
@@ -67,7 +67,7 @@ async function main() {
 
   // Read session tracking (written by track-read.ts)
   const sessionId = hookData.session_id || process.ppid || 'unknown';
-  const trackFile = `/tmp/keel-build-cycle-${sessionId}.json`;
+  const trackFile = `/tmp/alienkind-build-cycle-${sessionId}.json`;
 
   let tracking;
   try {

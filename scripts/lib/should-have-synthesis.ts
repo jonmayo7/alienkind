@@ -18,17 +18,17 @@ const fs = require('fs');
 const { processMessage, CHANNELS } = require('./keel-engine.ts');
 const { supabasePatch } = require('./supabase.ts');
 
-const KEEL_DIR = path.resolve(__dirname, '..', '..');
+const ALIENKIND_DIR = path.resolve(__dirname, '..', '..');
 
 // Load env for Supabase + Claude
 const { loadEnv } = require('./shared.ts');
-Object.assign(process.env, loadEnv(path.join(KEEL_DIR, '.env')));
+Object.assign(process.env, loadEnv(path.join(ALIENKIND_DIR, '.env')));
 
 function log(msg: string): void {
   const line = `[${new Date().toISOString()}] [should-have] ${msg}`;
   console.log(line);
   try {
-    fs.appendFileSync(path.join(KEEL_DIR, 'logs', 'should-have-synthesis.log'), line + '\n');
+    fs.appendFileSync(path.join(ALIENKIND_DIR, 'logs', 'should-have-synthesis.log'), line + '\n');
   } catch {}
 }
 

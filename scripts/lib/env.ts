@@ -10,7 +10,7 @@ const path = require('path');
 const { TIMEZONE } = require('./constants.ts');
 const { normalizeSecretInput, hardenFilePermissions } = require('./security.ts');
 
-const KEEL_DIR = path.resolve(__dirname, '../..');
+const ALIENKIND_DIR = path.resolve(__dirname, '../..');
 const CLAUDE_PATH: string = require('./constants.ts').PATHS.claude;
 
 /**
@@ -40,7 +40,7 @@ function getNowCT(d?: Date): string {
 // (via shell, systemd, launchd) without a .env file. Callers that require
 // specific vars should use requireEnv() to validate at call time.
 function loadEnv(envPath?: string): Record<string, string> {
-  const resolved = envPath || path.join(KEEL_DIR, '.env');
+  const resolved = envPath || path.join(ALIENKIND_DIR, '.env');
   const env: Record<string, string> = {};
   if (!fs.existsSync(resolved)) {
     return env;
@@ -105,7 +105,7 @@ function requireEnv(...keys: string[]): Record<string, string> {
  */
 function logToDaily(content: string, source?: string, timestamp: boolean = true): void {
   const today = getCDTDate();
-  const dailyPath = path.join(KEEL_DIR, 'memory', 'daily', `${today}.md`);
+  const dailyPath = path.join(ALIENKIND_DIR, 'memory', 'daily', `${today}.md`);
 
   let entry: string;
   if (source && timestamp) {
@@ -148,7 +148,7 @@ interface Decision {
  *   logDecision({ what: 'Build rate-of-change monitoring', open: true });
  */
 function logDecision(decision: Decision): void {
-  const terminalId = decision.terminal_id || process.env.KEEL_TERMINAL_ID || 'unknown';
+  const terminalId = decision.terminal_id || process.env.ALIENKIND_TERMINAL_ID || 'unknown';
   try {
     const { supabasePost, supabasePatch } = require('./supabase.ts');
     supabasePost('decisions', {
@@ -184,11 +184,11 @@ function getDecisions(openOnly: boolean = false): any[] {
       ? `const{supabaseGet}=require('./scripts/lib/supabase.ts');const d=new Date();d.setHours(d.getHours()-24);supabaseGet('decisions','select=*&open=eq.true&created_at=gte.'+d.toISOString()+'&order=created_at.desc&limit=20').then(r=>console.log(JSON.stringify(r))).catch(()=>console.log('[]'))`
       : `const{supabaseGet}=require('./scripts/lib/supabase.ts');const d=new Date();d.setHours(d.getHours()-24);supabaseGet('decisions','select=*&created_at=gte.'+d.toISOString()+'&order=created_at.desc&limit=30').then(r=>console.log(JSON.stringify(r))).catch(()=>console.log('[]'))`;
     const result = execSync(`node -e "${script.replace(/"/g, '\\"')}"`, {
-      cwd: KEEL_DIR,
+      cwd: ALIENKIND_DIR,
       encoding: 'utf8',
       timeout: 5000,
       stdio: ['pipe', 'pipe', 'pipe'],
-      env: { ...process.env, NODE_PATH: path.join(KEEL_DIR, 'node_modules') },
+      env: { ...process.env, NODE_PATH: path.join(ALIENKIND_DIR, 'node_modules') },
     }).trim();
     return JSON.parse(result);
   } catch {
@@ -241,4 +241,4 @@ function getSessionBrief(): string {
   return lines.length > 0 ? lines.join('\n') : 'No decisions logged today.';
 }
 
-module.exports = { KEEL_DIR, CLAUDE_PATH, loadEnv, requireEnv, getCDTDate, getNowCT, logToDaily, logDecision, getDecisions, getSessionBrief };
+module.exports = { ALIENKIND_DIR, CLAUDE_PATH, loadEnv, requireEnv, getCDTDate, getNowCT, logToDaily, logDecision, getDecisions, getSessionBrief };

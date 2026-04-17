@@ -17,10 +17,10 @@ const { execSync } = require('child_process');
 const { loadEnv, createLogger, checkAuth } = require('./lib/shared.ts');
 const { logToDaily, getNowCT } = require('./lib/keel-env.ts');
 
-const KEEL_DIR = path.resolve(__dirname, '..');
-Object.assign(process.env, loadEnv(path.join(KEEL_DIR, '.env')));
+const ALIENKIND_DIR = path.resolve(__dirname, '..');
+Object.assign(process.env, loadEnv(path.join(ALIENKIND_DIR, '.env')));
 
-const LOG_DIR = path.join(KEEL_DIR, 'logs');
+const LOG_DIR = path.join(ALIENKIND_DIR, 'logs');
 fs.mkdirSync(LOG_DIR, { recursive: true });
 const DATE = new Date().toISOString().split('T')[0];
 const { log } = createLogger(path.join(LOG_DIR, `working-group-self-improvement-${DATE}.log`));
@@ -75,13 +75,13 @@ async function run() {
   log('INFO', `Dispatch: ${d.mode} via ${d.substrate}`);
 
   const branch = `preview/self-fix-${Date.now()}`;
-  try { execSync(`git checkout -b ${branch}`, { cwd: KEEL_DIR, encoding: 'utf8', timeout: 5000 }); } catch {}
+  try { execSync(`git checkout -b ${branch}`, { cwd: ALIENKIND_DIR, encoding: 'utf8', timeout: 5000 }); } catch {}
 
   const prompt = `Fix this issue in Keel's codebase:\n\n${target.description}\n${target.type === 'correction' ? `\nCorrection text: ${target.data.correction_text}\nSeverity: ${target.data.severity}, Occurrences: ${target.data.occurrence_count}` : ''}\n${target.type === 'finding' ? `\nFindings: ${JSON.stringify(target.data.findings)?.slice(0, 2000)}` : ''}\n\nRead code. Fix it. Test it.\n\nSELF_FIX_SUMMARY_START\nIssue: [one line]\nFix: [what changed]\nFiles: [which files]\nTest: [verification]\nSELF_FIX_SUMMARY_END`;
 
   try {
-    const daemonSessionId = process.env.KEEL_DAEMON_SESSION_ID;
-    const daemonSessionResume = process.env.KEEL_DAEMON_SESSION_RESUME === 'true';
+    const daemonSessionId = process.env.ALIENKIND_DAEMON_SESSION_ID;
+    const daemonSessionResume = process.env.ALIENKIND_DAEMON_SESSION_RESUME === 'true';
     const result = await processMessage(prompt, {
       channelConfig: CHANNELS.research, log: (l: string, m: string) => log(l, m),
       sender: 'system', senderDisplayName: 'Self-Improvement',
@@ -99,7 +99,7 @@ async function run() {
     logToDaily(`### Self-Improvement (${time} CDT)\n${target.description.slice(0, 150)}\nBranch: ${branch}\n${summary}`, undefined, false);
   } catch (e: any) { log('ERROR', `Failed: ${e.message}`); }
 
-  try { execSync('git checkout main', { cwd: KEEL_DIR, encoding: 'utf8', timeout: 5000 }); } catch {}
+  try { execSync('git checkout main', { cwd: ALIENKIND_DIR, encoding: 'utf8', timeout: 5000 }); } catch {}
   log('INFO', '=== Self-Improvement Complete ===');
 }
 

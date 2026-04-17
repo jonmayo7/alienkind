@@ -32,15 +32,15 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-const KEEL_DIR = path.resolve(__dirname, '..', '..');
-const WORKTREE_BASE = path.join(KEEL_DIR, '.keel', 'worktrees');
+const ALIENKIND_DIR = path.resolve(__dirname, '..', '..');
+const WORKTREE_BASE = path.join(ALIENKIND_DIR, '.keel', 'worktrees');
 
 // Ensure the base directory exists
 function ensureBase(): void {
   fs.mkdirSync(WORKTREE_BASE, { recursive: true });
 
   // Add .keel/worktrees/ to .gitignore if not already there
-  const gitignorePath = path.join(KEEL_DIR, '.gitignore');
+  const gitignorePath = path.join(ALIENKIND_DIR, '.gitignore');
   try {
     const gitignore = fs.readFileSync(gitignorePath, 'utf8');
     if (!gitignore.includes('.keel/worktrees')) {
@@ -54,7 +54,7 @@ function ensureBase(): void {
 function git(cmd: string, opts?: { cwd?: string; ignoreError?: boolean }): string {
   try {
     return execSync(`git ${cmd}`, {
-      cwd: opts?.cwd || KEEL_DIR,
+      cwd: opts?.cwd || ALIENKIND_DIR,
       encoding: 'utf8',
       stdio: ['pipe', 'pipe', 'pipe'],
       timeout: 30000,
@@ -68,7 +68,7 @@ function git(cmd: string, opts?: { cwd?: string; ignoreError?: boolean }): strin
 function shell(cmd: string, opts?: { cwd?: string; timeout?: number }): { stdout: string; stderr: string; exitCode: number } {
   try {
     const stdout = execSync(cmd, {
-      cwd: opts?.cwd || KEEL_DIR,
+      cwd: opts?.cwd || ALIENKIND_DIR,
       encoding: 'utf8',
       stdio: ['pipe', 'pipe', 'pipe'],
       timeout: opts?.timeout || 120000,

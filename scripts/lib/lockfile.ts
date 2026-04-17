@@ -16,8 +16,8 @@
 const fs = require('fs');
 const path = require('path');
 
-const KEEL_DIR = path.resolve(__dirname, '..', '..');
-const LOCK_DIR = path.join(KEEL_DIR, 'logs');
+const ALIENKIND_DIR = path.resolve(__dirname, '..', '..');
+const LOCK_DIR = path.join(ALIENKIND_DIR, 'logs');
 
 interface LockData {
   pid: number;

@@ -13,8 +13,8 @@
 const fs = require('fs');
 const path = require('path');
 
-const KEEL_DIR = '__REPO_ROOT__';
-const CACHE_FILE = '/tmp/keel-import-graph.json';
+const ALIENKIND_DIR = '__REPO_ROOT__';
+const CACHE_FILE = '/tmp/alienkind-import-graph.json';
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
 interface GraphEdge {
@@ -52,18 +52,18 @@ function extractImports(filePath: string): string[] {
 }
 
 /**
- * Resolve a relative import path to an absolute path, then to a relative path from KEEL_DIR.
+ * Resolve a relative import path to an absolute path, then to a relative path from ALIENKIND_DIR.
  */
 function resolveImport(fromFile: string, importPath: string): string | null {
   const fromDir = path.dirname(fromFile);
-  let resolved = path.resolve(KEEL_DIR, fromDir, importPath);
+  let resolved = path.resolve(ALIENKIND_DIR, fromDir, importPath);
 
   // Try with extensions
   const extensions = ['', '.ts', '.js', '.json'];
   for (const ext of extensions) {
     const candidate = resolved + ext;
     if (fs.existsSync(candidate)) {
-      return path.relative(KEEL_DIR, candidate);
+      return path.relative(ALIENKIND_DIR, candidate);
     }
   }
 
@@ -71,7 +71,7 @@ function resolveImport(fromFile: string, importPath: string): string | null {
   for (const ext of ['.ts', '.js']) {
     const indexCandidate = path.join(resolved, `index${ext}`);
     if (fs.existsSync(indexCandidate)) {
-      return path.relative(KEEL_DIR, indexCandidate);
+      return path.relative(ALIENKIND_DIR, indexCandidate);
     }
   }
 
@@ -88,11 +88,11 @@ function buildGraph(): Graph {
   try {
     const files = execSync(
       'find scripts/ config/ -name "*.ts" -not -path "*/node_modules/*" -not -path "*/.git/*"',
-      { cwd: KEEL_DIR, encoding: 'utf8', timeout: 5000 }
+      { cwd: ALIENKIND_DIR, encoding: 'utf8', timeout: 5000 }
     ).trim().split('\n').filter(Boolean);
 
     for (const file of files) {
-      const imports = extractImports(path.join(KEEL_DIR, file));
+      const imports = extractImports(path.join(ALIENKIND_DIR, file));
       for (const imp of imports) {
         const resolved = resolveImport(file, imp);
         if (resolved) {
@@ -127,7 +127,7 @@ function getGraph(): Graph {
 
 /**
  * Get files related to a given file — both files it imports AND files that import it.
- * Returns relative paths from KEEL_DIR.
+ * Returns relative paths from ALIENKIND_DIR.
  */
 function getRelatedFiles(relPath: string): string[] {
   const graph = getGraph();

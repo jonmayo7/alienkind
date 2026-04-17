@@ -21,17 +21,17 @@ const fs = require('fs');
 const https = require('https');
 const { execSync } = require('child_process');
 
-const KEEL_DIR = path.resolve(__dirname, '../..');
+const ALIENKIND_DIR = path.resolve(__dirname, '../..');
 const { loadEnv, createLogger } = require('../lib/shared.ts');
 
 const now = new Date();
 const DATE = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-const LOG_DIR = path.join(KEEL_DIR, 'logs');
+const LOG_DIR = path.join(ALIENKIND_DIR, 'logs');
 fs.mkdirSync(LOG_DIR, { recursive: true });
 const LOG_FILE = path.join(LOG_DIR, `osint-monitor-${DATE}.log`);
 const { log } = createLogger(LOG_FILE);
 
-const env = loadEnv(path.join(KEEL_DIR, '.env'));
+const env = loadEnv(path.join(ALIENKIND_DIR, '.env'));
 Object.assign(process.env, env);
 const { supabasePost } = require('../lib/supabase.ts');
 const { writeDeepProcessOutput } = require('../lib/deep-process.ts');
@@ -81,7 +81,7 @@ async function scanLocalSecrets() {
   for (const sp of secretPatterns) {
     try {
       const result = execSync(
-        `grep -rnE '${sp.pattern}' ${KEEL_DIR} ` +
+        `grep -rnE '${sp.pattern}' ${ALIENKIND_DIR} ` +
         `--include='*.ts' --include='*.js' --include='*.json' ` +
         `--exclude-dir=node_modules --exclude-dir=.git --exclude-dir=logs --exclude-dir=.canary --exclude-dir=imports ` +
         `--exclude='*.log' 2>/dev/null | head -5`,
@@ -93,7 +93,7 @@ async function scanLocalSecrets() {
         // Only keep lines that look like grep output (path:line:content) to avoid
         // multiline string matches creating false-positive continuation lines
         const realHits = result.split('\n').filter((line: string) =>
-          line.includes(KEEL_DIR) &&
+          line.includes(ALIENKIND_DIR) &&
           // Exclude security tooling (contains detection patterns, test payloads, canary data)
           !line.includes('/security/') &&
           !line.includes('/tests/') &&
@@ -199,7 +199,7 @@ async function scanGitHistory() {
     for (const pat of valuePatterns) {
       try {
         const result = execSync(
-          `git -C ${KEEL_DIR} log -50 -p -- '*.ts' '*.js' ':!**/security/**' ':!**/tests/**' | grep -cE "${pat.grep}" 2>/dev/null`,
+          `git -C ${ALIENKIND_DIR} log -50 -p -- '*.ts' '*.js' ':!**/security/**' ':!**/tests/**' | grep -cE "${pat.grep}" 2>/dev/null`,
           { encoding: 'utf8', timeout: 30000 }
         ).trim();
 
@@ -228,7 +228,7 @@ async function scanEnvFile() {
   log('INFO', 'Scan 4: .env file audit...');
 
   try {
-    const envPath = path.join(KEEL_DIR, '.env');
+    const envPath = path.join(ALIENKIND_DIR, '.env');
     const content = fs.readFileSync(envPath, 'utf8');
     const lines = content.split('\n').filter((l: string) => l.trim() && !l.startsWith('#'));
 
@@ -255,7 +255,7 @@ async function scanEnvFile() {
     }
 
     // Check if .env is in .gitignore
-    const gitignore = fs.readFileSync(path.join(KEEL_DIR, '.gitignore'), 'utf8');
+    const gitignore = fs.readFileSync(path.join(ALIENKIND_DIR, '.gitignore'), 'utf8');
     if (!gitignore.includes('.env')) {
       addFinding({
         category: 'env_audit',

@@ -8,7 +8,7 @@ const fs = require('fs');
 const path = require('path');
 const { watchOutput, gracefulKill } = require('./process.ts');
 const { COMPLEXITY, MODELS, PATHS, FAILOVER } = require('./constants.ts');
-const { KEEL_DIR } = require('./env.ts');
+const { ALIENKIND_DIR } = require('./env.ts');
 const { getActiveConfigDir, getFailoverConfigDir, activateFailover, readFailoverState, isRateLimited, isAuthError, sendAuthAlert } = require('./failover.ts');
 const { injectClaudeAuth } = require('./keel-auth.ts');
 const { logInvocationUsage, getInvocationSource } = require('./telemetry.ts');
@@ -65,10 +65,10 @@ function getIdentityContext(): string {
   }
 
   const identityFiles = [
-    path.join(KEEL_DIR, 'identity/character.md'),
-    path.join(KEEL_DIR, 'identity/commitments.md'),
-    path.join(KEEL_DIR, 'identity/orientation.md'),
-    path.join(KEEL_DIR, 'identity/harness.md'),
+    path.join(ALIENKIND_DIR, 'identity/character.md'),
+    path.join(ALIENKIND_DIR, 'identity/commitments.md'),
+    path.join(ALIENKIND_DIR, 'identity/orientation.md'),
+    path.join(ALIENKIND_DIR, 'identity/harness.md'),
   ];
 
   const sections: string[] = [];
@@ -193,7 +193,7 @@ function invokeKeel(message: string, opts: InvokeKeelOptions): Promise<string | 
       // Claude CLI needs these
       'CLAUDE_CONFIG_DIR', 'ANTHROPIC_API_KEY', 'CLAUDE_CODE_OAUTH_TOKEN',
       // Account routing — 'primary' for interactive/war-room, 'secondary' for background
-      'KEEL_ACCOUNT_PRIORITY',
+      'ALIENKIND_ACCOUNT_PRIORITY',
       // Git needs these
       'GIT_AUTHOR_NAME', 'GIT_AUTHOR_EMAIL', 'GIT_COMMITTER_NAME', 'GIT_COMMITTER_EMAIL',
       'SSH_AUTH_SOCK', 'GPG_TTY',
@@ -210,21 +210,21 @@ function invokeKeel(message: string, opts: InvokeKeelOptions): Promise<string | 
     // Signal to compaction gate that identity was injected programmatically —
     // spawned session starts grounded, so gate should auto-clear.
     if (injectIdentity) {
-      cleanEnv.KEEL_IDENTITY_INJECTED = '1';
+      cleanEnv.ALIENKIND_IDENTITY_INJECTED = '1';
     }
 
     // Signal to guard-bash.sh that this is a listener-spawned DM session —
     // blocks direct send-telegram/discord-send calls to prevent double-posting.
     // The listener relay is the canonical delivery path for DM responses.
     if (dmSession) {
-      cleanEnv.KEEL_DM_SESSION = '1';
+      cleanEnv.ALIENKIND_DM_SESSION = '1';
     }
 
     // Session mode for capability separation (Containment Fields).
     // Set at spawn, immutable for session lifetime. Read by guard-bash.sh
     // and memory-firewall-hook.ts to enforce mode-specific restrictions.
     if (mode) {
-      cleanEnv.KEEL_SESSION_MODE = mode;
+      cleanEnv.ALIENKIND_SESSION_MODE = mode;
     }
 
     const sessionInfo = resumeSessionId ? `, resume=${resumeSessionId}` : sessionId ? `, session=${sessionId}` : '';
@@ -234,7 +234,7 @@ function invokeKeel(message: string, opts: InvokeKeelOptions): Promise<string | 
 
     const spawnTime = Date.now();
     const claude = spawn(CLAUDE_PATH, args, {
-      cwd: KEEL_DIR,
+      cwd: ALIENKIND_DIR,
       env: cleanEnv,
       stdio: ['pipe', 'pipe', 'pipe']
     });
@@ -283,7 +283,7 @@ function invokeKeel(message: string, opts: InvokeKeelOptions): Promise<string | 
         injectClaudeAuth(retryEnv, altConfigDir);
 
         const retrySpawnTime = Date.now();
-        const retryClaude = spawn(CLAUDE_PATH, args, { cwd: KEEL_DIR, env: retryEnv, stdio: ['pipe', 'pipe', 'pipe'] });
+        const retryClaude = spawn(CLAUDE_PATH, args, { cwd: ALIENKIND_DIR, env: retryEnv, stdio: ['pipe', 'pipe', 'pipe'] });
 
         const retryTimer = setTimeout(() => {
           log('WARN', `[auth-retry] Claude timeout on ${altLabel} — killing`);

@@ -29,7 +29,7 @@ try {
 } catch {
   resolveRepoRoot = () => path.resolve(__dirname, '..', '..');
 }
-const KEEL_DIR = resolveRepoRoot();
+const ALIENKIND_DIR = resolveRepoRoot();
 const PULSE_INTERVAL = 8; // every 8th Read call
 
 async function main() {
@@ -41,7 +41,7 @@ async function main() {
 
   // Session-level counter
   const sessionId = hookData.session_id || process.ppid || 'unknown';
-  const stateFile = `/tmp/keel-awareness-${sessionId}.json`;
+  const stateFile = `/tmp/alienkind-awareness-${sessionId}.json`;
 
   let state;
   try {
@@ -77,7 +77,7 @@ async function main() {
   // Mycelium — what other instances are doing (from Supabase)
   try {
     const { getTerminalId, getAllTerminals } = require(
-      path.resolve(KEEL_DIR, 'scripts', 'lib', 'terminal-state.ts')
+      path.resolve(ALIENKIND_DIR, 'scripts', 'lib', 'terminal-state.ts')
     );
     const myId = getTerminalId();
     const all = await getAllTerminals();
@@ -97,7 +97,7 @@ async function main() {
 
   // Calendar cache — today's events
   try {
-    const calPath = path.join(KEEL_DIR, 'logs', 'calendar-cache.json');
+    const calPath = path.join(ALIENKIND_DIR, 'logs', 'calendar-cache.json');
     if (fs.existsSync(calPath)) {
       const cache = JSON.parse(fs.readFileSync(calPath, 'utf8'));
       // Only use cache from today
@@ -113,10 +113,10 @@ async function main() {
   // Circulation — unseen findings from other organs (Supabase-backed)
   try {
     const { withdraw } = require(
-      path.resolve(KEEL_DIR, 'scripts', 'lib', 'circulation.ts')
+      path.resolve(ALIENKIND_DIR, 'scripts', 'lib', 'circulation.ts')
     );
     const { getTerminalId } = require(
-      path.resolve(KEEL_DIR, 'scripts', 'lib', 'terminal-state.ts')
+      path.resolve(ALIENKIND_DIR, 'scripts', 'lib', 'terminal-state.ts')
     );
     const termId = getTerminalId();
     const findings = await withdraw({

@@ -17,8 +17,8 @@ const path = require('path');
 const { loadEnv } = require('./shared.ts');
 const { withTimeout } = require('./utils.ts');
 
-const KEEL_DIR = path.resolve(__dirname, '../..');
-const MEMORY_DIR = path.join(KEEL_DIR, 'memory');
+const ALIENKIND_DIR = path.resolve(__dirname, '../..');
+const MEMORY_DIR = path.join(ALIENKIND_DIR, 'memory');
 
 interface SearchResult {
   source_file: string;
@@ -80,7 +80,7 @@ function searchMemoryLocal(query: string, { limit = 10 }: { limit?: number } = {
     const files = raw.split('\n').filter(Boolean).slice(0, limit);
 
     return files.map((filePath: string) => {
-      const relPath = path.relative(KEEL_DIR, filePath);
+      const relPath = path.relative(ALIENKIND_DIR, filePath);
       const dateMatch = relPath.match(/(\d{4}-\d{2}-\d{2})/);
       let fileType = 'memory';
       if (relPath.includes('daily/')) fileType = 'daily';

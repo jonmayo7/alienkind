@@ -16,7 +16,7 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
-const KEEL_DIR = path.resolve(__dirname, '../..');
+const ALIENKIND_DIR = path.resolve(__dirname, '../..');
 const CODE_DIRS = ['scripts/', 'config/', '.claude/'];
 
 async function main() {
@@ -27,7 +27,7 @@ async function main() {
   try { hookData = JSON.parse(input); } catch { process.exit(0); }
 
   const sessionId = hookData.session_id || 'unknown';
-  const counterFile = `/tmp/keel-uncommitted-delta-${sessionId}`;
+  const counterFile = `/tmp/alienkind-uncommitted-delta-${sessionId}`;
 
   // Throttle: fire every 5th response
   let count = 0;
@@ -43,7 +43,7 @@ async function main() {
   let modifiedFiles: string[] = [];
   try {
     const diffOutput = execSync('git diff --name-only', {
-      cwd: KEEL_DIR,
+      cwd: ALIENKIND_DIR,
       encoding: 'utf8',
       timeout: 5000,
     }).trim();
@@ -65,8 +65,8 @@ async function main() {
 
   // Read memory files
   const today = new Date().toISOString().split('T')[0];
-  const dailyFile = path.join(KEEL_DIR, `memory/daily/${today}.md`);
-  const sessionFile = path.join(KEEL_DIR, 'memory/daily/');
+  const dailyFile = path.join(ALIENKIND_DIR, `memory/daily/${today}.md`);
+  const sessionFile = path.join(ALIENKIND_DIR, 'memory/daily/');
 
   let memoryContent = '';
   try { memoryContent += fs.readFileSync(sessionFile, 'utf8'); } catch {}

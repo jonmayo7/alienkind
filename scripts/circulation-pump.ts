@@ -32,10 +32,10 @@ const path = require('path');
 const { loadEnv, createLogger } = require('./lib/shared.ts');
 const { logToDaily } = require('./lib/keel-env.ts');
 
-const KEEL_DIR = path.resolve(__dirname, '..');
-Object.assign(process.env, loadEnv(path.join(KEEL_DIR, '.env')));
+const ALIENKIND_DIR = path.resolve(__dirname, '..');
+Object.assign(process.env, loadEnv(path.join(ALIENKIND_DIR, '.env')));
 
-const LOG_DIR = path.join(KEEL_DIR, 'logs');
+const LOG_DIR = path.join(ALIENKIND_DIR, 'logs');
 fs.mkdirSync(LOG_DIR, { recursive: true });
 const DATE = new Date().toISOString().split('T')[0];
 const { log } = createLogger(path.join(LOG_DIR, `circulation-pump-${DATE}.log`));
@@ -177,7 +177,7 @@ async function detectAndReinforce(): Promise<number> {
  * Window state persists in circulation-pump-state.json.
  */
 
-const CASCADE_STATE_FILE = path.join(KEEL_DIR, 'scripts', 'circulation-pump-state.json');
+const CASCADE_STATE_FILE = path.join(ALIENKIND_DIR, 'scripts', 'circulation-pump-state.json');
 const CASCADE_WINDOW_CYCLES = 6;   // last 6 pump cycles = 30 minutes
 const CASCADE_SOURCE_THRESHOLD = 3; // same source deposits N+ findings
 const CASCADE_DOMAIN_THRESHOLD = 3; // different sources cluster N+ in same domain
@@ -321,7 +321,7 @@ async function detectCascades(): Promise<number> {
 
       // Route to Telegram
       try {
-        const outboxFile = path.join(KEEL_DIR, 'logs', 'circulation-telegram-outbox.txt');
+        const outboxFile = path.join(ALIENKIND_DIR, 'logs', 'circulation-telegram-outbox.txt');
         const msg = `[CASCADE] ${source} in ${domain}: ${deposits.length} findings in ${windowMinutes}min. Sample: "${deposits[0].finding_preview}"`;
         fs.appendFileSync(outboxFile, msg + '\n---TELEGRAM_MSG---\n');
       } catch { /* best effort */ }
@@ -382,7 +382,7 @@ async function detectCascades(): Promise<number> {
 
       // Route to Telegram
       try {
-        const outboxFile = path.join(KEEL_DIR, 'logs', 'circulation-telegram-outbox.txt');
+        const outboxFile = path.join(ALIENKIND_DIR, 'logs', 'circulation-telegram-outbox.txt');
         const msg = `[CASCADE] Domain ${domain}: ${totalDeposits} findings from ${uniqueSources} sources in ${windowMinutes}min. Sources: ${sourceNames.join(', ')}`;
         fs.appendFileSync(outboxFile, msg + '\n---TELEGRAM_MSG---\n');
       } catch { /* best effort */ }
@@ -491,7 +491,7 @@ async function routeActionable(): Promise<{ build: number; fix: number; report: 
           } catch {}
           // Also inform [HUMAN] via Telegram outbox
           try {
-            const outboxFile = path.join(KEEL_DIR, 'logs', 'circulation-telegram-outbox.txt');
+            const outboxFile = path.join(ALIENKIND_DIR, 'logs', 'circulation-telegram-outbox.txt');
             const msg = `[FIX] ${finding.source_organ} (${finding.domain}): ${finding.finding.slice(0, 300)}`;
             fs.appendFileSync(outboxFile, msg + '\n---TELEGRAM_MSG---\n');
           } catch {}
@@ -505,7 +505,7 @@ async function routeActionable(): Promise<{ build: number; fix: number; report: 
           // ESCALATE: cascade/systemic issue. Telegram immediately + capability_requests.
           // Bypasses normal routing — this is urgent.
           try {
-            const outboxFile = path.join(KEEL_DIR, 'logs', 'circulation-telegram-outbox.txt');
+            const outboxFile = path.join(ALIENKIND_DIR, 'logs', 'circulation-telegram-outbox.txt');
             const msg = `[ESCALATE] ${finding.source_organ} (${finding.domain}): ${finding.finding.slice(0, 300)}`;
             fs.appendFileSync(outboxFile, msg + '\n---TELEGRAM_MSG---\n');
           } catch {}
@@ -534,7 +534,7 @@ async function routeActionable(): Promise<{ build: number; fix: number; report: 
           // Telegram for urgent reports (security anomalies, critical findings)
           if (finding.domain === 'security' && finding.finding_type === 'anomaly') {
             try {
-              const outboxFile = path.join(KEEL_DIR, 'logs', 'circulation-telegram-outbox.txt');
+              const outboxFile = path.join(ALIENKIND_DIR, 'logs', 'circulation-telegram-outbox.txt');
               const msg = `[URGENT REPORT] ${finding.source_organ} (${finding.domain}): ${finding.finding.slice(0, 300)}`;
               fs.appendFileSync(outboxFile, msg + '\n---TELEGRAM_MSG---\n');
             } catch {}

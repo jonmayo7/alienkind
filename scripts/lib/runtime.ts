@@ -5,7 +5,7 @@
  * Cloud-first: Claude → [MODEL_TIER_2] → [MODEL_TIER_3] → Gemini → Local
  *
  * Local inference: vLLM-MLX (primary, native Apple Silicon)
- * Cloud tiers: Vercel AI Gateway with KEEL_AI_GATEWAY_API_KEY
+ * Cloud tiers: Vercel AI Gateway with ALIENKIND_AI_GATEWAY_API_KEY
  *
  * Readers: daemon scripts, listeners, any script that needs LLM inference
  * Writers: none (stateless router — reads failover state from shared.ts)
@@ -15,7 +15,7 @@ const path = require('path');
 const fs = require('fs');
 const https = require('https');
 
-const KEEL_DIR = path.resolve(__dirname, '../..');
+const ALIENKIND_DIR = path.resolve(__dirname, '../..');
 
 // --- Types ---
 
@@ -100,7 +100,7 @@ interface InvokeResult {
 }
 
 // --- Tier Configuration ---
-// All non-primary tiers use KEEL_AI_GATEWAY_API_KEY through Vercel AI Gateway.
+// All non-primary tiers use ALIENKIND_AI_GATEWAY_API_KEY through Vercel AI Gateway.
 // Model strings are gateway format: "provider/model-name"
 
 const GATEWAY_MODELS = {
@@ -481,7 +481,7 @@ async function invoke(message: string, opts: InvokeOptions): Promise<InvokeResul
   // Alert fires once per failover event (not per call).
   function notifySubstrateFailover(tier: string, model: string, reason: string): void {
     try {
-      const envPath = path.join(KEEL_DIR, '.env');
+      const envPath = path.join(ALIENKIND_DIR, '.env');
       if (!fs.existsSync(envPath)) return;
       const envContent = fs.readFileSync(envPath, 'utf8');
       let botToken: string | undefined, chatId: string | undefined;

@@ -16,7 +16,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const KEEL_DIR = path.resolve(__dirname, '../..');
+const ALIENKIND_DIR = path.resolve(__dirname, '../..');
 
 function getInput(): any {
   try {
@@ -33,7 +33,7 @@ function getInput(): any {
 }
 
 function loadEnv(): Record<string, string> {
-  const envPath = path.join(KEEL_DIR, '.env');
+  const envPath = path.join(ALIENKIND_DIR, '.env');
   const env: Record<string, string> = {};
   if (!fs.existsSync(envPath)) return env;
   for (const line of fs.readFileSync(envPath, 'utf8').split('\n')) {

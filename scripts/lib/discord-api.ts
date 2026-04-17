@@ -17,8 +17,8 @@ const path = require('path');
 const https = require('https');
 const { recordThread } = require('./external-threads.ts');
 
-const KEEL_DIR = path.resolve(__dirname, '..', '..');
-const CLAIMS_FILE = path.join(KEEL_DIR, 'logs', 'terminal-channel-claims.json');
+const ALIENKIND_DIR = path.resolve(__dirname, '..', '..');
+const CLAIMS_FILE = path.join(ALIENKIND_DIR, 'logs', 'terminal-channel-claims.json');
 const DEFAULT_CLAIM_MS = 2 * 60 * 60 * 1000; // 2 hours
 
 // Known channel ID → name map for routing audit trail.
@@ -30,7 +30,7 @@ function getKnownChannels(): Record<string, string> {
   KNOWN_CHANNELS = {};
   // Read from .env file directly (same source of truth as loadEnv)
   try {
-    const envPath = path.join(KEEL_DIR, '.env');
+    const envPath = path.join(ALIENKIND_DIR, '.env');
     const lines = fs.readFileSync(envPath, 'utf8').split('\n');
     const channelEnvMap: Record<string, string> = {
       'DISCORD_CHANNEL_ID': '[CHANNEL_NAME]',

@@ -17,8 +17,8 @@
 const fs = require('fs');
 const path = require('path');
 
-const KEEL_DIR = path.resolve(__dirname, '..', '..');
-const TOUCHES_PATH = path.join(KEEL_DIR, 'logs', 'file-touches.json');
+const ALIENKIND_DIR = path.resolve(__dirname, '..', '..');
+const TOUCHES_PATH = path.join(ALIENKIND_DIR, 'logs', 'file-touches.json');
 const LOCK_PATH = TOUCHES_PATH + '.lock';
 const STALE_MS = 30 * 60 * 1000; // 30 minutes
 
@@ -118,8 +118,8 @@ function recordTouch(nodeId: string, filePath: string, operation: 'edit' | 'writ
 
     // Normalize path to relative
     let relPath = filePath;
-    if (filePath.startsWith(KEEL_DIR + '/')) {
-      relPath = filePath.slice(KEEL_DIR.length + 1);
+    if (filePath.startsWith(ALIENKIND_DIR + '/')) {
+      relPath = filePath.slice(ALIENKIND_DIR.length + 1);
     }
 
     touches[relPath] = {
@@ -148,8 +148,8 @@ function checkConflict(nodeId: string, filePath: string): ConflictInfo | null {
 
     // Normalize path
     let relPath = filePath;
-    if (filePath.startsWith(KEEL_DIR + '/')) {
-      relPath = filePath.slice(KEEL_DIR.length + 1);
+    if (filePath.startsWith(ALIENKIND_DIR + '/')) {
+      relPath = filePath.slice(ALIENKIND_DIR.length + 1);
     }
 
     const entry = touches[relPath];

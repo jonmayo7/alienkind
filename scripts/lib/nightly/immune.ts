@@ -6,7 +6,7 @@
  * auto-commit, cleanup, defense elements, subscription reconciliation.
  */
 const {
-  KEEL_DIR, LOG_DIR, DATE, TIME, SKIP_BACKUP,
+  ALIENKIND_DIR, LOG_DIR, DATE, TIME, SKIP_BACKUP,
   fs, path, https, execSync, execFileSync,
   log, logHeap, sendTelegram, formatAlert, appendToDigest,
   attemptGrowthCycle, buildAwarenessContext,
@@ -33,13 +33,13 @@ async function runPreflight(): Promise<string> {
 
   // 1. Daemon PID alive
   try {
-    const pid = parseInt(fs.readFileSync(path.join(KEEL_DIR, 'logs/daemon.pid'), 'utf-8').trim(), 10);
+    const pid = parseInt(fs.readFileSync(path.join(ALIENKIND_DIR, 'logs/daemon.pid'), 'utf-8').trim(), 10);
     const alive = pid > 0 && (() => { try { process.kill(pid, 0); return true; } catch { return false; } })();
     check('Daemon PID', alive, alive ? `PID ${pid}` : 'not running');
   } catch { check('Daemon PID', false, 'no pid file'); }
 
   // 2. Daily memory file exists and has content
-  const dailyPath = path.join(KEEL_DIR, 'memory', 'daily', `${DATE}.md`);
+  const dailyPath = path.join(ALIENKIND_DIR, 'memory', 'daily', `${DATE}.md`);
   const dailyExists = fs.existsSync(dailyPath);
   const dailySize = dailyExists ? fs.statSync(dailyPath).size : 0;
   check('Daily memory', dailyExists && dailySize > 100, `${dailySize} bytes`);
@@ -64,7 +64,7 @@ async function runPreflight(): Promise<string> {
   // 5. Identity kernel files readable
   const identityFiles = ['identity/character.md', 'identity/commitments.md', 'identity/orientation.md'];
   for (const sf of identityFiles) {
-    const fp = path.join(KEEL_DIR, sf);
+    const fp = path.join(ALIENKIND_DIR, sf);
     const readable = fs.existsSync(fp) && fs.statSync(fp).size > 50;
     check(sf, readable);
   }
@@ -157,7 +157,7 @@ async function runBackup() {
 
   // 1. rsync project files (rsync binary works from Node.js — no /bin/bash needed)
   try {
-    execSync(`/usr/bin/rsync -a --exclude='node_modules' --exclude='*.jsonl' --exclude='.git' --exclude='data/browser-profile/*/Cache' --exclude='.credentials.bak' --exclude='backup-keys.txt' --exclude='.canary' "${KEEL_DIR}/" "${BACKUP_PATH}/workspace/"`, { timeout: 120000 });
+    execSync(`/usr/bin/rsync -a --exclude='node_modules' --exclude='*.jsonl' --exclude='.git' --exclude='data/browser-profile/*/Cache' --exclude='.credentials.bak' --exclude='backup-keys.txt' --exclude='.canary' "${ALIENKIND_DIR}/" "${BACKUP_PATH}/workspace/"`, { timeout: 120000 });
     log('Backup: project files synced');
   } catch (e: any) {
     log(`WARN: rsync failed: ${e.message}`);
@@ -323,12 +323,12 @@ async function runBackup() {
 
   // 3. Metadata
   fs.writeFileSync(path.join(BACKUP_PATH, 'backup-meta.json'), JSON.stringify({
-    timestamp: `${DATE}_${TIME}`, agent_dir: KEEL_DIR, created_at: new Date().toISOString(),
+    timestamp: `${DATE}_${TIME}`, agent_dir: ALIENKIND_DIR, created_at: new Date().toISOString(),
   }, null, 2));
 
   // 4. Copy restore docs
-  const restorePrompt = path.join(KEEL_DIR, 'config/keel-restore-prompt.txt');
-  const restoreGuide = path.join(KEEL_DIR, 'RESTORE.md');
+  const restorePrompt = path.join(ALIENKIND_DIR, 'config/keel-restore-prompt.txt');
+  const restoreGuide = path.join(ALIENKIND_DIR, 'RESTORE.md');
   if (fs.existsSync(restorePrompt)) fs.copyFileSync(restorePrompt, path.join(GDRIVE_BASE, 'keel-backups/RESTORE-KEEL.txt'));
   if (fs.existsSync(restoreGuide)) fs.copyFileSync(restoreGuide, path.join(GDRIVE_BASE, 'keel-backups/RESTORE-GUIDE.md'));
 
@@ -373,7 +373,7 @@ ${buildAwarenessContext({ selfNodeId: 'daemon' })}`;
 function verifyImmune() {
   const lines: string[] = [];
   // Check daily file has ## Immune System section
-  const dailyFile = path.join(KEEL_DIR, 'memory', 'daily', `${DATE}.md`);
+  const dailyFile = path.join(ALIENKIND_DIR, 'memory', 'daily', `${DATE}.md`);
   try {
     const stats = fs.statSync(dailyFile);
     const content = fs.readFileSync(dailyFile, 'utf-8');
@@ -461,8 +461,8 @@ async function runImmune() {
   if (dayOfMonth === 1) {
     log('Infrastructure: CLI capability scan (monthly)');
     try {
-      execSync(`npx tsx ${path.join(KEEL_DIR, 'scripts', 'check-cli-capabilities.ts')}`, {
-        timeout: 60000, cwd: KEEL_DIR, stdio: 'pipe',
+      execSync(`npx tsx ${path.join(ALIENKIND_DIR, 'scripts', 'check-cli-capabilities.ts')}`, {
+        timeout: 60000, cwd: ALIENKIND_DIR, stdio: 'pipe',
       });
       log('CLI capability scan: complete');
     } catch (e: any) {
@@ -479,7 +479,7 @@ async function runImmune() {
   try {
     const { AUTOCOMMIT: _AC } = require('../constants.ts');
     for (const safePath of _AC.safePaths) {
-      try { execSync(`git -C "${KEEL_DIR}" add "${safePath}"`, { timeout: 5000, stdio: 'pipe' }); } catch { /* ok */ }
+      try { execSync(`git -C "${ALIENKIND_DIR}" add "${safePath}"`, { timeout: 5000, stdio: 'pipe' }); } catch { /* ok */ }
     }
     // ACTIVATE gate — block commit if daemon running stale config
     const { checkActivateGate } = require('../activate-gate.ts');
@@ -488,7 +488,7 @@ async function runImmune() {
       log(`ACTIVATE BLOCKED: ${activateCheck.reason}`);
       commitResult = 'blocked-activate';
     } else {
-      execSync(`git -C "${KEEL_DIR}" diff --cached --quiet || git -C "${KEEL_DIR}" commit -m "nightly: ${DATE} immune + infrastructure"`, {
+      execSync(`git -C "${ALIENKIND_DIR}" diff --cached --quiet || git -C "${ALIENKIND_DIR}" commit -m "nightly: ${DATE} immune + infrastructure"`, {
         timeout: 30000,
         env: { ...process.env, GIT_AUTHOR_NAME: 'Keel', GIT_AUTHOR_EMAIL: '[EMAIL]', GIT_COMMITTER_NAME: 'Keel', GIT_COMMITTER_EMAIL: '[EMAIL]' },
       });
@@ -527,7 +527,7 @@ async function runImmune() {
   log('Infrastructure: Cleanup');
   let cleanupDeleted = 0;
   try {
-    const reapSummary = reapAll({ log, keelDir: KEEL_DIR });
+    const reapSummary = reapAll({ log, keelDir: ALIENKIND_DIR });
     cleanupDeleted = reapSummary.totalDeleted;
   } catch (e: any) {
     log(`WARNING: Reaper failed: ${e.message}`);
@@ -535,8 +535,8 @@ async function runImmune() {
 
   // Log rotation — size-based truncation for unbounded log files
   const logRotations: Array<{ name: string; file: string; maxLines: number; keepLines: number }> = [
-    { name: 'audit.log', file: path.join(KEEL_DIR, 'logs', 'audit.log'), maxLines: 100000, keepLines: 50000 },
-    { name: 'daemon-stdout.log', file: path.join(KEEL_DIR, 'logs', 'daemon-stdout.log'), maxLines: 30000, keepLines: 15000 },
+    { name: 'audit.log', file: path.join(ALIENKIND_DIR, 'logs', 'audit.log'), maxLines: 100000, keepLines: 50000 },
+    { name: 'daemon-stdout.log', file: path.join(ALIENKIND_DIR, 'logs', 'daemon-stdout.log'), maxLines: 30000, keepLines: 15000 },
   ];
   for (const rot of logRotations) {
     try {
@@ -594,7 +594,7 @@ async function runImmune() {
   let groundTruthResult = '';
   try {
     const output = execSync('npx tsx scripts/ground-truth-check.ts --json', {
-      cwd: KEEL_DIR,
+      cwd: ALIENKIND_DIR,
       timeout: 60000,
       stdio: 'pipe',
       env: { ...process.env, ...env },
@@ -630,13 +630,13 @@ async function runImmune() {
 
     // 1. Detect " 2" duplicate files (macOS conflict artifacts)
     const { execSync: exec2 } = require('child_process');
-    const dupes = exec2('find scripts/ config/ -name "* 2*" 2>/dev/null || true', { cwd: KEEL_DIR, encoding: 'utf8' }).trim();
+    const dupes = exec2('find scripts/ config/ -name "* 2*" 2>/dev/null || true', { cwd: ALIENKIND_DIR, encoding: 'utf8' }).trim();
     if (dupes) findings.push(`DUPLICATE FILES: ${dupes.split('\n').length} " 2" files found`);
 
     // 2. Verify daemon-jobs script paths exist
     const { JOBS } = require('../../../config/daemon-jobs.ts');
     for (const job of JOBS) {
-      if (job.script && !fs.existsSync(path.join(KEEL_DIR, job.script))) {
+      if (job.script && !fs.existsSync(path.join(ALIENKIND_DIR, job.script))) {
         findings.push(`BROKEN JOB: ${job.name} → ${job.script} (file missing)`);
       }
     }
@@ -652,7 +652,7 @@ async function runImmune() {
             const cmd = hook.command || '';
             const match = cmd.match(/scripts\/\S+\.(ts|sh|js)/);
             if (match) {
-              const hookPath = path.join(KEEL_DIR, match[0]);
+              const hookPath = path.join(ALIENKIND_DIR, match[0]);
               if (!fs.existsSync(hookPath)) {
                 findings.push(`BROKEN HOOK: ${event} → ${match[0]} (file missing)`);
               }
@@ -760,7 +760,7 @@ async function runImmune() {
     try {
       const { getCriticalFiles, updateBaseline } = require('../integrity-monitor.ts');
       const criticalFiles = getCriticalFiles();
-      const dirtyOutput = execSync('git diff --name-only HEAD', { encoding: 'utf8', cwd: KEEL_DIR }).trim();
+      const dirtyOutput = execSync('git diff --name-only HEAD', { encoding: 'utf8', cwd: ALIENKIND_DIR }).trim();
       const dirtyFiles = dirtyOutput ? dirtyOutput.split('\n') : [];
       const uncommittedCritical = criticalFiles.filter((f: string) => dirtyFiles.includes(f));
       if (uncommittedCritical.length === 0) {

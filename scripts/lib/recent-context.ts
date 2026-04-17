@@ -19,7 +19,7 @@ const fs = require('fs');
 const path = require('path');
 const { TIMEZONE, CONTEXT: CONTEXT_DEFAULTS } = require('./constants.ts');
 
-const KEEL_DIR = path.resolve(__dirname, '..', '..');
+const ALIENKIND_DIR = path.resolve(__dirname, '..', '..');
 
 // Direct conversation channels — where [HUMAN] and Keel talk directly
 const DM_CHANNELS: string[] = ['terminal', 'telegram_dm', 'discord', 'discord_partner_collab', 'discord_group', 'telegram_comms_coord', 'telegram_alerts'];
@@ -103,7 +103,7 @@ function getRecentContext({ url, key, channels = DM_CHANNELS, limit = CONTEXT_DE
     try {
       const now = new Date();
       const todayStr = now.toLocaleDateString('en-CA', { timeZone: TIMEZONE });
-      const dailyFile = path.join(KEEL_DIR, 'memory', 'daily', `${todayStr}.md`);
+      const dailyFile = path.join(ALIENKIND_DIR, 'memory', 'daily', `${todayStr}.md`);
       if (fs.existsSync(dailyFile)) {
         const content = fs.readFileSync(dailyFile, 'utf8');
         // Extract DM/Discord conversation lines

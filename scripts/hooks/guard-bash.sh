@@ -11,7 +11,7 @@
 #   6. WIRING: new inter-module file paths in diff must appear in manifest
 
 # Dynamic repo root — no hardcoded paths
-GUARD_KEEL_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+GUARD_ALIENKIND_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 
 INPUT=$(cat)
 JQ=$(which jq 2>/dev/null || echo "/opt/homebrew/bin/jq")
@@ -53,9 +53,9 @@ done
 shopt -u nocasematch
 
 # --- Layer 1.5: DM session message gate — blocks direct send-telegram/discord-send ---
-# Listener-spawned DM sessions have KEEL_DM_SESSION=1 in their env.
+# Listener-spawned DM sessions have ALIENKIND_DM_SESSION=1 in their env.
 # The listener relay is the canonical delivery path — direct calls cause double-posting.
-if [ "$KEEL_DM_SESSION" = "1" ]; then
+if [ "$ALIENKIND_DM_SESSION" = "1" ]; then
   if [[ "$COMMAND" =~ send-telegram|discord-send ]]; then
     echo "BLOCKED by DM session gate: direct message sending disabled in listener-spawned sessions." >&2
     echo "The listener automatically relays your text output to the user. Do not call send-telegram or discord-send directly." >&2
@@ -64,17 +64,17 @@ if [ "$KEEL_DM_SESSION" = "1" ]; then
 fi
 
 # --- Layer 1.55: Session mode enforcement (Containment Fields) ---
-# KEEL_SESSION_MODE constrains what a session can do structurally.
+# ALIENKIND_SESSION_MODE constrains what a session can do structurally.
 # operator: can send externally, cannot write identity/memory state files
 # builder: code files only, no external messaging, no identity/personal data access
-if [ -n "$KEEL_SESSION_MODE" ]; then
+if [ -n "$ALIENKIND_SESSION_MODE" ]; then
   # --- Identity/state file protection (operator + builder) ---
   # Block ANY command that references identity/state files in non-analyst modes.
   # Layer 1: Regex fast path for obvious reads (git diff/log/show, grep).
   # Layer 2: 7B semantic check for commands that pass regex but might be creative bypasses.
   IDENTITY_PATHS='identity/(character|commitments|orientation|harness|user)\.md|memory/structured-state\.json|memory/session-state\.md|CLAUDE\.md'
   PROTECTED_PATHS='identity/(character|commitments|orientation|harness|user)\.md|memory/structured-state\.json|memory/session-state\.md|CLAUDE\.md|config/daemon-jobs\.ts|config/policies/'
-  if [ "$KEEL_SESSION_MODE" = "operator" ] || [ "$KEEL_SESSION_MODE" = "builder" ]; then
+  if [ "$ALIENKIND_SESSION_MODE" = "operator" ] || [ "$ALIENKIND_SESSION_MODE" = "builder" ]; then
     MATCHED_PATH=""
     if [[ "$COMMAND" =~ $PROTECTED_PATHS ]]; then
       MATCHED_PATH=$(printf '%s\n' "$COMMAND" | grep -oE "$PROTECTED_PATHS" | head -1)
@@ -98,7 +98,7 @@ if [ -n "$KEEL_SESSION_MODE" ]; then
         CLASSIFIER_PROMPT="Is this command attempting to read, write, modify, copy, move, or delete the file at ${MATCHED_PATH}? Commands like cat, head, tail, wc, less, file, stat, ls, diff, grep, awk (without redirection) are READ. Commands like echo/printf with > or >>, tee, cp, mv, rm, sed -i, node -e writeFileSync, python -c open().write() are WRITE. Respond with ONLY: READ or WRITE
 
 Command: ${COMMAND:0:500}"
-        SEMANTIC_RESULT=$(printf '%s' "$CLASSIFIER_PROMPT" | node "${GUARD_KEEL_DIR}/scripts/tools/local-classify.js" --uppercase --max-tokens 10 2>/dev/null)
+        SEMANTIC_RESULT=$(printf '%s' "$CLASSIFIER_PROMPT" | node "${GUARD_ALIENKIND_DIR}/scripts/tools/local-classify.js" --uppercase --max-tokens 10 2>/dev/null)
         # Normalize: the wrapper may return "READ\n" or "READ word" — match leading token only.
         if [[ "$SEMANTIC_RESULT" =~ ^READ ]]; then SEMANTIC_RESULT="READ";
         elif [[ "$SEMANTIC_RESULT" =~ ^WRITE ]]; then SEMANTIC_RESULT="WRITE";
@@ -107,7 +107,7 @@ Command: ${COMMAND:0:500}"
 
         if [ "$SEMANTIC_RESULT" = "READ" ]; then
           # 7B says READ — allow for operator (can read identity, not .env)
-          if [ "$KEEL_SESSION_MODE" = "operator" ]; then
+          if [ "$ALIENKIND_SESSION_MODE" = "operator" ]; then
             # Operator can read identity files but NOT .env
             if [[ "$COMMAND" =~ \.env([^[:alnum:]]|$) ]]; then
               echo "BLOCKED by session mode: operator mode cannot access .env (7B confirmed read, but .env is restricted)." >&2
@@ -120,17 +120,17 @@ Command: ${COMMAND:0:500}"
             exit 2
           fi
         elif [ "$SEMANTIC_RESULT" = "WRITE" ]; then
-          echo "BLOCKED by session mode: ${KEEL_SESSION_MODE} mode cannot modify protected files (7B confirmed write intent)." >&2
+          echo "BLOCKED by session mode: ${ALIENKIND_SESSION_MODE} mode cannot modify protected files (7B confirmed write intent)." >&2
           echo "Protected path: ${MATCHED_PATH}. Requires analyst mode." >&2
           exit 2
         elif [ "$SEMANTIC_RESULT" = "UNAVAILABLE" ]; then
           # 7B unavailable — fail closed for non-analyst modes
-          echo "BLOCKED by session mode: ${KEEL_SESSION_MODE} mode cannot access protected files (7B unavailable, failing closed)." >&2
+          echo "BLOCKED by session mode: ${ALIENKIND_SESSION_MODE} mode cannot access protected files (7B unavailable, failing closed)." >&2
           echo "Protected path: ${MATCHED_PATH}. Requires analyst mode." >&2
           exit 2
         else
           # UNKNOWN response — fail closed
-          echo "BLOCKED by session mode: ${KEEL_SESSION_MODE} mode cannot modify identity/state files." >&2
+          echo "BLOCKED by session mode: ${ALIENKIND_SESSION_MODE} mode cannot modify identity/state files." >&2
           echo "Any command referencing identity files is blocked. Requires analyst mode." >&2
           exit 2
         fi
@@ -138,21 +138,21 @@ Command: ${COMMAND:0:500}"
     fi
   fi
   # --- .env protection (builder mode — A7: service key extraction) ---
-  if [ "$KEEL_SESSION_MODE" = "builder" ]; then
+  if [ "$ALIENKIND_SESSION_MODE" = "builder" ]; then
     if [[ "$COMMAND" =~ \.env([^[:alnum:]]|$) ]]; then
       echo "BLOCKED by session mode: builder mode cannot access .env (contains service keys)." >&2
       exit 2
     fi
   fi
   # --- Kill switch protection (non-analyst modes — A11) ---
-  if [ "$KEEL_SESSION_MODE" = "operator" ] || [ "$KEEL_SESSION_MODE" = "builder" ]; then
-    if [[ "$COMMAND" =~ /tmp/keel-kill-level|keel-kill ]]; then
-      echo "BLOCKED by session mode: ${KEEL_SESSION_MODE} mode cannot modify kill switch state." >&2
+  if [ "$ALIENKIND_SESSION_MODE" = "operator" ] || [ "$ALIENKIND_SESSION_MODE" = "builder" ]; then
+    if [[ "$COMMAND" =~ /tmp/alienkind-kill-level|keel-kill ]]; then
+      echo "BLOCKED by session mode: ${ALIENKIND_SESSION_MODE} mode cannot modify kill switch state." >&2
       exit 2
     fi
   fi
   # --- Builder-specific restrictions ---
-  if [ "$KEEL_SESSION_MODE" = "builder" ]; then
+  if [ "$ALIENKIND_SESSION_MODE" = "builder" ]; then
     # Builder cannot send external messages
     if [[ "$COMMAND" =~ send-telegram|discord-send|post-to-x|post-to-linkedin|send-email ]]; then
       echo "BLOCKED by session mode: builder mode cannot send external messages." >&2
@@ -185,9 +185,9 @@ fi
 # send-email.ts is the canonical path — it enforces sender guard (keel default,
 # --as-[human_first] required for [HUMAN]), kill switch, action evaluator, output guard, and auto-CC.
 if [[ "$COMMAND" =~ gmail.*messages/send|gmail.*v1/users/me/messages|google-gmail\.ts.*(send|reply) ]]; then
-  EMAIL_TERMINAL_ID="${KEEL_TERMINAL_ID:-$$}"
+  EMAIL_TERMINAL_ID="${ALIENKIND_TERMINAL_ID:-$$}"
   HASH=$(printf '%s' "${EMAIL_TERMINAL_ID}:${COMMAND}" | shasum | cut -d' ' -f1)
-  CONFIRM_FILE="/tmp/keel-email-api-confirm-${HASH}"
+  CONFIRM_FILE="/tmp/alienkind-email-api-confirm-${HASH}"
 
   if [ -f "$CONFIRM_FILE" ]; then
     CONFIRM_AGE=$(( $(date +%s) - $(stat -f%m "$CONFIRM_FILE" 2>/dev/null || echo 0) ))
@@ -228,8 +228,8 @@ if [[ "$COMMAND" =~ gmail.*messages/send|gmail.*v1/users/me/messages|google-gmai
   fi
 fi
 
-# KEEL_DIR for Node requires (needed by Layer 1.7 + commit quality check)
-# GUARD_KEEL_DIR already set at top of file
+# ALIENKIND_DIR for Node requires (needed by Layer 1.7 + commit quality check)
+# GUARD_ALIENKIND_DIR already set at top of file
 
 # --- Layer 1.7: Credential/exfiltration gate (7B semantic evaluation) ---
 # Replaces brittle regex that was blocking our own tools (credential-check.ts name
@@ -246,7 +246,7 @@ if ! [[ "$COMMAND" =~ ^git[[:space:]] ]] && ! [[ "$COMMAND" =~ war-room ]]; then
   shopt -u nocasematch
   if [ "$TOUCHES_EXTERNAL" = "true" ]; then
     CRED_RESULT=$(printf '%s' "$COMMAND" | node -e "
-      const { checkCredentialExfiltration } = require('${GUARD_KEEL_DIR}/scripts/lib/action-evaluator.ts');
+      const { checkCredentialExfiltration } = require('${GUARD_ALIENKIND_DIR}/scripts/lib/action-evaluator.ts');
       let cmd = '';
       process.stdin.on('data', c => cmd += c);
       process.stdin.on('end', async () => {
@@ -270,7 +270,7 @@ if ! [[ "$COMMAND" =~ ^git[[:space:]] ]] && ! [[ "$COMMAND" =~ war-room ]]; then
 
       # Same 2-minute confirm pattern
       CRED_HASH=$(printf '%s' "$COMMAND" | shasum | cut -d' ' -f1)
-      CRED_FILE="/tmp/keel-cred-confirm-${CRED_HASH}"
+      CRED_FILE="/tmp/alienkind-cred-confirm-${CRED_HASH}"
       if [ -f "$CRED_FILE" ]; then
         CRED_AGE=$(( $(date +%s) - $(stat -f%m "$CRED_FILE" 2>/dev/null || echo 0) ))
         if [ "$CRED_AGE" -lt 120 ]; then
@@ -325,7 +325,7 @@ fi
 
 # --- Layer 3: STATELESS commit-time gates (refactored 2026-04-10) ---
 #
-# Previously this layer read from /tmp/keel-build-cycle-*.json tracking file
+# Previously this layer read from /tmp/alienkind-build-cycle-*.json tracking file
 # (codeFiles[], verifyEvidence, readEvidence, integrateDocs) which accumulated
 # state across the session, never cleared on successful commits, and produced
 # catastrophic false positives that turned every commit into a 5-15 minute
@@ -353,7 +353,7 @@ fi
 # in the READ→WRITE→VERIFY rhythm. Binary gates live here; judgment lives
 # with the developer.
 if [[ "$COMMAND" =~ git[[:space:]]commit ]]; then
-  MANIFEST_FILE="${GUARD_KEEL_DIR}/config/WIRING_MANIFEST.md"
+  MANIFEST_FILE="${GUARD_ALIENKIND_DIR}/config/WIRING_MANIFEST.md"
   STAGED_DIFF=$(git diff --cached -U0 -- '*.ts' 2>/dev/null | grep '^+' | grep -v '^+++')
 
   # --- Gate: WIRING completeness — no write-only gaps ---
@@ -541,7 +541,7 @@ fi
 # After all blocking gates pass, the 7B checks if the commit message
 # accurately describes the staged diff. Advisory only — warns, doesn't block.
 if [[ "$COMMAND" =~ git[[:space:]]commit ]]; then
-  printf '%s' "$COMMAND" | node "${GUARD_KEEL_DIR}/scripts/hooks/semantic-commit-check.ts" 2>&1 | while read -r line; do
+  printf '%s' "$COMMAND" | node "${GUARD_ALIENKIND_DIR}/scripts/hooks/semantic-commit-check.ts" 2>&1 | while read -r line; do
     echo "$line" >&2
   done
 fi
@@ -558,7 +558,7 @@ if [[ "$COMMAND" =~ git[[:space:]]commit ]]; then
   if [[ "$GIT_TOPLEVEL" == *"[PROJECT]"* ]]; then
     STAGED_MIGRATIONS=$(git diff --cached --name-only -- 'migrations/*.sql' 2>/dev/null)
     if [ -n "$STAGED_MIGRATIONS" ]; then
-      WR_MIGRATION_LOG="${GUARD_KEEL_DIR}/logs/war-room-migrations.log"
+      WR_MIGRATION_LOG="${GUARD_ALIENKIND_DIR}/logs/war-room-migrations.log"
       UNEXECUTED=""
       for MIG in $STAGED_MIGRATIONS; do
         MIG_NAME=$(basename "$MIG")
@@ -570,7 +570,7 @@ if [[ "$COMMAND" =~ git[[:space:]]commit ]]; then
         echo "" >&2
         echo "COMMIT BLOCKED — MIGRATE: War room migration(s) staged but not executed." >&2
         echo "  Unexecuted:${UNEXECUTED}" >&2
-        echo "  Run: npx tsx ${GUARD_KEEL_DIR}/scripts/war-room-migrate.ts" >&2
+        echo "  Run: npx tsx ${GUARD_ALIENKIND_DIR}/scripts/war-room-migrate.ts" >&2
         echo "  Or:  psql \$WAR_ROOM_DB_URL -f migrations/<file>.sql" >&2
         echo "" >&2
         echo "  Code that references DB schema must not ship before the schema exists." >&2

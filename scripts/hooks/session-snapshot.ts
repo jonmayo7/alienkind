@@ -25,7 +25,7 @@ try {
 } catch {
   resolveRepoRoot = () => path.resolve(__dirname, '..', '..');
 }
-const KEEL_DIR = resolveRepoRoot();
+const ALIENKIND_DIR = resolveRepoRoot();
 
 async function main() {
   let input = '';
@@ -35,7 +35,7 @@ async function main() {
   try { hookData = JSON.parse(input); } catch { process.exit(0); }
 
   const sessionId = hookData.session_id || 'unknown';
-  const counterFile = `/tmp/keel-snapshot-counter-${sessionId}`;
+  const counterFile = `/tmp/alienkind-snapshot-counter-${sessionId}`;
   const stopReason = hookData.stop_hook_reason || hookData.reason || '';
 
   let count = 0;
@@ -53,7 +53,7 @@ async function main() {
   }
 
   try {
-    const { saveSnapshot, updateState, captureAutoSnapshot, writeSessionStateMd } = require(path.join(KEEL_DIR, 'scripts', 'lib', 'persistence.ts'));
+    const { saveSnapshot, updateState, captureAutoSnapshot, writeSessionStateMd } = require(path.join(ALIENKIND_DIR, 'scripts', 'lib', 'persistence.ts'));
 
     // Auto-update the session markers
     const auto = captureAutoSnapshot();

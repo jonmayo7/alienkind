@@ -20,7 +20,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const KEEL_DIR = path.resolve(__dirname, '../..');
+const ALIENKIND_DIR = path.resolve(__dirname, '../..');
 
 function getInput(): any {
   try {
@@ -46,7 +46,7 @@ function loadFileSlice(filepath: string, maxChars: number): string {
 function getRecentConversation(): string {
   // Load recent conversation from Supabase conversations table
   // Use synchronous approach: read from cache if available, else query
-  const cachePath = path.join(KEEL_DIR, 'logs', 'recent-conversation-cache.json');
+  const cachePath = path.join(ALIENKIND_DIR, 'logs', 'recent-conversation-cache.json');
   try {
     if (fs.existsSync(cachePath)) {
       const stat = fs.statSync(cachePath);
@@ -67,7 +67,7 @@ function getRecentConversation(): string {
   // Query Supabase for recent terminal conversation
   try {
     const { execSync } = require('child_process');
-    const envPath = path.join(KEEL_DIR, '.env');
+    const envPath = path.join(ALIENKIND_DIR, '.env');
     if (!fs.existsSync(envPath)) return '';
     const envContent = fs.readFileSync(envPath, 'utf8');
     let supabaseUrl = '', supabaseKey = '';
@@ -112,7 +112,7 @@ function main() {
   // Build grounding context
   const today = new Date().toISOString().split('T')[0];
   const dailySummary = loadFileSlice(
-    path.join(KEEL_DIR, 'memory', 'daily', `${today}.md`),
+    path.join(ALIENKIND_DIR, 'memory', 'daily', `${today}.md`),
     3000
   );
 

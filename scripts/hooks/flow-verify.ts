@@ -18,7 +18,7 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
-const KEEL_DIR = path.resolve(__dirname, '..', '..');
+const ALIENKIND_DIR = path.resolve(__dirname, '..', '..');
 
 // Read hook input
 let input;
@@ -32,7 +32,7 @@ const filePath = input.tool_input?.file_path || input.tool_input?.content?.file_
 if (!filePath) process.exit(0);
 
 // Only check scripts that could write to Supabase
-const relPath = filePath.replace(KEEL_DIR + '/', '');
+const relPath = filePath.replace(ALIENKIND_DIR + '/', '');
 if (!relPath.startsWith('scripts/')) process.exit(0);
 if (relPath.includes('/tests/')) process.exit(0);
 

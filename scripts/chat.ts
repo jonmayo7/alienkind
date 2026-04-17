@@ -81,7 +81,7 @@ function fireHooks(
           encoding: 'utf8',
           stdio: ['pipe', 'pipe', 'pipe'],
           timeout: 10000,
-          env: { ...process.env, KEEL_DIR: ROOT },
+          env: { ...process.env, ALIENKIND_DIR: ROOT },
         });
         if (result.trim()) outputs.push(result.trim());
       } catch (err: any) {

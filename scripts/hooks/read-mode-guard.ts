@@ -3,7 +3,7 @@
 /**
  * Read Mode Guard — PreToolUse hook for Read.
  *
- * Enforces KEEL_SESSION_MODE restrictions on file reads.
+ * Enforces ALIENKIND_SESSION_MODE restrictions on file reads.
  * Containment Fields — each mode gets 2 of 3 capabilities:
  *
  *   BUILDER mode blocks reads to:
@@ -33,7 +33,7 @@ try {
 } catch {
   resolveRepoRoot = () => path.resolve(__dirname, '..', '..');
 }
-const KEEL_DIR = resolveRepoRoot();
+const ALIENKIND_DIR = resolveRepoRoot();
 
 // Paths blocked per mode
 const BUILDER_BLOCKED = [
@@ -74,19 +74,19 @@ async function main() {
 
   if (!filePath) process.exit(0);
 
-  // Get relative path from KEEL_DIR
+  // Get relative path from ALIENKIND_DIR
   let relPath = filePath;
-  if (filePath.startsWith(KEEL_DIR + '/')) {
-    relPath = filePath.slice(KEEL_DIR.length + 1);
+  if (filePath.startsWith(ALIENKIND_DIR + '/')) {
+    relPath = filePath.slice(ALIENKIND_DIR.length + 1);
   }
 
   // Skip files outside the keel directory
-  if (filePath === relPath && !filePath.startsWith(KEEL_DIR)) {
+  if (filePath === relPath && !filePath.startsWith(ALIENKIND_DIR)) {
     process.exit(0);
   }
 
   // Check session mode
-  const sessionMode = process.env.KEEL_SESSION_MODE;
+  const sessionMode = process.env.ALIENKIND_SESSION_MODE;
   if (!sessionMode || sessionMode === 'analyst') {
     process.exit(0);
   }

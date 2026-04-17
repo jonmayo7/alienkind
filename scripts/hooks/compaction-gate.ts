@@ -23,7 +23,7 @@
  *   - memory/daily/YYYY-MM-DD.md
  *   - scripts/ground.sh (run, not read)
  *
- * Gate file: /tmp/keel-compaction-gate-{sessionId}.json
+ * Gate file: /tmp/alienkind-compaction-gate-{sessionId}.json
  * Consumed by: compaction-gate-enforce.ts (PreToolUse)
  *
  * Fires on: UserPromptSubmit
@@ -39,7 +39,7 @@ async function main() {
   try { hookData = JSON.parse(input); } catch { process.exit(0); }
 
   const sessionId = hookData.session_id || 'unknown';
-  const gateFile = `/tmp/keel-compaction-gate-${sessionId}.json`;
+  const gateFile = `/tmp/alienkind-compaction-gate-${sessionId}.json`;
 
   // Check if gate exists (set by compaction-gate-init.ts on SessionStart)
   let gateState = null;
@@ -108,7 +108,7 @@ async function main() {
 }
 
 function clearStaleReads(sessionId) {
-  const trackFile = `/tmp/keel-build-cycle-${sessionId}.json`;
+  const trackFile = `/tmp/alienkind-build-cycle-${sessionId}.json`;
   try {
     const tracking = JSON.parse(fs.readFileSync(trackFile, 'utf8'));
     if (tracking.filesRead) {
@@ -129,7 +129,7 @@ function clearStaleReads(sessionId) {
 }
 
 function checkMissing(sessionId) {
-  const trackFile = `/tmp/keel-build-cycle-${sessionId}.json`;
+  const trackFile = `/tmp/alienkind-build-cycle-${sessionId}.json`;
   let tracking = { filesRead: [] };
   try { tracking = JSON.parse(fs.readFileSync(trackFile, 'utf8')); } catch {}
   const filesRead = tracking.filesRead || [];
@@ -149,7 +149,7 @@ function checkMissing(sessionId) {
   }
 
   // Check Supabase boot queries (first-class boot element)
-  const supabaseMarker = `/tmp/keel-supabase-boot-${sessionId}.json`;
+  const supabaseMarker = `/tmp/alienkind-supabase-boot-${sessionId}.json`;
   try {
     const marker = JSON.parse(fs.readFileSync(supabaseMarker, 'utf8'));
     if (!marker.conversations) missing.push('Supabase: conversations query');

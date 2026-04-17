@@ -25,8 +25,8 @@ const { fork } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-const KEEL_DIR = path.resolve(__dirname, '..');
-const LOG_DIR = path.join(KEEL_DIR, 'logs');
+const ALIENKIND_DIR = path.resolve(__dirname, '..');
+const LOG_DIR = path.join(ALIENKIND_DIR, 'logs');
 
 // Ensure log directory exists
 fs.mkdirSync(LOG_DIR, { recursive: true });
@@ -110,7 +110,7 @@ const sendAlert = (text: string) => {
 // Populate process.env for downstream modules
 try {
   const { loadEnv } = require('./lib/shared.ts');
-  const env = loadEnv(path.join(KEEL_DIR, '.env'));
+  const env = loadEnv(path.join(ALIENKIND_DIR, '.env'));
   for (const [k, v] of Object.entries(env) as [string, string][]) {
     if (!process.env[k]) process.env[k] = v;
   }
@@ -370,7 +370,7 @@ function checkListenerHealth() {
 
 // --- Job runner (Phase 1: fork existing scripts) ---
 async function runNodeJob(jobDef, opts?: { recoveryContext?: 'missed' | 'retry' | null }) {
-  const scriptPath = path.resolve(KEEL_DIR, jobDef.script);
+  const scriptPath = path.resolve(ALIENKIND_DIR, jobDef.script);
   const args = jobDef.args || [];
 
   if (!fs.existsSync(scriptPath)) {
@@ -389,12 +389,12 @@ async function runNodeJob(jobDef, opts?: { recoveryContext?: 'missed' | 'retry' 
 
   // Intent #32: Recovery flag — tells jobs they're running in catch-up mode
   if (opts?.recoveryContext) {
-    childEnv.KEEL_RECOVERY_DATE = new Date().toISOString();
-    childEnv.KEEL_RECOVERY_TYPE = opts.recoveryContext;
-    log('INFO', `[runner] Recovery mode: ${opts.recoveryContext} — setting KEEL_RECOVERY_DATE`);
+    childEnv.ALIENKIND_RECOVERY_DATE = new Date().toISOString();
+    childEnv.ALIENKIND_RECOVERY_TYPE = opts.recoveryContext;
+    log('INFO', `[runner] Recovery mode: ${opts.recoveryContext} — setting ALIENKIND_RECOVERY_DATE`);
   } else {
-    delete childEnv.KEEL_RECOVERY_DATE;
-    delete childEnv.KEEL_RECOVERY_TYPE;
+    delete childEnv.ALIENKIND_RECOVERY_DATE;
+    delete childEnv.ALIENKIND_RECOVERY_TYPE;
   }
   if (jobDef.useSession) {
     // Persistent session via Supabase channel_sessions (single source of truth).
@@ -403,9 +403,9 @@ async function runNodeJob(jobDef, opts?: { recoveryContext?: 'missed' | 'retry' 
     const sessionChannel = jobDef.sessionChannel || `daemon_${jobDef.name}`;
     try {
       const session = await getChannelSession(sessionChannel, (level: string, msg: string) => log(level, msg));
-      childEnv.KEEL_DAEMON_SESSION_ID = session.sessionId;
-      childEnv.KEEL_DAEMON_SESSION_RESUME = session.isResume ? 'true' : '';
-      childEnv.KEEL_SESSION_CHANNEL = sessionChannel;
+      childEnv.ALIENKIND_DAEMON_SESSION_ID = session.sessionId;
+      childEnv.ALIENKIND_DAEMON_SESSION_RESUME = session.isResume ? 'true' : '';
+      childEnv.ALIENKIND_SESSION_CHANNEL = sessionChannel;
       log('INFO', `[runner] Session: ${session.sessionId} (${session.isResume ? 'resume' : 'new'}) [${sessionChannel}]`);
     } catch (err: any) {
       log('WARN', `[runner] Session lookup failed: ${err.message} — running stateless`);
@@ -418,13 +418,13 @@ async function runNodeJob(jobDef, opts?: { recoveryContext?: 'missed' | 'retry' 
   const daemonJobsPath = require.resolve('../config/daemon-jobs.ts');
   delete require.cache[daemonJobsPath];
   const { getJobMode } = require('../config/daemon-jobs.ts');
-  childEnv.KEEL_SESSION_MODE = getJobMode(jobDef.name);
+  childEnv.ALIENKIND_SESSION_MODE = getJobMode(jobDef.name);
 
-  log('INFO', `[runner] Forking: ${jobDef.script} [mode=${childEnv.KEEL_SESSION_MODE}] ${args.join(' ')}`);
+  log('INFO', `[runner] Forking: ${jobDef.script} [mode=${childEnv.ALIENKIND_SESSION_MODE}] ${args.join(' ')}`);
 
   return new Promise<void>((resolve, reject) => {
     const child = fork(scriptPath, args, {
-      cwd: KEEL_DIR,
+      cwd: ALIENKIND_DIR,
       env: childEnv,
       stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
       silent: true,
@@ -461,8 +461,8 @@ async function runNodeJob(jobDef, opts?: { recoveryContext?: 'missed' | 'retry' 
       }
 
       // Record successful session message for Supabase-backed persistent sessions
-      if (jobDef.useSession && code === 0 && childEnv.KEEL_SESSION_CHANNEL) {
-        recordSessionMessage(childEnv.KEEL_SESSION_CHANNEL, (level: string, msg: string) => log(level, msg)).catch(() => {});
+      if (jobDef.useSession && code === 0 && childEnv.ALIENKIND_SESSION_CHANNEL) {
+        recordSessionMessage(childEnv.ALIENKIND_SESSION_CHANNEL, (level: string, msg: string) => log(level, msg)).catch(() => {});
       }
 
       // Compaction detection: check if context was compressed during this job
@@ -493,7 +493,7 @@ async function runNodeJob(jobDef, opts?: { recoveryContext?: 'missed' | 'retry' 
         }
         log('INFO', `[runner] ${jobDef.name} completed (stdout: ${stdout.length}b)`);
         // Update Telegram session jobCount when shared session job completes
-        if (jobDef.useSession === 'telegram' && childEnv.KEEL_SESSION_SHARED === 'telegram') {
+        if (jobDef.useSession === 'telegram' && childEnv.ALIENKIND_SESSION_SHARED === 'telegram') {
           try {
             const tgStatePath = path.join(LOG_DIR, 'telegram-sessions.json');
             const tgState = JSON.parse(fs.readFileSync(tgStatePath, 'utf8'));
@@ -696,7 +696,7 @@ eventBus.on('file:add', async (event: any) => {
   log('INFO', `[event-bus:[DICTATION_PIPELINE]] Audio file detected: ${path.basename(event.path)}`);
 
   // Fork [DICTATION_PIPELINE]-process.ts directly for immediate processing
-  const sonarScript = path.resolve(KEEL_DIR, 'scripts', '[DICTATION_PIPELINE]-process.ts');
+  const sonarScript = path.resolve(ALIENKIND_DIR, 'scripts', '[DICTATION_PIPELINE]-process.ts');
   if (!fs.existsSync(sonarScript)) {
     log('WARN', '[event-bus:[DICTATION_PIPELINE]] [DICTATION_PIPELINE]-process.ts not found');
     return;
@@ -704,7 +704,7 @@ eventBus.on('file:add', async (event: any) => {
 
   try {
     const child = fork(sonarScript, [event.path], {
-      cwd: KEEL_DIR,
+      cwd: ALIENKIND_DIR,
       env: { ...process.env },
       stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
       silent: true,
@@ -793,7 +793,7 @@ async function runWorkChecks() {
       check.lastTriggered = now;
       workCheckRunning.add(check.name);
 
-      const scriptPath = path.resolve(KEEL_DIR, check.script);
+      const scriptPath = path.resolve(ALIENKIND_DIR, check.script);
       if (!fs.existsSync(scriptPath)) {
         log('WARN', `[work-checker] Script not found: ${check.script}`);
         workCheckRunning.delete(check.name);
@@ -803,7 +803,7 @@ async function runWorkChecks() {
       log('INFO', `[work-checker] ${check.name}: work detected, forking ${check.script}`);
 
       const child = fork(scriptPath, check.args || [], {
-        cwd: KEEL_DIR,
+        cwd: ALIENKIND_DIR,
         env: { ...process.env },
         stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
         silent: true,
@@ -892,7 +892,7 @@ function getInfraFilesToWatch(): string[] {
   const files = [...INFRA_FILES];
   // Also watch plist files (same logic as activate-gate.ts)
   try {
-    const configDir = path.join(KEEL_DIR, 'config');
+    const configDir = path.join(ALIENKIND_DIR, 'config');
     for (const f of fs.readdirSync(configDir)) {
       if (f.endsWith('.plist') && f.startsWith('com.example.') && !f.startsWith('com.example.studio2-')) {
         files.push(path.join(configDir, f));
@@ -934,7 +934,7 @@ async function checkConfigChanges(): Promise<void> {
           baseline.mtime = currentMtime;
           continue;
         }
-        const relPath = path.relative(KEEL_DIR, filePath);
+        const relPath = path.relative(ALIENKIND_DIR, filePath);
         await handleConfigChange(relPath);
         return; // only need to trigger once
       }
@@ -1052,7 +1052,7 @@ if (process.argv.includes('--once')) {
   let supabaseUrl, supabaseKey;
   try {
     const { loadEnv } = require('./lib/shared.ts');
-    const env = loadEnv(path.join(KEEL_DIR, '.env'));
+    const env = loadEnv(path.join(ALIENKIND_DIR, '.env'));
     supabaseUrl = env.SUPABASE_URL;
     supabaseKey = env.SUPABASE_SERVICE_KEY;
   } catch { /* ok — Supabase writes will be skipped */ }

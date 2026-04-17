@@ -10,12 +10,12 @@
 # This hook enforces INTEGRATE. The PostToolUse build-cycle.ts hook
 # enforces awareness of remaining steps during the work.
 
-KEEL_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+ALIENKIND_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 
 # --- Layer 1: Git-based doc drift detection ---
 # Check if any scripts, config, or hook files are modified in git
-MODIFIED=$(git -C "$KEEL_DIR" diff --name-only 2>/dev/null | grep -E '^(scripts/|config/|\.claude/)' | grep -v 'WIRING_MANIFEST' | grep -v 'BUILD_LOG')
-STAGED=$(git -C "$KEEL_DIR" diff --cached --name-only 2>/dev/null | grep -E '^(scripts/|config/|\.claude/)' | grep -v 'WIRING_MANIFEST' | grep -v 'BUILD_LOG')
+MODIFIED=$(git -C "$ALIENKIND_DIR" diff --name-only 2>/dev/null | grep -E '^(scripts/|config/|\.claude/)' | grep -v 'WIRING_MANIFEST' | grep -v 'BUILD_LOG')
+STAGED=$(git -C "$ALIENKIND_DIR" diff --cached --name-only 2>/dev/null | grep -E '^(scripts/|config/|\.claude/)' | grep -v 'WIRING_MANIFEST' | grep -v 'BUILD_LOG')
 
 CHANGED_FILES="${MODIFIED}${STAGED}"
 
@@ -23,14 +23,14 @@ if [ -n "$CHANGED_FILES" ]; then
   WARNINGS=""
 
   # Check if wiring manifest was updated
-  MANIFEST_CHANGED=$(git -C "$KEEL_DIR" diff --name-only 2>/dev/null | grep 'WIRING_MANIFEST')
-  MANIFEST_STAGED=$(git -C "$KEEL_DIR" diff --cached --name-only 2>/dev/null | grep 'WIRING_MANIFEST')
+  MANIFEST_CHANGED=$(git -C "$ALIENKIND_DIR" diff --name-only 2>/dev/null | grep 'WIRING_MANIFEST')
+  MANIFEST_STAGED=$(git -C "$ALIENKIND_DIR" diff --cached --name-only 2>/dev/null | grep 'WIRING_MANIFEST')
 
   if [ -z "$MANIFEST_CHANGED" ] && [ -z "$MANIFEST_STAGED" ]; then
     # Check if there are actually new file paths that need documenting
-    CODE_DIFF=$(git -C "$KEEL_DIR" diff -- '*.ts' 2>/dev/null | grep '^+' | grep -v '^+++')
+    CODE_DIFF=$(git -C "$ALIENKIND_DIR" diff -- '*.ts' 2>/dev/null | grep '^+' | grep -v '^+++')
     UNDOC_PATHS=""
-    MANIFEST_FILE="$KEEL_DIR/config/WIRING_MANIFEST.md"
+    MANIFEST_FILE="$ALIENKIND_DIR/config/WIRING_MANIFEST.md"
     if [ -n "$CODE_DIFF" ] && [ -f "$MANIFEST_FILE" ]; then
       for NP in $(printf '%s\n' "$CODE_DIFF" | grep -oE 'logs/[a-zA-Z0-9_-]+\.json' | sort -u); do
         if ! grep -q "$NP" "$MANIFEST_FILE" 2>/dev/null; then
@@ -52,8 +52,8 @@ if [ -n "$CHANGED_FILES" ]; then
 
   # Check if today's daily file was updated (source of truth for build documentation)
   TODAY_DATE=$(TZ='${TZ:-UTC}' date '+%Y-%m-%d')
-  DAILY_CHANGED=$(git -C "$KEEL_DIR" diff --name-only 2>/dev/null | grep "memory/daily/${TODAY_DATE}.md")
-  DAILY_STAGED=$(git -C "$KEEL_DIR" diff --cached --name-only 2>/dev/null | grep "memory/daily/${TODAY_DATE}.md")
+  DAILY_CHANGED=$(git -C "$ALIENKIND_DIR" diff --name-only 2>/dev/null | grep "memory/daily/${TODAY_DATE}.md")
+  DAILY_STAGED=$(git -C "$ALIENKIND_DIR" diff --cached --name-only 2>/dev/null | grep "memory/daily/${TODAY_DATE}.md")
 
   if [ -z "$DAILY_CHANGED" ] && [ -z "$DAILY_STAGED" ]; then
     WARNINGS="${WARNINGS}\n   → Today's daily file not updated. Document what was built in memory/daily/${TODAY_DATE}.md."
@@ -79,7 +79,7 @@ JQ=$(which jq 2>/dev/null || echo "/opt/homebrew/bin/jq")
 SESSION_ID=$(printf '%s' "$INPUT" | $JQ -r '.session_id // empty' 2>/dev/null)
 
 if [ -n "$SESSION_ID" ]; then
-  TRACK_FILE="/tmp/keel-build-cycle-${SESSION_ID}.json"
+  TRACK_FILE="/tmp/alienkind-build-cycle-${SESSION_ID}.json"
 
   if [ -f "$TRACK_FILE" ]; then
     CODE_COUNT=$(echo "$(cat "$TRACK_FILE")" | $JQ -r '.codeFiles | length' 2>/dev/null)

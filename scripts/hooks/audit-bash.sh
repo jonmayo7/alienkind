@@ -6,8 +6,8 @@
 #   - test: test scripts, test runners (proves happy + failure paths)
 # Both categories must be satisfied for full VERIFY compliance.
 
-KEEL_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
-AUDIT_LOG="${KEEL_DIR}/logs/audit.log"
+ALIENKIND_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+AUDIT_LOG="${ALIENKIND_DIR}/logs/audit.log"
 mkdir -p "$(dirname "$AUDIT_LOG")"
 
 # Read tool input from stdin
@@ -25,7 +25,7 @@ echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] [${TOOL}] ${COMMAND}" >> "$AUDIT_LOG"
 
 # --- Build cycle: detect and categorize verification commands ---
 if [ -n "$SESSION_ID" ]; then
-  TRACK_FILE="/tmp/keel-build-cycle-${KEEL_TERMINAL_ID:-${SESSION_ID}}.json"
+  TRACK_FILE="/tmp/alienkind-build-cycle-${ALIENKIND_TERMINAL_ID:-${SESSION_ID}}.json"
 
   if [ -f "$TRACK_FILE" ]; then
     VERIFY_TYPE=""
@@ -43,7 +43,7 @@ if [ -n "$SESSION_ID" ]; then
 
     # Test execution — proves happy + failure paths
     # Match both relative (node scripts/tests/) and absolute (node /Users/.../scripts/tests/) paths
-    if [[ "$COMMAND" =~ (node|tsx|npx[[:space:]]tsx|bash)[[:space:]](${KEEL_DIR}/)?scripts/tests/ ]]; then
+    if [[ "$COMMAND" =~ (node|tsx|npx[[:space:]]tsx|bash)[[:space:]](${ALIENKIND_DIR}/)?scripts/tests/ ]]; then
       VERIFY_TYPE="test"
     elif [[ "$COMMAND" =~ npm[[:space:]]test|npx[[:space:]]jest|npx[[:space:]]vitest|pytest|cargo[[:space:]]test|go[[:space:]]test ]]; then
       VERIFY_TYPE="test"
@@ -54,7 +54,7 @@ if [ -n "$SESSION_ID" ]; then
     fi
 
     # Flow integration tests — more specific than "test", overrides if matched
-    if [[ "$COMMAND" =~ (node|tsx|npx[[:space:]]tsx)[[:space:]](${KEEL_DIR}/)?scripts/tests/test-.*-flow ]]; then
+    if [[ "$COMMAND" =~ (node|tsx|npx[[:space:]]tsx)[[:space:]](${ALIENKIND_DIR}/)?scripts/tests/test-.*-flow ]]; then
       VERIFY_TYPE="flow"
     fi
 
@@ -127,7 +127,7 @@ if [ -n "$SESSION_ID" ] && [ -f "$TRACK_FILE" ]; then
   if [[ "$COMMAND" =~ git[[:space:]]+commit ]]; then
     # Check if HEAD advanced recently (within last 10 seconds)
     if command -v git >/dev/null 2>&1; then
-      LAST_COMMIT_TS=$(cd "$KEEL_DIR" 2>/dev/null && git log -1 --format=%ct 2>/dev/null)
+      LAST_COMMIT_TS=$(cd "$ALIENKIND_DIR" 2>/dev/null && git log -1 --format=%ct 2>/dev/null)
       NOW_TS=$(date +%s)
       if [ -n "$LAST_COMMIT_TS" ] && [ "$((NOW_TS - LAST_COMMIT_TS))" -lt 10 ]; then
         # Clear codeFiles, integrateDocs, and reset verifyEvidence. Leave
@@ -151,7 +151,7 @@ elif [[ "$COMMAND" =~ git[[:space:]](checkout|switch)[[:space:]] ]]; then
   OPERATION="switching branch"
 elif [[ "$COMMAND" =~ git[[:space:]](merge|rebase|cherry-pick) ]]; then
   OPERATION="merging"
-elif [[ "$COMMAND" =~ (node|tsx|npx[[:space:]]tsx|bash)[[:space:]](${KEEL_DIR}/)?scripts/tests/ ]]; then
+elif [[ "$COMMAND" =~ (node|tsx|npx[[:space:]]tsx|bash)[[:space:]](${ALIENKIND_DIR}/)?scripts/tests/ ]]; then
   OPERATION="running tests"
 elif [[ "$COMMAND" =~ npm[[:space:]]test|npx[[:space:]]jest|npx[[:space:]]vitest ]]; then
   OPERATION="running tests"
@@ -176,7 +176,7 @@ if [ -n "$OPERATION" ]; then
   MY_PID=${PARENT_PID:-$$}
   node -e "
     try {
-      const m = require('${KEEL_DIR}/scripts/lib/mycelium.ts');
+      const m = require('${ALIENKIND_DIR}/scripts/lib/mycelium.ts');
       m.updateActivity('terminal-${MY_PID}', '${OPERATION}', ${MY_PID});
     } catch {}
   " 2>/dev/null &

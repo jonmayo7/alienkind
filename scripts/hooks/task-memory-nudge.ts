@@ -28,12 +28,12 @@ try {
 } catch {
   resolveRepoRoot = () => path.resolve(__dirname, '..', '..');
 }
-const KEEL_DIR = resolveRepoRoot();
+const ALIENKIND_DIR = resolveRepoRoot();
 const STALENESS_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes
 
 function getDailyFilePath(): string {
   const today = new Date().toISOString().split('T')[0];
-  return path.join(KEEL_DIR, 'memory', 'daily', `${today}.md`);
+  return path.join(ALIENKIND_DIR, 'memory', 'daily', `${today}.md`);
 }
 
 async function main() {

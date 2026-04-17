@@ -30,8 +30,8 @@ const { installRejectionHandler } = require('./lib/security.ts');
 
 installRejectionHandler();
 
-const KEEL_DIR = path.resolve(__dirname, '..');
-const LOG_DIR = path.join(KEEL_DIR, 'logs');
+const ALIENKIND_DIR = path.resolve(__dirname, '..');
+const LOG_DIR = path.join(ALIENKIND_DIR, 'logs');
 
 const now = new Date();
 const DATE = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -39,13 +39,13 @@ const HOUR = now.getHours();
 const MINUTE = now.getMinutes();
 const TIME = `${String(HOUR).padStart(2, '0')}:${String(MINUTE).padStart(2, '0')}`;
 const LOG_FILE = path.join(LOG_DIR, `operational-pulse-${DATE}.log`);
-const DAILY_FILE = path.join(KEEL_DIR, 'memory', 'daily', `${DATE}.md`);
+const DAILY_FILE = path.join(ALIENKIND_DIR, 'memory', 'daily', `${DATE}.md`);
 
 fs.mkdirSync(LOG_DIR, { recursive: true });
 
 // Load env for Telegram
 const { loadEnv, requireEnv } = require('./lib/shared.ts');
-Object.assign(process.env, loadEnv(path.join(KEEL_DIR, '.env')));
+Object.assign(process.env, loadEnv(path.join(ALIENKIND_DIR, '.env')));
 const { sendTelegram: _sendTelegramAsync, processQueue } = require('./lib/telegram.ts');
 const { formatAlert } = require('./lib/alert-format.ts');
 
@@ -140,9 +140,9 @@ async function checkCalendar(): Promise<{ meetingDetected: boolean; briefTrigger
       // Trigger pre-call brief as child process
       log(`Triggering pre-call brief for "${event.title}"`);
       try {
-        const briefScript = path.join(KEEL_DIR, 'scripts', 'pre-call-brief.ts');
+        const briefScript = path.join(ALIENKIND_DIR, 'scripts', 'pre-call-brief.ts');
         const child = fork(briefScript, [event.title, event.time], {
-          cwd: KEEL_DIR,
+          cwd: ALIENKIND_DIR,
           stdio: 'ignore',
           detached: true,
         });
@@ -374,7 +374,7 @@ function saveMentionsState(state: MentionsState): void {
 async function checkXMentions(): Promise<string[]> {
   const { getMentions } = require('./post-to-x.ts');
   const { loadEnv: _loadEnv } = require('./lib/shared.ts');
-  const env = _loadEnv(path.join(KEEL_DIR, '.env'));
+  const env = _loadEnv(path.join(ALIENKIND_DIR, '.env'));
   Object.assign(process.env, env);
 
   const state = loadMentionsState();
@@ -395,9 +395,9 @@ async function checkXMentions(): Promise<string[]> {
   }
 
   // Check [@PARTNER_HANDLE] mentions
-  if (env.KEEL_X_ACCESS_TOKEN) {
-    const keelEnv = { ...env, X_ACCESS_TOKEN: env.KEEL_X_ACCESS_TOKEN, X_ACCESS_TOKEN_SECRET: env.KEEL_X_ACCESS_TOKEN_SECRET };
-    const keelUserId = env.KEEL_X_ACCESS_TOKEN.split('-')[0];
+  if (env.ALIENKIND_X_ACCESS_TOKEN) {
+    const keelEnv = { ...env, X_ACCESS_TOKEN: env.ALIENKIND_X_ACCESS_TOKEN, X_ACCESS_TOKEN_SECRET: env.ALIENKIND_X_ACCESS_TOKEN_SECRET };
+    const keelUserId = env.ALIENKIND_X_ACCESS_TOKEN.split('-')[0];
     try {
       const keelResult = await getMentions(keelEnv, keelUserId, state.keel_since_id);
       if (keelResult.data && keelResult.data.length > 0) {
@@ -434,13 +434,13 @@ function runRegressionTests(): void {
   const failures: string[] = [];
 
   for (const suite of testSuites) {
-    const suitePath = path.join(KEEL_DIR, 'scripts', 'tests', suite);
+    const suitePath = path.join(ALIENKIND_DIR, 'scripts', 'tests', suite);
     if (!fs.existsSync(suitePath)) {
       log(`WARN: Test suite not found: ${suite}`);
       continue;
     }
     try {
-      const out = execSync(`node "${suitePath}"`, { timeout: 30000, cwd: KEEL_DIR, stdio: 'pipe' }).toString();
+      const out = execSync(`node "${suitePath}"`, { timeout: 30000, cwd: ALIENKIND_DIR, stdio: 'pipe' }).toString();
       const passMatch = out.match(/(\d+)\s+passed/);
       const failMatch = out.match(/(\d+)\s+failed/);
       if (passMatch) totalPass += parseInt(passMatch[1]);
@@ -550,7 +550,7 @@ log(`Operational pulse starting: hour=${HOUR}, minute=${MINUTE}`);
   // 6. OAuth token health check (once daily, first pulse before 5 AM)
   if (HOUR < 5) {
     try {
-      const envContent = fs.readFileSync(path.join(KEEL_DIR, '.env'), 'utf8');
+      const envContent = fs.readFileSync(path.join(ALIENKIND_DIR, '.env'), 'utf8');
       const tokenChecks = [
         { name: 'CLAUDE_OAUTH_TOKEN_PRIMARY', label: 'primary', configDir: '__REPO_ROOT__/.claude' },
         { name: 'CLAUDE_OAUTH_TOKEN_SECONDARY', label: 'secondary', configDir: '__REPO_ROOT__/.claude-auto' },
@@ -576,7 +576,7 @@ log(`Operational pulse starting: hour=${HOUR}, minute=${MINUTE}`);
           testEnv.CLAUDE_CODE_OAUTH_TOKEN = match[1].trim();
           testEnv.CLAUDE_CONFIG_DIR = configDir;
           const result = execSync('echo "OK" | claude -p --max-turns 1 2>&1', {
-            env: testEnv, timeout: 30000, cwd: KEEL_DIR,
+            env: testEnv, timeout: 30000, cwd: ALIENKIND_DIR,
           }).toString().trim();
           if (result.toLowerCase().includes('not logged in') || result.toLowerCase().includes('authentication')) {
             const msg = formatAlert({
@@ -779,7 +779,7 @@ log(`Operational pulse starting: hour=${HOUR}, minute=${MINUTE}`);
 
   // 14. Process circulation Telegram outbox (pump runs in builder mode, can't send directly)
   try {
-    const outboxFile = path.join(KEEL_DIR, 'logs', 'circulation-telegram-outbox.txt');
+    const outboxFile = path.join(ALIENKIND_DIR, 'logs', 'circulation-telegram-outbox.txt');
     if (fs.existsSync(outboxFile)) {
       const content = fs.readFileSync(outboxFile, 'utf-8').trim();
       if (content) {

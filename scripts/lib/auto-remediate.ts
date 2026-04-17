@@ -19,7 +19,7 @@ const fs = require('fs');
 const path = require('path');
 const { launchctlRunning } = require('./service-health.ts');
 
-const KEEL_DIR = path.resolve(__dirname, '..', '..');
+const ALIENKIND_DIR = path.resolve(__dirname, '..', '..');
 
 async function logRemediation(entry: {
   issue_type: string;
@@ -34,7 +34,7 @@ async function logRemediation(entry: {
     await supabasePost('remediation_log', entry);
   } catch {}
   try {
-    fs.appendFileSync(path.join(KEEL_DIR, 'logs', 'remediation.log'),
+    fs.appendFileSync(path.join(ALIENKIND_DIR, 'logs', 'remediation.log'),
       `[${new Date().toISOString()}] ${entry.outcome}: ${entry.issue_type} — ${entry.action_taken}\n`);
   } catch {}
 }
@@ -64,7 +64,7 @@ async function remediateServices(log: (msg: string) => void): Promise<string[]> 
 
 async function remediateStaleLocks(log: (msg: string) => void): Promise<string[]> {
   const remediations: string[] = [];
-  const lockFiles = [path.join(KEEL_DIR, 'logs', 'session-lock.json'), path.join(KEEL_DIR, 'logs', 'keel-session-lock.json')];
+  const lockFiles = [path.join(ALIENKIND_DIR, 'logs', 'session-lock.json'), path.join(ALIENKIND_DIR, 'logs', 'keel-session-lock.json')];
 
   for (const lockFile of lockFiles) {
     try {
@@ -84,7 +84,7 @@ async function remediateStaleLocks(log: (msg: string) => void): Promise<string[]
 async function remediateLogs(log: (msg: string) => void): Promise<string[]> {
   const remediations: string[] = [];
   try {
-    const logDir = path.join(KEEL_DIR, 'logs');
+    const logDir = path.join(ALIENKIND_DIR, 'logs');
     for (const file of fs.readdirSync(logDir)) {
       if (!file.endsWith('.log') && !file.endsWith('.jsonl')) continue;
       const filePath = path.join(logDir, file);

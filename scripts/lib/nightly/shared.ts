@@ -24,12 +24,12 @@ const { formatAlert } = require('../alert-format.ts');
 
 // ─── Config ───
 
-const KEEL_DIR = path.resolve(__dirname, '..', '..', '..');
-const LOG_DIR = path.join(KEEL_DIR, 'logs');
+const ALIENKIND_DIR = path.resolve(__dirname, '..', '..', '..');
+const LOG_DIR = path.join(ALIENKIND_DIR, 'logs');
 const CLAUDE_BIN = PATHS.claude;
 
 // Load .env via shared module (applies secret normalization + permission hardening)
-const env = loadEnv(path.join(KEEL_DIR, '.env'));
+const env = loadEnv(path.join(ALIENKIND_DIR, '.env'));
 Object.assign(process.env, env);
 
 const now = new Date();
@@ -55,10 +55,10 @@ const ALLOWED_TOOLS_WEEKLY = 'Bash(curl *),Bash(date *),Bash(ls *),Bash(wc *),Ba
 const FALLIBILISM_RETIREMENT_DAYS = 30; // also in constants.ts FALLIBILISM block
 
 // Intent #32: Recovery mode
-const isRecoveryMode = !!process.env.KEEL_RECOVERY_DATE;
-const recoveryType = process.env.KEEL_RECOVERY_TYPE || 'unknown';
+const isRecoveryMode = !!process.env.ALIENKIND_RECOVERY_DATE;
+const recoveryType = process.env.ALIENKIND_RECOVERY_TYPE || 'unknown';
 const recoveryPreamble = isRecoveryMode
-  ? `\nRECOVERY MODE: You are running in catch-up mode (${recoveryType === 'missed' ? 'missed job — daemon was down at scheduled time' : 'retry after previous failure'}). Recovery timestamp: ${process.env.KEEL_RECOVERY_DATE}. Current time: ${TIME}. You may be running hours after your normal schedule. Skip any time-sensitive real-time checks. Focus on analysis and synthesis of existing data.\n`
+  ? `\nRECOVERY MODE: You are running in catch-up mode (${recoveryType === 'missed' ? 'missed job — daemon was down at scheduled time' : 'retry after previous failure'}). Recovery timestamp: ${process.env.ALIENKIND_RECOVERY_DATE}. Current time: ${TIME}. You may be running hours after your normal schedule. Skip any time-sensitive real-time checks. Focus on analysis and synthesis of existing data.\n`
   : '';
 
 // Known large tables for streaming backup
@@ -445,7 +445,7 @@ function loadIdentityKernelContent(): string {
   const identityFiles = ['identity/character.md', 'identity/commitments.md', 'identity/orientation.md'];
   const sections: string[] = [];
   for (const sf of identityFiles) {
-    const fp = path.join(KEEL_DIR, sf);
+    const fp = path.join(ALIENKIND_DIR, sf);
     try {
       const content = fs.readFileSync(fp, 'utf-8');
       if (content && content.trim().length > 0) {
@@ -483,8 +483,8 @@ async function attemptGrowthCycle({ promptText, maxTurns, overallTimeout, noOutp
     // on 2026-04-12. This race ensures the session is capped at overallTimeout
     // regardless of activity.
     // Session persistence: daemon passes session ID via env vars.
-    const daemonSessionId = process.env.KEEL_DAEMON_SESSION_ID;
-    const daemonSessionResume = process.env.KEEL_DAEMON_SESSION_RESUME === 'true';
+    const daemonSessionId = process.env.ALIENKIND_DAEMON_SESSION_ID;
+    const daemonSessionResume = process.env.ALIENKIND_DAEMON_SESSION_RESUME === 'true';
 
     const messagePromise = processMessage(promptText, {
       channelConfig: CHANNELS.nightly,
@@ -609,7 +609,7 @@ async function attemptGrowthCycle({ promptText, maxTurns, overallTimeout, noOutp
 
 module.exports = {
   // Config
-  KEEL_DIR, LOG_DIR, CLAUDE_BIN, DATE, TIME, DAY_OF_WEEK, LOG_FILE,
+  ALIENKIND_DIR, LOG_DIR, CLAUDE_BIN, DATE, TIME, DAY_OF_WEEK, LOG_FILE,
   SKIP_BACKUP, DIGEST_FILE,
   SUPABASE_URL, SUPABASE_SERVICE_KEY,
   TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, TELEGRAM_ALERTS_CHAT_ID,

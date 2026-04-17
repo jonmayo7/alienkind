@@ -23,7 +23,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const KEEL_DIR = path.resolve(__dirname, '..', '..');
+const ALIENKIND_DIR = path.resolve(__dirname, '..', '..');
 const CONTEXT_LIMIT_TOKENS = 1_000_000;
 // Rough approximation: 1 token ≈ 4 characters for English text.
 // Claude's tokenizer varies, but this is close enough for diagnostics.
@@ -62,7 +62,7 @@ function measureFile(filePath: string, label: string, category: FileEntry['categ
     const content = fs.readFileSync(filePath, 'utf8');
     const bytes = Buffer.byteLength(content, 'utf8');
     return {
-      path: filePath.replace(KEEL_DIR + '/', ''),
+      path: filePath.replace(ALIENKIND_DIR + '/', ''),
       label,
       bytes,
       tokens: Math.ceil(bytes / CHARS_PER_TOKEN),
@@ -81,7 +81,7 @@ function parseImports(claudeMdPath: string): string[] {
     for (const line of content.split('\n')) {
       const match = line.match(/^@(.+\.md)\s*$/);
       if (match) {
-        imports.push(path.resolve(KEEL_DIR, match[1]));
+        imports.push(path.resolve(ALIENKIND_DIR, match[1]));
       }
     }
     return imports;
@@ -104,7 +104,7 @@ function parseHooks(settingsPath: string): HookEntry[] {
         const scripts: string[] = [];
         for (const h of hookList) {
           if (h.command) {
-            scripts.push(h.command.replace(KEEL_DIR + '/', '').replace('__REPO_ROOT__/', ''));
+            scripts.push(h.command.replace(ALIENKIND_DIR + '/', '').replace('__REPO_ROOT__/', ''));
           }
         }
         if (scripts.length > 0) {
@@ -123,7 +123,7 @@ function getDailyFilePath(): string {
   const yyyy = now.getFullYear();
   const mm = String(now.getMonth() + 1).padStart(2, '0');
   const dd = String(now.getDate()).padStart(2, '0');
-  return path.join(KEEL_DIR, 'memory', 'daily', `${yyyy}-${mm}-${dd}.md`);
+  return path.join(ALIENKIND_DIR, 'memory', 'daily', `${yyyy}-${mm}-${dd}.md`);
 }
 
 function generateSuggestions(report: DiagnosticReport): string[] {
@@ -187,11 +187,11 @@ function runDiagnostic(): DiagnosticReport {
   const bootFiles: FileEntry[] = [];
 
   // 1. CLAUDE.md
-  const claudeMd = measureFile(path.join(KEEL_DIR, 'CLAUDE.md'), 'CLAUDE.md (operational identity)', 'boot');
+  const claudeMd = measureFile(path.join(ALIENKIND_DIR, 'CLAUDE.md'), 'CLAUDE.md (operational identity)', 'boot');
   if (claudeMd) bootFiles.push(claudeMd);
 
   // 2. @imported identity kernel files
-  const imports = parseImports(path.join(KEEL_DIR, 'CLAUDE.md'));
+  const imports = parseImports(path.join(ALIENKIND_DIR, 'CLAUDE.md'));
   for (const imp of imports) {
     const label = `@import: ${path.basename(imp)}`;
     const entry = measureFile(imp, label, 'identity');
@@ -218,7 +218,7 @@ function runDiagnostic(): DiagnosticReport {
   if (autoMemory) bootFiles.push(autoMemory);
 
   // 6. Hooks
-  const settingsPath = path.join(KEEL_DIR, '.claude', 'settings.local.json');
+  const settingsPath = path.join(ALIENKIND_DIR, '.claude', 'settings.local.json');
   const hooks = parseHooks(settingsPath);
 
   // Calculate totals

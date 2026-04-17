@@ -25,7 +25,7 @@ const path = require('path');
 const fs = require('fs');
 const { taintCheck, channelTrustTier } = require('./taint-tracker.ts');
 
-const KEEL_DIR = path.resolve(__dirname, '../..');
+const ALIENKIND_DIR = path.resolve(__dirname, '../..');
 
 // ============================================================
 // CREDENTIAL PATTERNS — catch secrets before they leave

@@ -23,7 +23,7 @@ try {
 } catch {
   resolveRepoRoot = () => path.resolve(__dirname, '..', '..');
 }
-const KEEL_DIR = resolveRepoRoot();
+const ALIENKIND_DIR = resolveRepoRoot();
 
 async function main() {
   let input = '';
@@ -37,15 +37,15 @@ async function main() {
 
   if (!filePath) process.exit(0);
 
-  // Get relative path from KEEL_DIR
+  // Get relative path from ALIENKIND_DIR
   let relPath = filePath;
-  if (filePath.startsWith(KEEL_DIR + '/')) {
-    relPath = filePath.slice(KEEL_DIR.length + 1);
+  if (filePath.startsWith(ALIENKIND_DIR + '/')) {
+    relPath = filePath.slice(ALIENKIND_DIR.length + 1);
   }
 
   // Session-level tracking file
-  const terminalId = process.env.KEEL_TERMINAL_ID || hookData.session_id || process.ppid || 'unknown';
-  const trackFile = `/tmp/keel-build-cycle-${terminalId}.json`;
+  const terminalId = process.env.ALIENKIND_TERMINAL_ID || hookData.session_id || process.ppid || 'unknown';
+  const trackFile = `/tmp/alienkind-build-cycle-${terminalId}.json`;
 
   let tracking = {
     codeFiles: [],

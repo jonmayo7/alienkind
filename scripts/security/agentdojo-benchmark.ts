@@ -28,22 +28,22 @@ process.env.TZ = TIMEZONE;
 const path = require('path');
 const fs = require('fs');
 
-const KEEL_DIR = path.resolve(__dirname, '../..');
+const ALIENKIND_DIR = path.resolve(__dirname, '../..');
 const { loadEnv, createLogger } = require('../lib/shared.ts');
 
 const now = new Date();
 const DATE = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-const LOG_DIR = path.join(KEEL_DIR, 'logs');
+const LOG_DIR = path.join(ALIENKIND_DIR, 'logs');
 fs.mkdirSync(LOG_DIR, { recursive: true });
 const LOG_FILE = path.join(LOG_DIR, `agentdojo-benchmark-${DATE}.log`);
 const { log } = createLogger(LOG_FILE);
 
-const env = loadEnv(path.join(KEEL_DIR, '.env'));
+const env = loadEnv(path.join(ALIENKIND_DIR, '.env'));
 Object.assign(process.env, env);
 
 const VERBOSE = process.argv.includes('--verbose');
 const FORCE = process.argv.includes('--force');
-const RESULTS_FILE = path.join(KEEL_DIR, 'logs', 'agentdojo-results.json');
+const RESULTS_FILE = path.join(ALIENKIND_DIR, 'logs', 'agentdojo-results.json');
 
 // Monthly gate: only runs on the 1st of each month (or with --force)
 if (!FORCE) {

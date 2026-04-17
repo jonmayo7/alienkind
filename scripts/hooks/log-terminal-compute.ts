@@ -15,8 +15,8 @@ const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
 
-const KEEL_DIR = path.resolve(__dirname, '..', '..');
-const ENV_PATH = path.join(KEEL_DIR, '.env');
+const ALIENKIND_DIR = path.resolve(__dirname, '..', '..');
+const ENV_PATH = path.join(ALIENKIND_DIR, '.env');
 
 function loadEnv(): Record<string, string> {
   const env: Record<string, string> = {};
@@ -138,7 +138,7 @@ async function main() {
   if (!sessionId || !transcriptPath) process.exit(0);
 
   // Session-level dedup: one compute log per session
-  const markerFile = `/tmp/keel-terminal-compute-${sessionId}`;
+  const markerFile = `/tmp/alienkind-terminal-compute-${sessionId}`;
   if (fs.existsSync(markerFile)) process.exit(0);
 
   // Write marker immediately (before async work)

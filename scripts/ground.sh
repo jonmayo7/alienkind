@@ -13,8 +13,8 @@
 # Add or remove sections as needed for your infrastructure.
 
 # ─── Resolve repo root ──────────────────────────────────────────────────────
-# Uses KEEL_DIR env var if set, otherwise resolves from script location
-KEEL_DIR="${KEEL_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
+# Uses ALIENKIND_DIR env var if set, otherwise resolves from script location
+ALIENKIND_DIR="${ALIENKIND_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
 TODAY=$(TZ="${TZ:-UTC}" date '+%Y-%m-%d')
 
 # ─── Color palette ──────────────────────────────────────────────────────────
@@ -31,8 +31,8 @@ C_MISTAKES='\033[91m'     # Bright red — warnings
 
 # ─── Load environment ───────────────────────────────────────────────────────
 # Load .env for database credentials and API keys
-if [ -f "$KEEL_DIR/.env" ]; then
-  export $(grep -v '^#' "$KEEL_DIR/.env" | grep -v '^$' | xargs)
+if [ -f "$ALIENKIND_DIR/.env" ]; then
+  export $(grep -v '^#' "$ALIENKIND_DIR/.env" | grep -v '^$' | xargs)
 fi
 
 NOW=$(TZ="${TZ:-UTC}" date '+%Y-%m-%d %H:%M:%S %Z')
@@ -86,7 +86,7 @@ echo ""
 
 # ─── LAST HEARTBEAT ─────────────────────────────────────────────────────────
 # Check when the last autonomous heartbeat completed
-HEARTBEAT_LOG="${KEEL_DIR}/logs/heartbeat-${TODAY}.log"
+HEARTBEAT_LOG="${ALIENKIND_DIR}/logs/heartbeat-${TODAY}.log"
 if [ -f "$HEARTBEAT_LOG" ]; then
   LAST_BEAT=$(grep "Heartbeat completed" "$HEARTBEAT_LOG" | tail -1)
   if [ -n "$LAST_BEAT" ]; then
@@ -103,7 +103,7 @@ echo ""
 
 # ─── GIT STATUS ──────────────────────────────────────────────────────────────
 # Current branch, modifications, and last commit
-cd "$KEEL_DIR" 2>/dev/null
+cd "$ALIENKIND_DIR" 2>/dev/null
 BRANCH=$(git branch --show-current 2>/dev/null)
 MODIFIED=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
 LAST_COMMIT=$(git log --oneline -1 2>/dev/null)
@@ -113,7 +113,7 @@ echo ""
 # ─── DAILY FILE ──────────────────────────────────────────────────────────────
 # The daily memory file is the canonical record of what happened today.
 # CUSTOMIZE: Adjust the path to match your memory directory structure.
-DAILY_FILE="${KEEL_DIR}/memory/daily/${TODAY}.md"
+DAILY_FILE="${ALIENKIND_DIR}/memory/daily/${TODAY}.md"
 if [ -f "$DAILY_FILE" ]; then
   DAILY_LINES=$(wc -l < "$DAILY_FILE" | tr -d ' ')
   printf "${C_MEMORY}Daily memory:${C_RESET} ${DAILY_FILE} (${DAILY_LINES} lines)\n"
@@ -132,7 +132,7 @@ echo ""
 # display today's events here.
 # CUSTOMIZE: Enable this section if you wire a calendar integration.
 JQ=$(which jq 2>/dev/null || echo "/opt/homebrew/bin/jq")
-CAL_CACHE="${KEEL_DIR}/logs/calendar-cache.json"
+CAL_CACHE="${ALIENKIND_DIR}/logs/calendar-cache.json"
 if [ -f "$CAL_CACHE" ] && [ -s "$CAL_CACHE" ] && [ -x "$JQ" ]; then
   CAL_DATE=$($JQ -r '.date // ""' "$CAL_CACHE" 2>/dev/null)
   if [ "$CAL_DATE" = "$TODAY" ]; then
@@ -151,7 +151,7 @@ echo ""
 # Estimate how much of the context window is consumed by boot files.
 # CUSTOMIZE: Update the file list to match your identity/boot files.
 BOOT_LINES=0
-for f in "$KEEL_DIR/CLAUDE.md" "$KEEL_DIR/identity/character.md" "$KEEL_DIR/identity/commitments.md" "$KEEL_DIR/identity/orientation.md" "$KEEL_DIR/identity/harness.md" "$DAILY_FILE"; do
+for f in "$ALIENKIND_DIR/CLAUDE.md" "$ALIENKIND_DIR/identity/character.md" "$ALIENKIND_DIR/identity/commitments.md" "$ALIENKIND_DIR/identity/orientation.md" "$ALIENKIND_DIR/identity/harness.md" "$DAILY_FILE"; do
   [ -f "$f" ] && BOOT_LINES=$((BOOT_LINES + $(wc -l < "$f" | tr -d ' ')))
 done
 # Rough token estimate: ~20 tokens per line
@@ -167,7 +167,7 @@ echo ""
 
 # ─── WIRING MANIFEST ────────────────────────────────────────────────────────
 # Check for data flow documentation gaps
-MANIFEST="$KEEL_DIR/config/WIRING_MANIFEST.md"
+MANIFEST="$ALIENKIND_DIR/config/WIRING_MANIFEST.md"
 if [ -f "$MANIFEST" ]; then
   OPEN_GAPS=$(grep -c '| \*\*WRITE-ONLY\*\*' "$MANIFEST" 2>/dev/null)
   if [ -z "$OPEN_GAPS" ] || [ "$OPEN_GAPS" = "0" ]; then

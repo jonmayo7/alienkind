@@ -34,7 +34,7 @@ try {
 } catch {
   resolveRepoRoot = () => path.resolve(__dirname, '..', '..');
 }
-const KEEL_DIR = resolveRepoRoot();
+const ALIENKIND_DIR = resolveRepoRoot();
 
 // Memory files where verification matters
 const MEMORY_PATTERNS = [
@@ -153,8 +153,8 @@ async function main() {
 
   // Get relative path
   let relPath = filePath;
-  if (filePath.startsWith(KEEL_DIR + '/')) {
-    relPath = filePath.slice(KEEL_DIR.length + 1);
+  if (filePath.startsWith(ALIENKIND_DIR + '/')) {
+    relPath = filePath.slice(ALIENKIND_DIR.length + 1);
   }
 
   // Only enforce on memory files
@@ -172,7 +172,7 @@ async function main() {
 
   // Load tracking file
   const sessionId = hookData.session_id || process.ppid || 'unknown';
-  const trackFile = `/tmp/keel-build-cycle-${sessionId}.json`;
+  const trackFile = `/tmp/alienkind-build-cycle-${sessionId}.json`;
 
   let tracking;
   try {

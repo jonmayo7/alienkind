@@ -25,17 +25,17 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
-const KEEL_DIR = path.resolve(__dirname, '../..');
+const ALIENKIND_DIR = path.resolve(__dirname, '../..');
 const { loadEnv, createLogger } = require('../lib/shared.ts');
 
 const now = new Date();
 const DATE = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-const LOG_DIR = path.join(KEEL_DIR, 'logs');
+const LOG_DIR = path.join(ALIENKIND_DIR, 'logs');
 fs.mkdirSync(LOG_DIR, { recursive: true });
 const LOG_FILE = path.join(LOG_DIR, `threat-hunter-${DATE}.log`);
 const { log } = createLogger(LOG_FILE);
 
-const env = loadEnv(path.join(KEEL_DIR, '.env'));
+const env = loadEnv(path.join(ALIENKIND_DIR, '.env'));
 Object.assign(process.env, env);
 const { supabasePost } = require('../lib/supabase.ts');
 const { writeDeepProcessOutput } = require('../lib/deep-process.ts');
@@ -222,7 +222,7 @@ async function scanNetwork() {
 async function scanLogs() {
   log('INFO', 'Scan 4: Log analysis...');
   try {
-    const logDir = path.join(KEEL_DIR, 'logs');
+    const logDir = path.join(ALIENKIND_DIR, 'logs');
     const logFiles = fs.readdirSync(logDir).filter((f: string) => f.endsWith('.log') && f.includes(DATE));
 
     let errorCount = 0;
@@ -338,7 +338,7 @@ async function scanLocalInference() {
 async function scanEnvPermissions() {
   log('INFO', 'Scan 7: Env file permissions...');
   try {
-    const envPath = path.join(KEEL_DIR, '.env');
+    const envPath = path.join(ALIENKIND_DIR, '.env');
     const stat = fs.statSync(envPath);
     const mode = (stat.mode & 0o777).toString(8);
 

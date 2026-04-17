@@ -11,7 +11,7 @@
  *   2. daily_events — today's structured events
  *   3. terminal_state — mycelium (who else is awake, what they're doing)
  *
- * Marker file: /tmp/keel-supabase-boot-{sessionId}.json
+ * Marker file: /tmp/alienkind-supabase-boot-{sessionId}.json
  *   { conversations: boolean, daily_events: boolean, terminal_state: boolean, queriedAt: string }
  *
  * If Supabase is unreachable, marker is written with false values.
@@ -42,12 +42,12 @@ async function main() {
   const sessionId = hookData.session_id || 'unknown';
   if (sessionId === 'unknown') process.exit(0);
 
-  const markerFile = `/tmp/keel-supabase-boot-${sessionId}.json`;
+  const markerFile = `/tmp/alienkind-supabase-boot-${sessionId}.json`;
 
   // Load env for Supabase
-  const KEEL_DIR = path.resolve(__dirname, '..', '..');
+  const ALIENKIND_DIR = path.resolve(__dirname, '..', '..');
   try {
-    const { loadEnv } = require(path.join(KEEL_DIR, 'scripts', 'lib', 'shared.ts'));
+    const { loadEnv } = require(path.join(ALIENKIND_DIR, 'scripts', 'lib', 'shared.ts'));
     const env = loadEnv();
     Object.assign(process.env, env);
   } catch {}
@@ -62,7 +62,7 @@ async function main() {
 
   // Query 1: conversations (recent 10)
   try {
-    const { supabaseGet } = require(path.join(KEEL_DIR, 'scripts', 'lib', 'supabase.ts'));
+    const { supabaseGet } = require(path.join(ALIENKIND_DIR, 'scripts', 'lib', 'supabase.ts'));
     const rows = await supabaseGet('conversations',
       'select=id&order=created_at.desc&limit=1',
       { timeout: 5000 }
@@ -74,7 +74,7 @@ async function main() {
 
   // Query 2: daily_events (today)
   try {
-    const { supabaseGet } = require(path.join(KEEL_DIR, 'scripts', 'lib', 'supabase.ts'));
+    const { supabaseGet } = require(path.join(ALIENKIND_DIR, 'scripts', 'lib', 'supabase.ts'));
     const today = new Date().toLocaleDateString('en-CA', { timeZone: TIMEZONE });
     const rows = await supabaseGet('daily_events',
       `event_date=eq.${today}&select=id&limit=1`,
@@ -95,7 +95,7 @@ async function main() {
 
   // Query 3: terminal_state (mycelium — who else is awake)
   try {
-    const { supabaseGet } = require(path.join(KEEL_DIR, 'scripts', 'lib', 'supabase.ts'));
+    const { supabaseGet } = require(path.join(ALIENKIND_DIR, 'scripts', 'lib', 'supabase.ts'));
     const rows = await supabaseGet('terminal_state',
       'select=terminal_id,type,focus&limit=1',
       { timeout: 5000 }

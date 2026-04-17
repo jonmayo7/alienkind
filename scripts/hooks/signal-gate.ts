@@ -38,10 +38,10 @@ function isMainTerminalContext(): boolean {
     const { execSync } = require('child_process');
     const ppid = process.ppid;
     // Check if parent wrote a terminal ID marker (direct hook from claude, claude's parent is keel.sh)
-    if (fs.existsSync(`/tmp/keel-terminal-id-${ppid}`)) return true;
+    if (fs.existsSync(`/tmp/alienkind-terminal-id-${ppid}`)) return true;
     // Check grandparent (hook → claude → keel.sh)
     const grandPpid = execSync(`ps -o ppid= -p ${ppid}`, { encoding: 'utf8', timeout: 1000 }).trim();
-    if (grandPpid && fs.existsSync(`/tmp/keel-terminal-id-${grandPpid}`)) return true;
+    if (grandPpid && fs.existsSync(`/tmp/alienkind-terminal-id-${grandPpid}`)) return true;
   } catch { /* can't determine */ }
   return false;
 }

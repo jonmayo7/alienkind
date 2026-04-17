@@ -28,8 +28,8 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
-const KEEL_DIR = path.resolve(__dirname, '../..');
-const DEFAULT_STATE_FILE = path.join(KEEL_DIR, 'logs', 'daemon-sessions.json');
+const ALIENKIND_DIR = path.resolve(__dirname, '../..');
+const DEFAULT_STATE_FILE = path.join(ALIENKIND_DIR, 'logs', 'daemon-sessions.json');
 const DEFAULT_MAX_JOBS = 25;
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -86,7 +86,7 @@ interface ReadSessionResult {
 
 function createSessionManager({ log = console.log, prefix = 'auto', stateFile, maxJobs }: SessionManagerOptions = {}): SessionManager {
   const STATE_FILE = stateFile
-    ? (path.isAbsolute(stateFile) ? stateFile : path.join(KEEL_DIR, stateFile))
+    ? (path.isAbsolute(stateFile) ? stateFile : path.join(ALIENKIND_DIR, stateFile))
     : DEFAULT_STATE_FILE;
 
   const MAX_JOBS = maxJobs || DEFAULT_MAX_JOBS;
@@ -233,7 +233,7 @@ function readSessionState(stateFilePath: string): ReadSessionResult | null {
   try {
     const absPath = path.isAbsolute(stateFilePath)
       ? stateFilePath
-      : path.join(KEEL_DIR, stateFilePath);
+      : path.join(ALIENKIND_DIR, stateFilePath);
     if (fs.existsSync(absPath)) {
       const data = JSON.parse(fs.readFileSync(absPath, 'utf8'));
       const now = new Date();

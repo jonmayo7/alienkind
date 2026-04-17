@@ -18,8 +18,8 @@
 const fs = require('fs');
 const path = require('path');
 
-const KEEL_DIR = path.resolve(__dirname, '..', '..');
-const WEIGHTS_FILE = path.join(KEEL_DIR, 'config', 'triage-weights.json');
+const ALIENKIND_DIR = path.resolve(__dirname, '..', '..');
+const WEIGHTS_FILE = path.join(ALIENKIND_DIR, 'config', 'triage-weights.json');
 
 // --- Core Physics (immutable) ---
 // These multipliers NEVER change. They encode what always matters.
@@ -149,7 +149,7 @@ async function updateWeightsFromOutcomes(): Promise<{ updated: boolean; changes:
   try {
     const { supabaseGet } = require('./supabase.ts');
     const { loadEnv } = require('./shared.ts');
-    Object.assign(process.env, loadEnv(path.join(KEEL_DIR, '.env')));
+    Object.assign(process.env, loadEnv(path.join(ALIENKIND_DIR, '.env')));
 
     // Get all evaluated packets (shipped + rejected) from the last 30 days
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
@@ -232,7 +232,7 @@ async function verifyShippedPackets(): Promise<{ verified: number; failed: numbe
   try {
     const { supabaseGet, supabasePatch } = require('./supabase.ts');
     const { loadEnv } = require('./shared.ts');
-    Object.assign(process.env, loadEnv(path.join(KEEL_DIR, '.env')));
+    Object.assign(process.env, loadEnv(path.join(ALIENKIND_DIR, '.env')));
 
     // Find shipped packets that haven't been verified yet
     const unverified = await supabaseGet('mission_packets',
@@ -256,7 +256,7 @@ async function verifyShippedPackets(): Promise<{ verified: number; failed: numbe
       // Check: does the commit still exist in git? (not reverted)
       try {
         const { execSync } = require('child_process');
-        execSync(`git log --oneline ${packet.commit_sha} -1`, { cwd: KEEL_DIR, timeout: 5000, stdio: 'pipe' });
+        execSync(`git log --oneline ${packet.commit_sha} -1`, { cwd: ALIENKIND_DIR, timeout: 5000, stdio: 'pipe' });
         // Commit exists — mark as verified (basic check)
         await supabasePatch('mission_packets', `id=eq.${packet.id}`, {
           verified: true,

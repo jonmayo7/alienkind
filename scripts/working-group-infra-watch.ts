@@ -19,10 +19,10 @@ const { execSync } = require('child_process');
 const { loadEnv, createLogger } = require('./lib/shared.ts');
 const { logToDaily, getNowCT } = require('./lib/keel-env.ts');
 
-const KEEL_DIR = path.resolve(__dirname, '..');
-Object.assign(process.env, loadEnv(path.join(KEEL_DIR, '.env')));
+const ALIENKIND_DIR = path.resolve(__dirname, '..');
+Object.assign(process.env, loadEnv(path.join(ALIENKIND_DIR, '.env')));
 
-const LOG_DIR = path.join(KEEL_DIR, 'logs');
+const LOG_DIR = path.join(ALIENKIND_DIR, 'logs');
 fs.mkdirSync(LOG_DIR, { recursive: true });
 const DATE = new Date().toISOString().split('T')[0];
 const { log } = createLogger(path.join(LOG_DIR, `working-group-infra-${DATE}.log`));

@@ -21,17 +21,17 @@ const fs = require('fs');
 const https = require('https');
 const { execSync } = require('child_process');
 
-const KEEL_DIR = path.resolve(__dirname, '../..');
+const ALIENKIND_DIR = path.resolve(__dirname, '../..');
 const { loadEnv, createLogger } = require('../lib/shared.ts');
 
 const now = new Date();
 const DATE = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-const LOG_DIR = path.join(KEEL_DIR, 'logs');
+const LOG_DIR = path.join(ALIENKIND_DIR, 'logs');
 fs.mkdirSync(LOG_DIR, { recursive: true });
 const LOG_FILE = path.join(LOG_DIR, `threat-intel-${DATE}.log`);
 const { log } = createLogger(LOG_FILE);
 
-const env = loadEnv(path.join(KEEL_DIR, '.env'));
+const env = loadEnv(path.join(ALIENKIND_DIR, '.env'));
 Object.assign(process.env, env);
 const { supabasePost } = require('../lib/supabase.ts');
 const { writeDeepProcessOutput } = require('../lib/deep-process.ts');
@@ -78,7 +78,7 @@ async function scanNpmAudit() {
     let auditOutput: string;
     try {
       auditOutput = execSync('npm audit --json 2>/dev/null', {
-        cwd: KEEL_DIR,
+        cwd: ALIENKIND_DIR,
         encoding: 'utf8',
         timeout: 60000,
       });
@@ -156,7 +156,7 @@ async function scanDependencyFreshness() {
   log('INFO', 'Scan 3: Dependency freshness...');
 
   try {
-    const pkgJson = JSON.parse(fs.readFileSync(path.join(KEEL_DIR, 'package.json'), 'utf8'));
+    const pkgJson = JSON.parse(fs.readFileSync(path.join(ALIENKIND_DIR, 'package.json'), 'utf8'));
     const deps = { ...pkgJson.dependencies, ...pkgJson.devDependencies };
     const depCount = Object.keys(deps).length;
 
@@ -164,7 +164,7 @@ async function scanDependencyFreshness() {
     let outdated: string;
     try {
       outdated = execSync('npm outdated --json 2>/dev/null', {
-        cwd: KEEL_DIR,
+        cwd: ALIENKIND_DIR,
         encoding: 'utf8',
         timeout: 30000,
       });
@@ -211,7 +211,7 @@ async function scanGitHubAdvisories() {
         const latestVersion = data['dist-tags']?.latest;
 
         // Check if we're on latest
-        const pkgJson = JSON.parse(fs.readFileSync(path.join(KEEL_DIR, 'package.json'), 'utf8'));
+        const pkgJson = JSON.parse(fs.readFileSync(path.join(ALIENKIND_DIR, 'package.json'), 'utf8'));
         const allDeps = { ...pkgJson.dependencies, ...pkgJson.devDependencies };
         const ourVersion = allDeps[dep];
 

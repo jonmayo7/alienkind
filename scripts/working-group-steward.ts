@@ -32,7 +32,7 @@ process.env.TZ = TIMEZONE;
 import * as fs from 'fs';
 import * as path from 'path';
 
-const KEEL_DIR = path.resolve(__dirname, '..');
+const ALIENKIND_DIR = path.resolve(__dirname, '..');
 
 const { loadEnv, createLogger, checkAuth } = require('./lib/shared.ts');
 const { logToDaily, getNowCT } = require('./lib/keel-env.ts');
@@ -45,9 +45,9 @@ const { scoreFinding, checkScopeLock } = require('./lib/triage-aire.ts');
 const { verify: crossVerify } = require('./lib/cross-verify.ts');
 const { CHANNELS } = require('./lib/consciousness-engine.ts');
 
-Object.assign(process.env, loadEnv(path.join(KEEL_DIR, '.env')));
+Object.assign(process.env, loadEnv(path.join(ALIENKIND_DIR, '.env')));
 
-const LOG_DIR = path.join(KEEL_DIR, 'logs');
+const LOG_DIR = path.join(ALIENKIND_DIR, 'logs');
 fs.mkdirSync(LOG_DIR, { recursive: true });
 const DATE = new Date().toISOString().split('T')[0];
 const { log } = createLogger(path.join(LOG_DIR, `working-group-steward-${DATE}.log`));
@@ -74,7 +74,7 @@ const MAX_GAPS_PER_RUN = 1;
 function loadStewardRegistry(): Record<string, string> {
   // Try loading from config/steward-registry.json
   try {
-    const configPath = path.join(KEEL_DIR, 'config', 'steward-registry.json');
+    const configPath = path.join(ALIENKIND_DIR, 'config', 'steward-registry.json');
     if (fs.existsSync(configPath)) {
       const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
       if (config && typeof config === 'object') {
@@ -101,7 +101,7 @@ const DEFAULT_ORGAN = 'consciousness-engine';
 // Roles: foreman (build discipline), devils-advocate (red team),
 // historian (fence principle), visionary (3-move rule).
 function loadRolePrompts(): Record<string, string> {
-  const roleDir = path.join(KEEL_DIR, 'config', 'roles');
+  const roleDir = path.join(ALIENKIND_DIR, 'config', 'roles');
   const roles: Record<string, string> = {};
   for (const file of ['foreman.md', 'devils-advocate.md', 'historian.md', 'visionary.md']) {
     try {
@@ -229,8 +229,8 @@ Be concise. Your output goes directly into a mission packet for primary model ev
     // compute budget allows multi-model debate.
     const substrate = 'studio2-daily';
     const start = Date.now();
-    const daemonSessionId = process.env.KEEL_DAEMON_SESSION_ID;
-    const daemonSessionResume = process.env.KEEL_DAEMON_SESSION_RESUME === 'true';
+    const daemonSessionId = process.env.ALIENKIND_DAEMON_SESSION_ID;
+    const daemonSessionResume = process.env.ALIENKIND_DAEMON_SESSION_RESUME === 'true';
     const result = await processMessage(taskPrompt, {
       channelConfig: CHANNELS.research,
       log: (level: string, msg: string) => log(level, `[single] ${msg}`),

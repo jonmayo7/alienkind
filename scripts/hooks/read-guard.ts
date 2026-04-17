@@ -3,7 +3,7 @@
 /**
  * read-guard.ts — NO-OP as of 2026-04-10.
  *
- * This hook used to read from /tmp/keel-build-cycle-*.json to enforce
+ * This hook used to read from /tmp/alienkind-build-cycle-*.json to enforce
  * two gates on every Edit/Write:
  *
  *   1. READ stage: block editing production code until WIRING_MANIFEST

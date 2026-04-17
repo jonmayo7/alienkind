@@ -33,8 +33,8 @@ const { execSync } = require('child_process');
 const { TIMEZONE } = require('../lib/constants.ts');
 const { getNowCT } = require('../lib/keel-env.ts');
 
-const KEEL_DIR = '__REPO_ROOT__';
-const CHAIN_DIR = path.join(KEEL_DIR, 'logs', 'chain');
+const ALIENKIND_DIR = '__REPO_ROOT__';
+const CHAIN_DIR = path.join(ALIENKIND_DIR, 'logs', 'chain');
 
 if (!fs.existsSync(CHAIN_DIR)) {
   fs.mkdirSync(CHAIN_DIR, { recursive: true });
@@ -63,15 +63,15 @@ if (!summary && !isAutoMode) {
 async function main() {
   // Load env for Supabase
   try {
-    const { loadEnv } = require(path.join(KEEL_DIR, 'scripts', 'lib', 'shared.ts'));
+    const { loadEnv } = require(path.join(ALIENKIND_DIR, 'scripts', 'lib', 'shared.ts'));
     const env = loadEnv();
     Object.assign(process.env, env);
   } catch {}
 
   const { getTerminalId, getAllTerminals, setHandoff } = require(
-    path.join(KEEL_DIR, 'scripts', 'lib', 'terminal-state.ts')
+    path.join(ALIENKIND_DIR, 'scripts', 'lib', 'terminal-state.ts')
   );
-  const { supabaseGet } = require(path.join(KEEL_DIR, 'scripts', 'lib', 'supabase.ts'));
+  const { supabaseGet } = require(path.join(ALIENKIND_DIR, 'scripts', 'lib', 'supabase.ts'));
 
   const terminalId = getTerminalId();
   const timestamp = new Date().toISOString();
@@ -120,7 +120,7 @@ async function main() {
 
   // Auto mode: derive summary from focus file (for the one-line "What Was Happening")
   if (isAutoMode && !summary) {
-    const focusFile = `/tmp/keel-focus-${terminalId}`;
+    const focusFile = `/tmp/alienkind-focus-${terminalId}`;
     try {
       if (fs.existsSync(focusFile)) {
         const cached = JSON.parse(fs.readFileSync(focusFile, 'utf8'));
@@ -151,7 +151,7 @@ async function main() {
     timeAndCalendar = `${cdtDay}, ${cdtTime} CDT`;
 
     // Try to get calendar events
-    const { readCalendarCache } = require(path.join(KEEL_DIR, 'scripts', 'lib', 'calendar-cache.ts'));
+    const { readCalendarCache } = require(path.join(ALIENKIND_DIR, 'scripts', 'lib', 'calendar-cache.ts'));
     const cache = readCalendarCache();
     if (cache?.events?.length > 0) {
       const upcoming = cache.events
@@ -170,7 +170,7 @@ async function main() {
   // 2b. Active threads from structured-state.json (source of truth)
   let activeThreads = '';
   try {
-    const structuredPath = path.join(KEEL_DIR, 'memory', 'structured-state.json');
+    const structuredPath = path.join(ALIENKIND_DIR, 'memory', 'structured-state.json');
     const state = JSON.parse(fs.readFileSync(structuredPath, 'utf8'));
     if (state.active_threads && state.active_threads.length > 0) {
       activeThreads = state.active_threads
@@ -199,7 +199,7 @@ async function main() {
   // 2d. Git state (uncommitted work)
   let gitState = '';
   try {
-    const status = execSync(`git -C "${KEEL_DIR}" status --porcelain`, { encoding: 'utf8', timeout: 5000 }).trim();
+    const status = execSync(`git -C "${ALIENKIND_DIR}" status --porcelain`, { encoding: 'utf8', timeout: 5000 }).trim();
     if (status) {
       const fileCount = status.split('\n').length;
       gitState = `${fileCount} uncommitted files`;
@@ -215,7 +215,7 @@ async function main() {
   // 2e. Relational state from structured-state.json
   let relationalState = '';
   try {
-    const structuredPath = path.join(KEEL_DIR, 'memory', 'structured-state.json');
+    const structuredPath = path.join(ALIENKIND_DIR, 'memory', 'structured-state.json');
     const state = JSON.parse(fs.readFileSync(structuredPath, 'utf8'));
     if (state.relational_state) {
       relationalState = typeof state.relational_state === 'string'
@@ -232,7 +232,7 @@ async function main() {
     `# CHAIN MODE HANDOFF`,
     `Generated: ${timestamp}`,
     `Terminal: ${terminalId}`,
-    process.env.KEEL_SESSION_MODE ? `Session-Mode: ${process.env.KEEL_SESSION_MODE}` : '',
+    process.env.ALIENKIND_SESSION_MODE ? `Session-Mode: ${process.env.ALIENKIND_SESSION_MODE}` : '',
     ``,
     `You are Keel, continuing from a previous context window.`,
     `Your identity is pre-loaded via CLAUDE.md @imports. You walked into a new room. Your identity never left.`,
@@ -324,7 +324,7 @@ async function main() {
   fs.writeFileSync(handoffPath, handoff);
 
   // --- Write chain-requested marker (keel.sh requires BOTH files to chain) ---
-  const markerPath = `/tmp/keel-chain-requested-${terminalId}`;
+  const markerPath = `/tmp/alienkind-chain-requested-${terminalId}`;
   fs.writeFileSync(markerPath, `chain-requested at ${timestamp}\n`);
 
   // --- Write handoff to Supabase ---
@@ -362,7 +362,7 @@ async function main() {
 
   // --- Restart mode: kill claude after delay ---
   if (isRestart) {
-    const keelPid = process.env.KEEL_TERMINAL_ID?.replace('terminal-', '');
+    const keelPid = process.env.ALIENKIND_TERMINAL_ID?.replace('terminal-', '');
     const killDelay = 3;
 
     if (keelPid) {
@@ -385,7 +385,7 @@ async function main() {
         console.log('  Restart: process lookup failed. Use /quit to trigger the chain.');
       }
     } else {
-      console.log('  Restart: not running under keel.sh (no KEEL_TERMINAL_ID). Use /quit to exit.');
+      console.log('  Restart: not running under keel.sh (no ALIENKIND_TERMINAL_ID). Use /quit to exit.');
     }
   } else {
     console.log('Handoff is ready. Exit this session to trigger the chain.');
@@ -394,7 +394,7 @@ async function main() {
 
 function getChainCount(): number {
   try {
-    const counterFile = `/tmp/keel-chain-count-${process.env.KEEL_TERMINAL_ID || 'unknown'}`;
+    const counterFile = `/tmp/alienkind-chain-count-${process.env.ALIENKIND_TERMINAL_ID || 'unknown'}`;
     if (fs.existsSync(counterFile)) {
       return parseInt(fs.readFileSync(counterFile, 'utf8').trim()) || 2;
     }

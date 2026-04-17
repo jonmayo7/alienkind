@@ -31,17 +31,17 @@ const { supabasePatch } = require('./lib/supabase.ts');
 const { TIMEZONE, SELF_HEAL, MODELS } = require('./lib/constants.ts');
 const { recordInvestigation, buildPriorContext } = require('./lib/heal-history.ts');
 
-const KEEL_DIR = path.resolve(__dirname, '..');
-const PARTIAL_DIR = path.join(KEEL_DIR, 'logs');
+const ALIENKIND_DIR = path.resolve(__dirname, '..');
+const PARTIAL_DIR = path.join(ALIENKIND_DIR, 'logs');
 
 // Ensure env is loaded for Supabase calls
-const env = loadEnv(path.join(KEEL_DIR, '.env'));
+const env = loadEnv(path.join(ALIENKIND_DIR, '.env'));
 Object.assign(process.env, env);
 
 // --- Lock Management ---
 
 function acquireHealLock(jobName, log) {
-  const lockPath = path.join(KEEL_DIR, SELF_HEAL.lockFile);
+  const lockPath = path.join(ALIENKIND_DIR, SELF_HEAL.lockFile);
   if (fs.existsSync(lockPath)) {
     try {
       const lock = JSON.parse(fs.readFileSync(lockPath, 'utf8'));
@@ -65,7 +65,7 @@ function acquireHealLock(jobName, log) {
 }
 
 function releaseHealLock() {
-  const lockPath = path.join(KEEL_DIR, SELF_HEAL.lockFile);
+  const lockPath = path.join(ALIENKIND_DIR, SELF_HEAL.lockFile);
   try { fs.unlinkSync(lockPath); } catch {}
 }
 
@@ -103,9 +103,9 @@ function readLogTail(jobName) {
   // Try job-specific log, fall back to daemon log
   const date = new Date().toISOString().split('T')[0];
   const candidates = [
-    path.join(KEEL_DIR, 'logs', `${jobName.replace('-hourly', '')}-${date}.log`),
-    path.join(KEEL_DIR, 'logs', `${jobName}.log`),
-    path.join(KEEL_DIR, 'logs', `daemon-${date}.log`),
+    path.join(ALIENKIND_DIR, 'logs', `${jobName.replace('-hourly', '')}-${date}.log`),
+    path.join(ALIENKIND_DIR, 'logs', `${jobName}.log`),
+    path.join(ALIENKIND_DIR, 'logs', `daemon-${date}.log`),
   ];
   for (const logFile of candidates) {
     if (fs.existsSync(logFile)) {
@@ -121,8 +121,8 @@ function readLogTail(jobName) {
 
 function getGitContext() {
   try {
-    const gitLog = execSync('git log --oneline -5', { cwd: KEEL_DIR, encoding: 'utf8', timeout: 5000 });
-    const gitDiff = execSync('git diff --stat HEAD~3 2>/dev/null || echo "(less than 3 commits)"', { cwd: KEEL_DIR, encoding: 'utf8', timeout: 5000 });
+    const gitLog = execSync('git log --oneline -5', { cwd: ALIENKIND_DIR, encoding: 'utf8', timeout: 5000 });
+    const gitDiff = execSync('git diff --stat HEAD~3 2>/dev/null || echo "(less than 3 commits)"', { cwd: ALIENKIND_DIR, encoding: 'utf8', timeout: 5000 });
     return { gitLog, gitDiff };
   } catch {
     return { gitLog: '(git unavailable)', gitDiff: '' };
@@ -138,7 +138,7 @@ function getGroundingContext() {
   // Run grounding script for time/services/sessions
   try {
     const grounding = execSync('bash scripts/ground.sh 2>/dev/null', {
-      cwd: KEEL_DIR, encoding: 'utf8', timeout: 10000
+      cwd: ALIENKIND_DIR, encoding: 'utf8', timeout: 10000
     });
     sections.push(`GROUNDING:\n${grounding}`);
   } catch {
@@ -147,7 +147,7 @@ function getGroundingContext() {
 
   // Today's daily memory (last 100 lines to stay concise)
   const date = new Date().toISOString().split('T')[0];
-  const dailyPath = path.join(KEEL_DIR, 'memory', 'daily', `${date}.md`);
+  const dailyPath = path.join(ALIENKIND_DIR, 'memory', 'daily', `${date}.md`);
   try {
     const daily = fs.readFileSync(dailyPath, 'utf8');
     const lines = daily.split('\n');
@@ -159,7 +159,7 @@ function getGroundingContext() {
 
   // Recent git log — what was actually built (source of truth)
   try {
-    const gitLog = execSync('git log --oneline -15', { cwd: KEEL_DIR, encoding: 'utf8', timeout: 5000 });
+    const gitLog = execSync('git log --oneline -15', { cwd: ALIENKIND_DIR, encoding: 'utf8', timeout: 5000 });
     sections.push(`RECENT GIT LOG:\n${gitLog}`);
   } catch {}
 
@@ -311,7 +311,7 @@ async function investigate({ jobName, errorMsg, scriptPath, intentId, log }) {
 
     // Step 3: Build prompt with full grounding context + prior investigation memory
     const fullScriptPath = scriptPath.startsWith('scripts/')
-      ? path.join(KEEL_DIR, scriptPath)
+      ? path.join(ALIENKIND_DIR, scriptPath)
       : scriptPath;
     const fp = getErrorFingerprint(errorMsg);
     let priorContext = '';
@@ -376,13 +376,13 @@ async function investigate({ jobName, errorMsg, scriptPath, intentId, log }) {
     if (parsed.status === 'fixed') {
       // Verify the diff was small (code enforcement, not prompt willpower)
       try {
-        const diffStat = execSync('git diff --stat HEAD~1', { cwd: KEEL_DIR, encoding: 'utf8', timeout: 5000 });
+        const diffStat = execSync('git diff --stat HEAD~1', { cwd: ALIENKIND_DIR, encoding: 'utf8', timeout: 5000 });
         const insertions = diffStat.match(/(\d+) insertion/);
         const deletions = diffStat.match(/(\d+) deletion/);
         const totalLines = (parseInt(insertions?.[1] || '0', 10)) + (parseInt(deletions?.[1] || '0', 10));
         if (totalLines > SELF_HEAL.maxDiffLines) {
           log('WARN', `[self-heal] Diff too large (${totalLines} lines > ${SELF_HEAL.maxDiffLines}) — reverting`);
-          execSync('git reset --soft HEAD~1', { cwd: KEEL_DIR, timeout: 5000 });
+          execSync('git reset --soft HEAD~1', { cwd: ALIENKIND_DIR, timeout: 5000 });
           parsed.status = 'propose';
           parsed.summary = `Fix identified but diff too large (${totalLines} lines). ${parsed.summary}`;
         }
@@ -429,7 +429,7 @@ async function investigate({ jobName, errorMsg, scriptPath, intentId, log }) {
       let fixCommit: string | undefined;
       if (parsed.status === 'fixed') {
         try {
-          fixCommit = execSync('git rev-parse --short HEAD', { cwd: KEEL_DIR, encoding: 'utf8', timeout: 3000 }).trim();
+          fixCommit = execSync('git rev-parse --short HEAD', { cwd: ALIENKIND_DIR, encoding: 'utf8', timeout: 3000 }).trim();
         } catch {}
       }
       recordInvestigation({

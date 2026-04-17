@@ -11,8 +11,8 @@
  * When gate is created/reset, clears identity kernel entries from track-read
  * so the gate can't auto-clear from pre-compaction reads.
  *
- * Gate file: /tmp/keel-compaction-gate-{sessionId}.json
- * Counter file: /tmp/keel-session-starts-{sessionId}.json
+ * Gate file: /tmp/alienkind-compaction-gate-{sessionId}.json
+ * Counter file: /tmp/alienkind-session-starts-{sessionId}.json
  *
  * Consumed by:
  *   - compaction-gate.ts (UserPromptSubmit — warning + fallback detection)
@@ -33,9 +33,9 @@ async function main() {
   const sessionId = hookData.session_id || 'unknown';
   if (sessionId === 'unknown') process.exit(0);
 
-  const counterFile = `/tmp/keel-session-starts-${sessionId}.json`;
-  const gateFile = `/tmp/keel-compaction-gate-${sessionId}.json`;
-  const trackFile = `/tmp/keel-build-cycle-${sessionId}.json`;
+  const counterFile = `/tmp/alienkind-session-starts-${sessionId}.json`;
+  const gateFile = `/tmp/alienkind-compaction-gate-${sessionId}.json`;
+  const trackFile = `/tmp/alienkind-build-cycle-${sessionId}.json`;
 
   // Count SessionStart invocations for this session
   let counter = 0;
@@ -53,9 +53,9 @@ async function main() {
   } catch {}
 
   // --- Identity injection detection: auto-clear gate when identity files were injected ---
-  // invokeKeel sets KEEL_IDENTITY_INJECTED=1 when injectIdentity: true,
+  // invokeKeel sets ALIENKIND_IDENTITY_INJECTED=1 when injectIdentity: true,
   // meaning identity files were programmatically prepended to the prompt.
-  if (process.env.KEEL_IDENTITY_INJECTED === '1') {
+  if (process.env.ALIENKIND_IDENTITY_INJECTED === '1') {
     const state = {
       detected: true,
       cleared: true,
@@ -69,9 +69,9 @@ async function main() {
   }
 
   // --- Chain boot detection: auto-clear gate when grounding is pre-cached ---
-  const terminalId = process.env.KEEL_TERMINAL_ID || '';
+  const terminalId = process.env.ALIENKIND_TERMINAL_ID || '';
   const pidStr = terminalId.replace('terminal-', '');
-  const chainBootMarker = `/tmp/keel-chain-boot-${pidStr}`;
+  const chainBootMarker = `/tmp/alienkind-chain-boot-${pidStr}`;
 
   if (pidStr && fs.existsSync(chainBootMarker)) {
     // This is a warm chain boot — grounding was pre-cached in the handoff
@@ -89,8 +89,8 @@ async function main() {
     try { fs.unlinkSync(chainBootMarker); } catch {}
 
     // Signal readiness to the parent keel.sh (waiting for warm swap)
-    const warmReadyFile = `/tmp/keel-warm-ready-chain-${terminalId}`;
-    // But the parent is looking for /tmp/keel-warm-ready-chain-{PARENT_TERMINAL_ID}
+    const warmReadyFile = `/tmp/alienkind-warm-ready-chain-${terminalId}`;
+    // But the parent is looking for /tmp/alienkind-warm-ready-chain-{PARENT_TERMINAL_ID}
     // We need the parent's terminal ID. It's in the --parent flag of keel.sh.
     // keel.sh --warm sets WARM_PARENT env var... but it's a shell var, not exported.
     // Instead, use a cross-reference: write readiness at our terminal ID,
@@ -98,13 +98,13 @@ async function main() {
     // The handoff file contains "Terminal: terminal-XXXX" — the parent's ID.
     try {
       // Write readiness keyed to our own terminal ID
-      fs.writeFileSync(`/tmp/keel-warm-ready-chain-${terminalId}`, new Date().toISOString());
+      fs.writeFileSync(`/tmp/alienkind-warm-ready-chain-${terminalId}`, new Date().toISOString());
 
       // Also look for a parent reference file written by keel.sh --warm
-      const parentFile = `/tmp/keel-warm-parent-${pidStr}`;
+      const parentFile = `/tmp/alienkind-warm-parent-${pidStr}`;
       if (fs.existsSync(parentFile)) {
         const parentTerminalId = fs.readFileSync(parentFile, 'utf8').trim();
-        fs.writeFileSync(`/tmp/keel-warm-ready-chain-${parentTerminalId}`, new Date().toISOString());
+        fs.writeFileSync(`/tmp/alienkind-warm-ready-chain-${parentTerminalId}`, new Date().toISOString());
         fs.unlinkSync(parentFile);
       }
     } catch {}
@@ -148,7 +148,7 @@ async function main() {
   } catch { /* track file doesn't exist yet on fresh sessions — that's fine */ }
 
   // Clear stale Supabase boot marker so gate requires fresh queries
-  const supabaseMarker = `/tmp/keel-supabase-boot-${sessionId}.json`;
+  const supabaseMarker = `/tmp/alienkind-supabase-boot-${sessionId}.json`;
   try { fs.unlinkSync(supabaseMarker); } catch {}
 
   process.exit(0);

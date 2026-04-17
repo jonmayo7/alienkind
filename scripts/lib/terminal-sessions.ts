@@ -16,8 +16,8 @@
 const fs = require('fs');
 const path = require('path');
 
-const KEEL_DIR = path.resolve(__dirname, '..', '..');
-const STATE_FILE = path.join(KEEL_DIR, 'logs', 'active-terminals.json');
+const ALIENKIND_DIR = path.resolve(__dirname, '..', '..');
+const STATE_FILE = path.join(ALIENKIND_DIR, 'logs', 'active-terminals.json');
 const STALE_THRESHOLD_MS = 4 * 60 * 60 * 1000; // 4 hours — consider stale
 
 interface TerminalEntry {

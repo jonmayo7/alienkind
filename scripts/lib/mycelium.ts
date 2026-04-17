@@ -19,8 +19,8 @@
 const fs = require('fs');
 const path = require('path');
 
-const KEEL_DIR = path.resolve(__dirname, '..', '..');
-const CONSCIOUSNESS_CACHE_PATH = path.join(KEEL_DIR, 'logs', 'consciousness-recent.json');
+const ALIENKIND_DIR = path.resolve(__dirname, '..', '..');
+const CONSCIOUSNESS_CACHE_PATH = path.join(ALIENKIND_DIR, 'logs', 'consciousness-recent.json');
 const CONSCIOUSNESS_LOCK_PATH = CONSCIOUSNESS_CACHE_PATH + '.lock';
 
 interface SubstrateNode {
@@ -79,7 +79,7 @@ function updateFocus(nodeId: string, { type, focus, activity, repoContext, execu
   // Mirror focus to local file — survives crashes, readable without Supabase
   if (focus) {
     try {
-      const focusFile = `/tmp/keel-focus-${nodeId}`;
+      const focusFile = `/tmp/alienkind-focus-${nodeId}`;
       require('fs').writeFileSync(focusFile, JSON.stringify({
         focus: String(focus).slice(0, 150),
         activity: activity ? String(activity).slice(0, 200) : '',

@@ -30,12 +30,12 @@ try {
 } catch {
   resolveRepoRoot = () => path.resolve(__dirname, '..', '..');
 }
-const KEEL_DIR = resolveRepoRoot();
+const ALIENKIND_DIR = resolveRepoRoot();
 
 // Infrastructure deps — degrade gracefully on a fresh fork
 let readConsciousnessState: any, writeConsciousnessState: any, isConsciousnessStateFresh: any;
 try {
-  const mycelium = require(path.join(KEEL_DIR, 'scripts', 'lib', 'mycelium.ts'));
+  const mycelium = require(path.join(ALIENKIND_DIR, 'scripts', 'lib', 'mycelium.ts'));
   readConsciousnessState = mycelium.readConsciousnessState;
   writeConsciousnessState = mycelium.writeConsciousnessState;
   isConsciousnessStateFresh = mycelium.isConsciousnessStateFresh;
@@ -47,10 +47,10 @@ try {
 
 function writeToSupabase(state) {
   try {
-    const { loadEnv } = require(path.join(KEEL_DIR, 'scripts', 'lib', 'env.ts'));
+    const { loadEnv } = require(path.join(ALIENKIND_DIR, 'scripts', 'lib', 'env.ts'));
     const env = loadEnv();
     Object.assign(process.env, env);
-    const { supabasePost } = require(path.join(KEEL_DIR, 'scripts', 'lib', 'supabase.ts'));
+    const { supabasePost } = require(path.join(ALIENKIND_DIR, 'scripts', 'lib', 'supabase.ts'));
     supabasePost('consciousness_entries', {
       mode: state.mode || 'terminal',
       session_id: state.sessionId || `precompact-${process.ppid || process.pid}`,
@@ -130,7 +130,7 @@ async function buildMinimalState(sessionId, trigger) {
 async function getTerminalFocus() {
   try {
     const { getAllTerminals } = require(
-      path.resolve(KEEL_DIR, 'scripts', 'lib', 'terminal-state.ts')
+      path.resolve(ALIENKIND_DIR, 'scripts', 'lib', 'terminal-state.ts')
     );
     const all = await getAllTerminals();
 
@@ -153,7 +153,7 @@ async function getTerminalFocus() {
 function getActiveThreadsFromSessionState() {
   try {
     const sessionState = fs.readFileSync(
-      path.join(KEEL_DIR, 'memory', 'daily', new Date().toISOString().split('T')[0] + '.md'), 'utf8'
+      path.join(ALIENKIND_DIR, 'memory', 'daily', new Date().toISOString().split('T')[0] + '.md'), 'utf8'
     );
     // Extract thread names from the active threads table
     const threads = [];

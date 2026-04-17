@@ -24,8 +24,8 @@ try {
 } catch {
   resolveRepoRoot = () => path.resolve(__dirname, '..', '..');
 }
-const KEEL_DIR = resolveRepoRoot();
-const CAPABILITY_SEARCH = path.join(KEEL_DIR, 'scripts', 'tools', 'capability-search.ts');
+const ALIENKIND_DIR = resolveRepoRoot();
+const CAPABILITY_SEARCH = path.join(ALIENKIND_DIR, 'scripts', 'tools', 'capability-search.ts');
 
 // Phrases that signal "I can't do this" — the exact failure mode we're catching
 const CANT_PATTERNS = [
@@ -121,8 +121,8 @@ async function main() {
 
   // Get relative path
   let relPath = filePath;
-  if (filePath.startsWith(KEEL_DIR + '/')) {
-    relPath = filePath.slice(KEEL_DIR.length + 1);
+  if (filePath.startsWith(ALIENKIND_DIR + '/')) {
+    relPath = filePath.slice(ALIENKIND_DIR.length + 1);
   }
 
   // Skip exempt files (memory, identity, docs, config, tests, this hook)
@@ -162,7 +162,7 @@ async function main() {
     const result = execSync(
       `node "${CAPABILITY_SEARCH}" "${searchQuery}" --limit 5`,
       {
-        cwd: KEEL_DIR,
+        cwd: ALIENKIND_DIR,
         timeout: 10000,
         encoding: 'utf8',
         stdio: ['pipe', 'pipe', 'pipe'],

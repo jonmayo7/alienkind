@@ -5,7 +5,7 @@
  * Reads immune/debrief/weekly outputs, produces analysis for morning brief.
  */
 const {
-  KEEL_DIR, LOG_DIR, DATE, TIME,
+  ALIENKIND_DIR, LOG_DIR, DATE, TIME,
   fs, path,
   log, logHeap, sendTelegram, formatAlert, appendToDigest,
   attemptGrowthCycle, buildAwarenessContext,
@@ -188,7 +188,7 @@ async function investigatePatterns(): Promise<string> {
     }
 
     // Check which hooks already exist
-    const hooksDir = path.join(KEEL_DIR, 'scripts', 'hooks');
+    const hooksDir = path.join(ALIENKIND_DIR, 'scripts', 'hooks');
     let existingHooks: string[] = [];
     try {
       existingHooks = fs.readdirSync(hooksDir).filter(f => f.endsWith('.ts') || f.endsWith('.js'));
@@ -424,7 +424,7 @@ function verifyAnalysis() {
   }
 
   // Daily file check
-  const dailyFile = path.join(KEEL_DIR, 'memory', 'daily', `${DATE}.md`);
+  const dailyFile = path.join(ALIENKIND_DIR, 'memory', 'daily', `${DATE}.md`);
   try {
     const stats = fs.statSync(dailyFile);
     const recentlyModified = (Date.now() - stats.mtimeMs) < 15 * 60 * 1000;

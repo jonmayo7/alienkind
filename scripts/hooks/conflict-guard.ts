@@ -61,9 +61,9 @@ async function main() {
     // Uses dynamic import graph — relationships computed from code, not a static table.
     const { getAllTouches } = require(path.resolve(__dirname, '..', 'lib', 'file-touches.ts'));
     const allTouches = getAllTouches();
-    const KEEL_DIR = resolveRepoRoot();
+    const ALIENKIND_DIR = resolveRepoRoot();
     let relPath = filePath;
-    if (filePath.startsWith(KEEL_DIR + '/')) relPath = filePath.slice(KEEL_DIR.length + 1);
+    if (filePath.startsWith(ALIENKIND_DIR + '/')) relPath = filePath.slice(ALIENKIND_DIR.length + 1);
 
     // Get related files from import graph (dynamic — parsed from require/import statements)
     let relatedPaths: string[] = [];
@@ -87,7 +87,7 @@ async function main() {
       if (touchAge > 15 * 60 * 1000) continue;
 
       let touchRelPath = touch.filePath;
-      if (touchRelPath.startsWith(KEEL_DIR + '/')) touchRelPath = touchRelPath.slice(KEEL_DIR.length + 1);
+      if (touchRelPath.startsWith(ALIENKIND_DIR + '/')) touchRelPath = touchRelPath.slice(ALIENKIND_DIR.length + 1);
 
       if (relatedPaths.includes(touchRelPath)) {
         const ageMin = Math.round(touchAge / 60000);

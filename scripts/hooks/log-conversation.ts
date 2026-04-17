@@ -34,8 +34,8 @@ try {
 }
 
 // --- Load Environment (same pattern as discord-listener.ts) ---
-const KEEL_DIR = path.resolve(__dirname, '..', '..');
-const ENV_PATH = path.join(KEEL_DIR, '.env');
+const ALIENKIND_DIR = path.resolve(__dirname, '..', '..');
+const ENV_PATH = path.join(ALIENKIND_DIR, '.env');
 
 function loadEnv() {
   const env = {};
@@ -79,7 +79,7 @@ function supabasePost(envVars, table, data, prefer = 'return=minimal') {
 
 // Dedup — prevents duplicate inserts within 5 seconds for same channel+sender+content.
 // Uses a shared file because each hook invocation is a separate process.
-const DEDUP_FILE = path.join(KEEL_DIR, 'logs', 'conversation-dedup.json');
+const DEDUP_FILE = path.join(ALIENKIND_DIR, 'logs', 'conversation-dedup.json');
 const DEDUP_WINDOW_MS = 5000;
 
 function isDuplicate(dedupKey: string): boolean {
@@ -106,7 +106,7 @@ function recordDedup(dedupKey: string): void {
 }
 
 // --- Keel Intelligence Engine: message index tracking ---
-const MSG_IDX_DIR = path.join(KEEL_DIR, 'logs');
+const MSG_IDX_DIR = path.join(ALIENKIND_DIR, 'logs');
 
 function getNextMessageIndex(termId: string): number {
   const file = path.join(MSG_IDX_DIR, `keel-msg-idx-${termId}.txt`);
@@ -142,7 +142,7 @@ function logConversation(envVars, { channel, role, sender, content, visibility =
   // trimmed to last 20 messages. Eliminates network dependency from the hook.
   if (channel === 'terminal') {
     try {
-      const cachePath = path.join(KEEL_DIR, 'logs', 'recent-conversation-cache.json');
+      const cachePath = path.join(ALIENKIND_DIR, 'logs', 'recent-conversation-cache.json');
       let messages: any[] = [];
       try {
         if (fs.existsSync(cachePath)) {
@@ -435,7 +435,7 @@ async function main() {
 
             // 2. Write correction to shared file for immediate cross-terminal visibility
             // Other terminals read this via mycelium awareness hooks
-            const correctionFile = path.join(KEEL_DIR, 'logs', 'recent-corrections.json');
+            const correctionFile = path.join(ALIENKIND_DIR, 'logs', 'recent-corrections.json');
             let corrections = [];
             try {
               corrections = JSON.parse(fs.readFileSync(correctionFile, 'utf8'));
@@ -461,7 +461,7 @@ async function main() {
               const { execSync } = require('child_process');
               try {
                 execSync('npx tsx scripts/ground-truth-check.ts --json > /dev/null 2>&1 &', {
-                  cwd: KEEL_DIR,
+                  cwd: ALIENKIND_DIR,
                   timeout: 5000,
                   stdio: 'ignore',
                 });

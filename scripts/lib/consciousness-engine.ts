@@ -21,7 +21,7 @@ const path = require('path');
 const fs = require('fs');
 const { TIMEZONE } = require('./constants.ts');
 
-const KEEL_DIR = path.resolve(__dirname, '../..');
+const ALIENKIND_DIR = path.resolve(__dirname, '../..');
 
 // Load env vars into process.env so supabase.ts and other libs can access them
 const { loadEnv } = require('./shared.ts');

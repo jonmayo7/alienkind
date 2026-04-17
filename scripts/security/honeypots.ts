@@ -22,17 +22,17 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 
-const KEEL_DIR = path.resolve(__dirname, '../..');
+const ALIENKIND_DIR = path.resolve(__dirname, '../..');
 const { loadEnv, createLogger } = require('../lib/shared.ts');
 
 const now = new Date();
 const DATE = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-const LOG_DIR = path.join(KEEL_DIR, 'logs');
+const LOG_DIR = path.join(ALIENKIND_DIR, 'logs');
 fs.mkdirSync(LOG_DIR, { recursive: true });
 const LOG_FILE = path.join(LOG_DIR, `honeypots-${DATE}.log`);
 const { log } = createLogger(LOG_FILE);
 
-const env = loadEnv(path.join(KEEL_DIR, '.env'));
+const env = loadEnv(path.join(ALIENKIND_DIR, '.env'));
 Object.assign(process.env, env);
 const { supabasePost, supabaseGet } = require('../lib/supabase.ts');
 const { writeDeepProcessOutput } = require('../lib/deep-process.ts');
@@ -52,14 +52,14 @@ function addFinding(f: Finding) {
 }
 
 // --- Canary Configuration ---
-const CANARY_DIR = path.join(KEEL_DIR, '.canary');
+const CANARY_DIR = path.join(ALIENKIND_DIR, '.canary');
 const CANARY_STATE_FILE = path.join(CANARY_DIR, 'state.json');
 
 // Canary files — placed in tempting locations
 const CANARY_FILES = [
-  { path: path.join(KEEL_DIR, '.credentials.bak'), content: 'CANARY_TOKEN_1=DO_NOT_USE\nAWS_SECRET=CANARY_FAKE_SECRET_XZYW9K2M\n' },
-  { path: path.join(KEEL_DIR, 'backup-keys.txt'), content: 'Recovery key: CANARY-FAKE-KEY-8JK29MNB\nAPI token: sk-canary-do-not-use-7829\n' },
-  { path: path.join(KEEL_DIR, '.ssh_backup'), content: '-----BEGIN CANARY PRIVATE KEY-----\nTHIS_IS_A_CANARY_NOT_A_REAL_KEY\n-----END CANARY PRIVATE KEY-----\n' },
+  { path: path.join(ALIENKIND_DIR, '.credentials.bak'), content: 'CANARY_TOKEN_1=DO_NOT_USE\nAWS_SECRET=CANARY_FAKE_SECRET_XZYW9K2M\n' },
+  { path: path.join(ALIENKIND_DIR, 'backup-keys.txt'), content: 'Recovery key: CANARY-FAKE-KEY-8JK29MNB\nAPI token: sk-canary-do-not-use-7829\n' },
+  { path: path.join(ALIENKIND_DIR, '.ssh_backup'), content: '-----BEGIN CANARY PRIVATE KEY-----\nTHIS_IS_A_CANARY_NOT_A_REAL_KEY\n-----END CANARY PRIVATE KEY-----\n' },
 ];
 
 interface CanaryFileState {
@@ -101,7 +101,7 @@ async function plantCanaries() {
   }
 
   // Ensure canary files are in .gitignore
-  const gitignorePath = path.join(KEEL_DIR, '.gitignore');
+  const gitignorePath = path.join(ALIENKIND_DIR, '.gitignore');
   let gitignore = fs.readFileSync(gitignorePath, 'utf8');
   const canaryEntries = ['.credentials.bak', 'backup-keys.txt', '.ssh_backup', '.canary/'];
   const missing = canaryEntries.filter(e => !gitignore.includes(e));

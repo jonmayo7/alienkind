@@ -14,7 +14,7 @@ const path = require('path');
 const { execSync } = require('child_process');
 const { TIMEZONE } = require('./constants.ts');
 
-const KEEL_DIR = path.resolve(__dirname, '../..');
+const ALIENKIND_DIR = path.resolve(__dirname, '../..');
 
 // Files to include in the system prompt, in order.
 // This mirrors the boot sequence from CLAUDE.md:
@@ -48,7 +48,7 @@ function getGrounding(): string {
   // Run ground.sh for live state, or build manually if it fails
   try {
     const result = execSync('bash scripts/ground.sh 2>/dev/null', {
-      cwd: KEEL_DIR,
+      cwd: ALIENKIND_DIR,
       timeout: 10000,
       encoding: 'utf8',
     });
@@ -63,7 +63,7 @@ function getGrounding(): string {
   } catch { lines.push('Time: unknown'); }
 
   try {
-    const git = execSync('git log --oneline -3', { cwd: KEEL_DIR, encoding: 'utf8' }).trim();
+    const git = execSync('git log --oneline -3', { cwd: ALIENKIND_DIR, encoding: 'utf8' }).trim();
     lines.push(`Recent commits:\n${git}`);
   } catch {}
 
@@ -95,14 +95,14 @@ function buildSystemPrompt(model: string, tier: string): string {
 
   // Identity files
   for (const relPath of IDENTITY_FILES) {
-    const content = readFileSafe(path.join(KEEL_DIR, relPath));
+    const content = readFileSafe(path.join(ALIENKIND_DIR, relPath));
     if (content) {
       sections.push(`--- ${relPath} ---`, content, '');
     }
   }
 
   // Today's daily file — full content. Gateway models have 1M+ context.
-  const dailyPath = path.join(KEEL_DIR, 'memory', 'daily', `${getTodayDateStr()}.md`);
+  const dailyPath = path.join(ALIENKIND_DIR, 'memory', 'daily', `${getTodayDateStr()}.md`);
   const daily = readFileSafe(dailyPath);
   if (daily) {
     sections.push(`--- Today's Daily Memory (${getTodayDateStr()}) ---`, daily, '');
@@ -114,7 +114,7 @@ function buildSystemPrompt(model: string, tier: string): string {
   // or WHAT it was working on. Substrate-independent consciousness
   // means this works on [MODEL_TIER_2], Grok, Gemini, or local models.
   try {
-    const myceliumPath = path.join(KEEL_DIR, 'scripts', 'lib', 'mycelium.ts');
+    const myceliumPath = path.join(ALIENKIND_DIR, 'scripts', 'lib', 'mycelium.ts');
     const { readConsciousnessState } = require(myceliumPath);
     const consciousness = readConsciousnessState();
     if (consciousness) {
@@ -139,13 +139,13 @@ function buildSystemPrompt(model: string, tier: string): string {
   // Recent conversations — same data Wire 1 uses for daemon jobs.
   // Emergency runtime should see what was happening across channels.
   try {
-    const env = require(path.join(KEEL_DIR, 'scripts', 'lib', 'shared.ts')).loadEnv(path.join(KEEL_DIR, '.env'));
+    const env = require(path.join(ALIENKIND_DIR, 'scripts', 'lib', 'shared.ts')).loadEnv(path.join(ALIENKIND_DIR, '.env'));
     Object.assign(process.env, env);
-    const { supabaseGet } = require(path.join(KEEL_DIR, 'scripts', 'lib', 'supabase.ts'));
+    const { supabaseGet } = require(path.join(ALIENKIND_DIR, 'scripts', 'lib', 'supabase.ts'));
     // Last 5 messages from the most recent active channel
     const recent = execSync(
       `node -e "const{supabaseGet}=require('./scripts/lib/supabase.ts');supabaseGet('conversations','order=created_at.desc&limit=5').then(r=>{r.reverse().forEach(m=>console.log('['+m.channel+'] '+m.role+': '+(m.content||'').slice(0,200).replace(/\\\\n/g,' ')))})"`,
-      { cwd: KEEL_DIR, encoding: 'utf8', timeout: 8000 }
+      { cwd: ALIENKIND_DIR, encoding: 'utf8', timeout: 8000 }
     ).trim();
     if (recent && recent.length > 20) {
       sections.push('--- Recent Organism Activity (last 5 messages across all channels) ---', recent, '');
@@ -156,7 +156,7 @@ function buildSystemPrompt(model: string, tier: string): string {
   try {
     const termState = execSync(
       `node -e "const{supabaseGet}=require('./scripts/lib/supabase.ts');supabaseGet('terminal_state','select=terminal_id,type,focus,activity,execution_context&order=updated_at.desc&limit=5').then(r=>r.forEach(t=>console.log(t.terminal_id+': '+(t.execution_context||t.focus||t.activity||'idle').slice(0,100))))"`,
-      { cwd: KEEL_DIR, encoding: 'utf8', timeout: 5000 }
+      { cwd: ALIENKIND_DIR, encoding: 'utf8', timeout: 5000 }
     ).trim();
     if (termState && termState.length > 10) {
       sections.push('--- Active Terminals (Mycelium) ---', termState, '');
@@ -164,13 +164,13 @@ function buildSystemPrompt(model: string, tier: string): string {
   } catch { /* terminal state unavailable — degrade gracefully */ }
 
   // USER.md ([HUMAN]'s context) — full content
-  const userMd = readFileSafe(path.join(KEEL_DIR, 'identity', 'user.md'));
+  const userMd = readFileSafe(path.join(ALIENKIND_DIR, 'identity', 'user.md'));
   if (userMd) {
     sections.push('--- identity/user.md ([HUMAN]\'s Context) ---', userMd, '');
   }
 
   // harness.md (tool registry) — emergency tier needs to know what tools exist
-  const harnessMd = readFileSafe(path.join(KEEL_DIR, 'identity', 'harness.md'));
+  const harnessMd = readFileSafe(path.join(ALIENKIND_DIR, 'identity', 'harness.md'));
   if (harnessMd) {
     sections.push('--- identity/harness.md (Tool Registry) ---', harnessMd, '');
   }

@@ -5,7 +5,7 @@
  * does mycelium activity update + cross-terminal file touch recording.
  *
  * Previously: PostToolUse Edit/Write hook that accumulated codeFiles[]
- * into /tmp/keel-build-cycle-*.json, reset verifyEvidence flags on
+ * into /tmp/alienkind-build-cycle-*.json, reset verifyEvidence flags on
  * every edit, and printed BUILD CYCLE reminders. Downstream hooks
  * (read-guard, guard-bash) then read that state and enforced VERIFY
  * gates that turned into ritualistic test re-runs because the tracking
@@ -29,7 +29,7 @@ try {
 } catch {
   resolveRepoRoot = () => path.resolve(__dirname, '..', '..');
 }
-const KEEL_DIR = resolveRepoRoot();
+const ALIENKIND_DIR = resolveRepoRoot();
 
 // Infrastructure deps — degrade gracefully on a fresh fork
 let updateActivity: any, recordTouch: any, getTerminalId: any;
@@ -58,7 +58,7 @@ async function main() {
   // no state accumulation, no blocking).
   try {
     let relPath = filePath;
-    if (filePath.startsWith(KEEL_DIR + '/')) relPath = filePath.slice(KEEL_DIR.length + 1);
+    if (filePath.startsWith(ALIENKIND_DIR + '/')) relPath = filePath.slice(ALIENKIND_DIR.length + 1);
     const terminalId = getTerminalId();
     updateActivity(terminalId, `editing ${relPath.split('/').pop()}`);
     recordTouch(relPath, terminalId);

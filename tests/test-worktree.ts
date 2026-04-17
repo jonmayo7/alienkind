@@ -18,8 +18,8 @@ const { createWorktree, listWorktrees, removeWorktree, runInWorktree, pruneWorkt
 const fs = require('fs');
 const path = require('path');
 
-const KEEL_DIR = path.resolve(__dirname, '..');
-const WORKTREE_BASE = path.join(KEEL_DIR, '.keel', 'worktrees');
+const ALIENKIND_DIR = path.resolve(__dirname, '..');
+const WORKTREE_BASE = path.join(ALIENKIND_DIR, '.keel', 'worktrees');
 
 let passed = 0;
 let failed = 0;
@@ -101,7 +101,7 @@ async function run() {
     const wtPath = wt.path;
     assertTrue(fs.existsSync(wtPath), 'worktree path exists');
     fs.writeFileSync(path.join(wtPath, '_test_isolation_marker.txt'), 'isolated');
-    assertTrue(!fs.existsSync(path.join(KEEL_DIR, '_test_isolation_marker.txt')), 'marker not in main');
+    assertTrue(!fs.existsSync(path.join(ALIENKIND_DIR, '_test_isolation_marker.txt')), 'marker not in main');
   });
 
   await test('error on duplicate name', () => {
@@ -154,7 +154,7 @@ async function run() {
     // Delete the test branch from main repo
     try {
       const { execSync } = require('child_process');
-      execSync(`git branch -D ${branchName}`, { cwd: KEEL_DIR, stdio: 'pipe' });
+      execSync(`git branch -D ${branchName}`, { cwd: ALIENKIND_DIR, stdio: 'pipe' });
     } catch {}
   });
 

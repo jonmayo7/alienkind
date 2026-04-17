@@ -36,7 +36,7 @@ try {
 } catch {
   resolveRepoRoot = () => path.resolve(__dirname, '..', '..');
 }
-const KEEL_DIR = resolveRepoRoot();
+const ALIENKIND_DIR = resolveRepoRoot();
 
 // Known substrate endpoints — map of "host:port" → label for friendly output.
 // When the file being edited contains a port reference, we look up the
@@ -174,7 +174,7 @@ async function main() {
   if (!filePath) process.exit(0);
 
   // Convert absolute path → repo-relative
-  const relPath = filePath.startsWith(KEEL_DIR) ? filePath.slice(KEEL_DIR.length + 1) : filePath;
+  const relPath = filePath.startsWith(ALIENKIND_DIR) ? filePath.slice(ALIENKIND_DIR.length + 1) : filePath;
 
   // Scope: only check files that declare model IDs or ports. Fast exit
   // for routine edits (tests, memory, docs, daily files).

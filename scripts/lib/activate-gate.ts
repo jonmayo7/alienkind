@@ -16,23 +16,23 @@ const fs = require('fs');
 const path = require('path');
 const { launchctlRunning } = require('./service-health.ts');
 
-const KEEL_DIR = path.resolve(__dirname, '..', '..');
+const ALIENKIND_DIR = path.resolve(__dirname, '..', '..');
 
 // Files that require daemon restart when modified
 // Files the daemon loads ONCE at startup. Changes to these require daemon restart.
 // Regular job scripts (crypto-engine.ts, morning-brief.ts, etc.) are forked as
 // fresh node processes each run and pick up changes automatically.
 const INFRA_FILES = [
-  path.join(KEEL_DIR, 'config', 'daemon-jobs.ts'),
-  path.join(KEEL_DIR, 'scripts', 'lib', 'constants.ts'),
-  path.join(KEEL_DIR, 'scripts', 'daemon.ts'),
-  path.join(KEEL_DIR, 'scripts', 'lib', 'scheduler.ts'),
-  path.join(KEEL_DIR, 'scripts', 'lib', 'job-queue.ts'),
-  path.join(KEEL_DIR, 'scripts', 'lib', 'session-manager.ts'),
+  path.join(ALIENKIND_DIR, 'config', 'daemon-jobs.ts'),
+  path.join(ALIENKIND_DIR, 'scripts', 'lib', 'constants.ts'),
+  path.join(ALIENKIND_DIR, 'scripts', 'daemon.ts'),
+  path.join(ALIENKIND_DIR, 'scripts', 'lib', 'scheduler.ts'),
+  path.join(ALIENKIND_DIR, 'scripts', 'lib', 'job-queue.ts'),
+  path.join(ALIENKIND_DIR, 'scripts', 'lib', 'session-manager.ts'),
 ];
 
 // Also check any plist files in config/
-const PLIST_GLOB = path.join(KEEL_DIR, 'config');
+const PLIST_GLOB = path.join(ALIENKIND_DIR, 'config');
 
 interface ActivateResult {
   passed: boolean;
@@ -55,7 +55,7 @@ function checkActivateGate(): ActivateResult {
   // Including them here would force a Studio 1 daemon restart for changes
   // the Studio 1 daemon doesn't load. False positive.
   try {
-    const configDir = path.join(KEEL_DIR, 'config');
+    const configDir = path.join(ALIENKIND_DIR, 'config');
     const configFiles = fs.readdirSync(configDir);
     for (const f of configFiles) {
       if (f.endsWith('.plist') && f.startsWith('com.example.') && !f.startsWith('com.example.studio2-')) {
@@ -98,7 +98,7 @@ function checkActivateGate(): ActivateResult {
       const stat = fs.statSync(filePath);
       const fileMtime = Math.floor(stat.mtimeMs / 1000);
       if (fileMtime > daemonEpoch) {
-        staleFiles.push(path.relative(KEEL_DIR, filePath));
+        staleFiles.push(path.relative(ALIENKIND_DIR, filePath));
       }
     } catch { /* stat failure is non-fatal */ }
   }

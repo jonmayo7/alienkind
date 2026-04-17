@@ -20,7 +20,7 @@ const http = require('http');
 const https = require('https');
 const { loadEnv } = require('./shared.ts');
 
-const KEEL_DIR = path.resolve(__dirname, '../..');
+const ALIENKIND_DIR = path.resolve(__dirname, '../..');
 
 interface IndexTarget {
   glob?: string;
@@ -63,7 +63,7 @@ interface IndexAllOptions {
   dryRun?: boolean;
 }
 
-// Files to index, relative to KEEL_DIR
+// Files to index, relative to ALIENKIND_DIR
 // Add new directories here as memory expands — indexer auto-discovers files via globs
 const INDEX_TARGETS: IndexTarget[] = [
   // Daily memory
@@ -265,7 +265,7 @@ async function saveEmbedding(chunkId: number, embedding: number[], creds: Supaba
 
 // --- Index a single file ---
 async function indexFile(filePath: string, fileType: string, { url, key, log, dryRun = false }: IndexFileOptions): Promise<IndexResult> {
-  const relativePath = path.relative(KEEL_DIR, filePath);
+  const relativePath = path.relative(ALIENKIND_DIR, filePath);
   if (!fs.existsSync(filePath)) {
     log('WARN', `File not found: ${relativePath}`);
     return { file: relativePath, indexed: 0, skipped: 0, deleted: 0 };
@@ -341,7 +341,7 @@ async function indexFile(filePath: string, fileType: string, { url, key, log, dr
 
 // --- Resolve glob patterns ---
 function resolveGlob(pattern: string): string[] {
-  const dir = path.join(KEEL_DIR, path.dirname(pattern));
+  const dir = path.join(ALIENKIND_DIR, path.dirname(pattern));
   const filePattern = path.basename(pattern);
   if (!fs.existsSync(dir)) return [];
 
@@ -368,7 +368,7 @@ async function indexAll({ log, dryRun = false }: IndexAllOptions): Promise<Index
   for (const target of INDEX_TARGETS) {
     const files = target.glob
       ? resolveGlob(target.glob)
-      : [path.join(KEEL_DIR, target.file!)];
+      : [path.join(ALIENKIND_DIR, target.file!)];
 
     for (const filePath of files) {
       try {
@@ -379,7 +379,7 @@ async function indexAll({ log, dryRun = false }: IndexAllOptions): Promise<Index
         }
       } catch (err: any) {
         log('WARN', `Failed to index ${filePath}: ${err.message}`);
-        results.push({ file: path.relative(KEEL_DIR, filePath), indexed: 0, skipped: 0, deleted: 0, error: err.message });
+        results.push({ file: path.relative(ALIENKIND_DIR, filePath), indexed: 0, skipped: 0, deleted: 0, error: err.message });
       }
     }
   }
@@ -406,7 +406,7 @@ if (require.main === module) {
   (async () => {
     if (specificFile) {
       const env = loadEnv();
-      const filePath = path.resolve(KEEL_DIR, specificFile);
+      const filePath = path.resolve(ALIENKIND_DIR, specificFile);
       const type = specificFile.includes('daily') ? 'daily'
         : specificFile.includes('MEMORY') ? 'memory'
         : specificFile.includes('BUILD_LOG') ? 'build_log'

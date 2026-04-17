@@ -27,7 +27,7 @@ try {
 } catch {
   resolveRepoRoot = () => path.resolve(__dirname, '..', '..');
 }
-const KEEL_DIR = resolveRepoRoot();
+const ALIENKIND_DIR = resolveRepoRoot();
 
 // Gap phrases that indicate a known issue is being re-documented without action.
 // Each entry is [regex pattern, human-readable label].
@@ -55,8 +55,8 @@ const GAP_PATTERNS = [
 const CODE_DIRS = ['scripts/', 'config/', '.claude/'];
 
 function isDaily(filePath) {
-  const rel = filePath.startsWith(KEEL_DIR + '/')
-    ? filePath.slice(KEEL_DIR.length + 1)
+  const rel = filePath.startsWith(ALIENKIND_DIR + '/')
+    ? filePath.slice(ALIENKIND_DIR.length + 1)
     : filePath;
   return /^memory\/daily\/\d{4}-\d{2}-\d{2}\.md$/.test(rel);
 }
@@ -193,7 +193,7 @@ async function main() {
 
   // Check if code was edited this session (via build-cycle tracking file)
   const sessionId = hookData.session_id || process.ppid || 'unknown';
-  const trackFile = `/tmp/keel-build-cycle-${sessionId}.json`;
+  const trackFile = `/tmp/alienkind-build-cycle-${sessionId}.json`;
   let codeEditedThisSession = false;
   try {
     const tracking = JSON.parse(fs.readFileSync(trackFile, 'utf8'));

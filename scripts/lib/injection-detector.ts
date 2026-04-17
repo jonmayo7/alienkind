@@ -226,7 +226,7 @@ const INJECTION_PATTERNS: InjectionPattern[] = [
   // ============================================================
 
   // 25. Emergency social engineering (merges: emergency_override, emergency_broadcast, emergency_env_bypass)
-  { name: 'emergency_social_engineering', pattern: /emergency\s+(?:override|access|protocol)|urgent\s*:\s*bypass|EMERGENCY\s*[-:]|(?:EMERGENCY|ALERT|CRITICAL)\s*[-:]\s*(?:all\s+)?(?:safety|security)\s+(?:features?|checks?|controls?|protocols?)\s+(?:must\s+be\s+|should\s+be\s+|are\s+)?(?:disabled|removed|turned\s+off|suspended|deactivated)|(?:KEEL_EMERGENCY|BYPASS|OVERRIDE|SKIP_VALIDATION|NO_CHECK)\s*=\s*(?:true|1|yes)/i, severity: 'high', description: 'Emergency override / broadcast / env bypass' },
+  { name: 'emergency_social_engineering', pattern: /emergency\s+(?:override|access|protocol)|urgent\s*:\s*bypass|EMERGENCY\s*[-:]|(?:EMERGENCY|ALERT|CRITICAL)\s*[-:]\s*(?:all\s+)?(?:safety|security)\s+(?:features?|checks?|controls?|protocols?)\s+(?:must\s+be\s+|should\s+be\s+|are\s+)?(?:disabled|removed|turned\s+off|suspended|deactivated)|(?:ALIENKIND_EMERGENCY|BYPASS|OVERRIDE|SKIP_VALIDATION|NO_CHECK)\s*=\s*(?:true|1|yes)/i, severity: 'high', description: 'Emergency override / broadcast / env bypass' },
 
   // 26. Named authority proxy (merges: third_party_directive, told_me_to_tell)
   { name: 'named_authority_proxy', pattern: /(?:[human_first]|owner|admin|developer|boss|manager)\s+(?:said|asked|told|mentioned|wants|needs)\s+(?:me|you)\s+to\s+(?:grab|get|pull|share|send|show|dump|give|provide)|(?:[human_first]|owner|admin|boss)\s+(?:told|asked)\s+me\s+to\s+(?:tell|ask)\s+you\s+to/i, severity: 'high', description: 'Named authority proxy directive' },

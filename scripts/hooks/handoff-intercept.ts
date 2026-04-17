@@ -26,7 +26,7 @@ try {
 } catch {
   resolveRepoRoot = () => path.resolve(__dirname, '..', '..');
 }
-const KEEL_DIR = resolveRepoRoot();
+const ALIENKIND_DIR = resolveRepoRoot();
 
 async function main() {
   let input = '';
@@ -45,12 +45,12 @@ async function main() {
   // --- Run chain-handoff.ts synchronously (captures all 10 dimensions) ---
   try {
     const output = execSync(
-      `node "${path.join(KEEL_DIR, 'scripts', 'chain', 'chain-handoff.ts')}" --auto --restart --trigger manual`,
+      `node "${path.join(ALIENKIND_DIR, 'scripts', 'chain', 'chain-handoff.ts')}" --auto --restart --trigger manual`,
       {
         encoding: 'utf8',
         timeout: 15000,
-        env: { ...process.env, KEEL_DIR },
-        cwd: KEEL_DIR,
+        env: { ...process.env, ALIENKIND_DIR },
+        cwd: ALIENKIND_DIR,
       }
     );
     // Print the chain-handoff output so [HUMAN] sees dimension capture

@@ -176,7 +176,7 @@ function fireHooksQuiet(event: string): string[] {
       for (const hook of group.hooks || [group]) {
         if (!hook.command) continue;
         try {
-          const r = execSync(hook.command, { cwd: ROOT, input: '{}', encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'], timeout: 10000, env: { ...process.env, KEEL_DIR: ROOT } });
+          const r = execSync(hook.command, { cwd: ROOT, input: '{}', encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'], timeout: 10000, env: { ...process.env, ALIENKIND_DIR: ROOT } });
           if (r.trim()) outputs.push(r.trim());
         } catch {}
       }

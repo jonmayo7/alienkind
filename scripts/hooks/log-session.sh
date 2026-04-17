@@ -2,7 +2,7 @@
 # Stop hook: Log interactive session to Supabase sessions table.
 # Fires when Claude finishes responding. Logs once per session via session_id marker.
 
-KEEL_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+ALIENKIND_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 
 # Read hook input from stdin to extract session_id
 INPUT=$(cat)
@@ -13,7 +13,7 @@ if [ -z "$SESSION_ID" ]; then
   exit 0
 fi
 
-SESSION_MARKER="/tmp/keel-session-logged-${SESSION_ID}"
+SESSION_MARKER="/tmp/alienkind-session-logged-${SESSION_ID}"
 
 # Only log once per session (first Stop event with this session_id)
 if [ -f "$SESSION_MARKER" ]; then
@@ -21,8 +21,8 @@ if [ -f "$SESSION_MARKER" ]; then
 fi
 
 # Load env
-if [ -f "$KEEL_DIR/.env" ]; then
-  export $(grep -v '^#' "$KEEL_DIR/.env" | grep -v '^$' | xargs) 2>/dev/null
+if [ -f "$ALIENKIND_DIR/.env" ]; then
+  export $(grep -v '^#' "$ALIENKIND_DIR/.env" | grep -v '^$' | xargs) 2>/dev/null
 fi
 
 if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_KEY" ]; then

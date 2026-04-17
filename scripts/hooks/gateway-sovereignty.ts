@@ -39,7 +39,7 @@ const BLOCKED_PATTERNS = [
   /openai\/gpt/,
   /xai\/grok/,
   /google\/gemini/,
-  /KEEL_AI_GATEWAY/,
+  /ALIENKIND_AI_GATEWAY/,
 ];
 
 function main() {

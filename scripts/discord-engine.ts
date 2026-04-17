@@ -17,7 +17,7 @@ const path = require('path');
 const fs = require('fs');
 const { Client, GatewayIntentBits, Partials } = require('discord.js');
 
-const KEEL_DIR = path.resolve(__dirname, '..');
+const ALIENKIND_DIR = path.resolve(__dirname, '..');
 const { loadEnv, createLogger, classifyMessage } = require('./lib/shared.ts');
 const { processMessage, CHANNELS } = require('./lib/keel-engine.ts');
 const { acquireLock } = require('./lib/lockfile.ts');
@@ -30,7 +30,7 @@ const env = loadEnv();
 for (const [k, v] of Object.entries(env) as [string, string][]) {
   if (!process.env[k]) process.env[k] = v;
 }
-const { log, fatal } = createLogger(path.join(KEEL_DIR, 'logs', 'discord-engine.log'));
+const { log, fatal } = createLogger(path.join(ALIENKIND_DIR, 'logs', 'discord-engine.log'));
 
 const BOT_TOKEN = env.DISCORD_BOT_TOKEN;
 const ALLOWED_USER_ID = env.DISCORD_ALLOWED_USER_ID;
@@ -276,14 +276,14 @@ client.on('shardDisconnect', (event: any) => {
 process.on('SIGTERM', () => {
   log('INFO', 'Received SIGTERM. Shutting down.');
   client.destroy();
-  try { fs.unlinkSync(path.join(KEEL_DIR, 'logs', 'discord-engine.lock')); } catch {}
+  try { fs.unlinkSync(path.join(ALIENKIND_DIR, 'logs', 'discord-engine.lock')); } catch {}
   process.exit(0);
 });
 
 process.on('SIGINT', () => {
   log('INFO', 'Received SIGINT. Shutting down.');
   client.destroy();
-  try { fs.unlinkSync(path.join(KEEL_DIR, 'logs', 'discord-engine.lock')); } catch {}
+  try { fs.unlinkSync(path.join(ALIENKIND_DIR, 'logs', 'discord-engine.lock')); } catch {}
   process.exit(0);
 });
 

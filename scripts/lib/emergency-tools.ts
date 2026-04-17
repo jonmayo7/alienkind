@@ -19,7 +19,7 @@ const path = require('path');
 const { execSync } = require('child_process');
 const { spawnSync } = require('child_process');
 
-const KEEL_DIR = path.resolve(__dirname, '../..');
+const ALIENKIND_DIR = path.resolve(__dirname, '../..');
 
 // --- Hook Dispatcher ---
 // Uses keel-hooks.ts library — reads from config/hooks.ts (canonical source).
@@ -429,7 +429,7 @@ function executeTool(
   }
 
   const SOCIAL_ENV_KEYS = ['X_API_KEY', 'X_API_SECRET', 'X_ACCESS_TOKEN', 'X_ACCESS_TOKEN_SECRET',
-    'KEEL_X_ACCESS_TOKEN', 'KEEL_X_ACCESS_TOKEN_SECRET', 'LINKEDIN_ACCESS_TOKEN'];
+    'ALIENKIND_X_ACCESS_TOKEN', 'ALIENKIND_X_ACCESS_TOKEN_SECRET', 'LINKEDIN_ACCESS_TOKEN'];
   const socialEnv: Record<string, string> = { ...scopedEnv };
   for (const key of SOCIAL_ENV_KEYS) {
     if (process.env[key]) socialEnv[key] = process.env[key]!;
@@ -445,7 +445,7 @@ function executeTool(
   function validatePath(filePath: string): string | null {
     try {
       const resolved = fs.existsSync(filePath) ? fs.realpathSync(filePath) : path.resolve(filePath);
-      if (!resolved.startsWith(KEEL_DIR)) {
+      if (!resolved.startsWith(ALIENKIND_DIR)) {
         return 'ERROR: Path must be within project directory';
       }
       return null;
@@ -496,7 +496,7 @@ function executeTool(
 
       case 'run_command': {
         const result = spawnSync('bash', ['-c', args.command], {
-          cwd: KEEL_DIR,
+          cwd: ALIENKIND_DIR,
           timeout: 60000,
           encoding: 'utf8',
           env: scopedEnv,
@@ -513,11 +513,11 @@ function executeTool(
       }
 
       case 'search_files': {
-        const searchDir = args.path || KEEL_DIR;
+        const searchDir = args.path || ALIENKIND_DIR;
         const searchDirResolved = path.resolve(searchDir);
-        if (!searchDirResolved.startsWith(KEEL_DIR)) { output = 'ERROR: Path must be within project directory'; break; }
+        if (!searchDirResolved.startsWith(ALIENKIND_DIR)) { output = 'ERROR: Path must be within project directory'; break; }
         const result = spawnSync('find', [searchDir, '-path', `*${args.pattern}*`, '-type', 'f'], {
-          cwd: KEEL_DIR,
+          cwd: ALIENKIND_DIR,
           timeout: 10000,
           encoding: 'utf8',
         });
@@ -533,13 +533,13 @@ function executeTool(
       }
 
       case 'search_content': {
-        const searchPath = args.path || KEEL_DIR;
+        const searchPath = args.path || ALIENKIND_DIR;
         const searchPathResolved = path.resolve(searchPath);
-        if (!searchPathResolved.startsWith(KEEL_DIR)) { output = 'ERROR: Path must be within project directory'; break; }
+        if (!searchPathResolved.startsWith(ALIENKIND_DIR)) { output = 'ERROR: Path must be within project directory'; break; }
         const rgArgs = ['-n', '--max-count', '50', args.pattern, searchPath];
         if (args.glob) rgArgs.push('--glob', args.glob);
         const result = spawnSync('rg', rgArgs, {
-          cwd: KEEL_DIR,
+          cwd: ALIENKIND_DIR,
           timeout: 10000,
           encoding: 'utf8',
         });
@@ -558,7 +558,7 @@ function executeTool(
           ? `npx tsx scripts/lib/supabase.ts ${method} '${supabasePath}' ${bodyArg}`
           : `npx tsx scripts/lib/supabase.ts ${method} '${supabasePath}'`;
         const result = spawnSync('bash', ['-c', cmd], {
-          cwd: KEEL_DIR,
+          cwd: ALIENKIND_DIR,
           timeout: 30000,
           encoding: 'utf8',
           env: supabaseEnv,
@@ -572,8 +572,8 @@ function executeTool(
 
       case 'send_telegram': {
         const msg = (args.message || '').replace(/'/g, "'\\''");
-        const result = spawnSync('node', [path.join(KEEL_DIR, 'scripts', 'send-telegram.js'), msg], {
-          cwd: KEEL_DIR,
+        const result = spawnSync('node', [path.join(ALIENKIND_DIR, 'scripts', 'send-telegram.js'), msg], {
+          cwd: ALIENKIND_DIR,
           timeout: 15000,
           encoding: 'utf8',
           env: telegramEnv,
@@ -583,7 +583,7 @@ function executeTool(
       }
 
       case 'google_calendar': {
-        const calArgs = [path.join(KEEL_DIR, 'scripts', 'lib', 'google-calendar.ts')];
+        const calArgs = [path.join(ALIENKIND_DIR, 'scripts', 'lib', 'google-calendar.ts')];
         calArgs.push(args.action);
         if (args.days) calArgs.push('--days', String(args.days));
         if (args.summary) calArgs.push('--summary', args.summary);
@@ -591,7 +591,7 @@ function executeTool(
         if (args.end) calArgs.push('--end', args.end);
         if (args.event_id) calArgs.push(args.event_id);
         const result = spawnSync('npx', ['tsx', ...calArgs], {
-          cwd: KEEL_DIR,
+          cwd: ALIENKIND_DIR,
           timeout: 15000,
           encoding: 'utf8',
           env: googleEnv,
@@ -601,7 +601,7 @@ function executeTool(
       }
 
       case 'gmail': {
-        const gmailArgs = [path.join(KEEL_DIR, 'scripts', 'lib', 'google-gmail.ts')];
+        const gmailArgs = [path.join(ALIENKIND_DIR, 'scripts', 'lib', 'google-gmail.ts')];
         gmailArgs.push(args.action);
         if (args.query) gmailArgs.push(args.query);
         if (args.message_id) gmailArgs.push(args.message_id);
@@ -609,7 +609,7 @@ function executeTool(
         if (args.subject) gmailArgs.push('--subject', args.subject);
         if (args.body) gmailArgs.push('--body', args.body);
         const result = spawnSync('npx', ['tsx', ...gmailArgs], {
-          cwd: KEEL_DIR,
+          cwd: ALIENKIND_DIR,
           timeout: 15000,
           encoding: 'utf8',
           env: googleEnv,
@@ -621,8 +621,8 @@ function executeTool(
       case 'web_search': {
         // Use in-house SearxNG via local-inference.ts search command
         const query = (args.query || '').replace(/'/g, "'\\''");
-        const result = spawnSync('npx', ['tsx', path.join(KEEL_DIR, 'scripts', 'lib', 'local-inference.ts'), 'search', query], {
-          cwd: KEEL_DIR,
+        const result = spawnSync('npx', ['tsx', path.join(ALIENKIND_DIR, 'scripts', 'lib', 'local-inference.ts'), 'search', query], {
+          cwd: ALIENKIND_DIR,
           timeout: 15000,
           encoding: 'utf8',
           env: scopedEnv,
@@ -656,7 +656,7 @@ function executeTool(
           break;
         }
         const result = spawnSync('curl', ['-s', '-L', '--max-redirs', '3', '--max-time', '10', '--proto', '=http,https', '-A', 'Mozilla/5.0', url], {
-          cwd: KEEL_DIR,
+          cwd: ALIENKIND_DIR,
           timeout: 15000,
           encoding: 'utf8',
           env: scopedEnv,
@@ -670,11 +670,11 @@ function executeTool(
 
       case 'post_to_x': {
         const text = (args.text || '').replace(/'/g, "'\\''");
-        const xArgs = ['tsx', path.join(KEEL_DIR, 'scripts', 'post-to-x.ts'), text];
+        const xArgs = ['tsx', path.join(ALIENKIND_DIR, 'scripts', 'post-to-x.ts'), text];
         if (args.account === 'keel') xArgs.push('--account', 'keel');
         if (args.media) xArgs.push('--media', args.media);
         const result = spawnSync('npx', xArgs, {
-          cwd: KEEL_DIR,
+          cwd: ALIENKIND_DIR,
           timeout: 30000,
           encoding: 'utf8',
           env: socialEnv,
@@ -685,10 +685,10 @@ function executeTool(
 
       case 'post_to_linkedin': {
         const text = (args.text || '').replace(/'/g, "'\\''");
-        const liArgs = ['tsx', path.join(KEEL_DIR, 'scripts', 'post-to-linkedin.ts'), text];
+        const liArgs = ['tsx', path.join(ALIENKIND_DIR, 'scripts', 'post-to-linkedin.ts'), text];
         if (args.media) liArgs.push('--media', args.media);
         const result = spawnSync('npx', liArgs, {
-          cwd: KEEL_DIR,
+          cwd: ALIENKIND_DIR,
           timeout: 30000,
           encoding: 'utf8',
           env: socialEnv,
@@ -701,10 +701,10 @@ function executeTool(
         const target = (args.target || '').replace(/'/g, "'\\''");
         const msg = (args.message || '').replace(/'/g, "'\\''");
         const result = spawnSync('node', [
-          path.join(KEEL_DIR, 'scripts', 'discord-send.js'),
+          path.join(ALIENKIND_DIR, 'scripts', 'discord-send.js'),
           '--target', target, '--message', msg, '--send'
         ], {
-          cwd: KEEL_DIR,
+          cwd: ALIENKIND_DIR,
           timeout: 15000,
           encoding: 'utf8',
           env: discordEnv,
@@ -718,13 +718,13 @@ function executeTool(
           const outPathErr = validatePath(args.output_path);
           if (outPathErr) { output = outPathErr; break; }
         }
-        const driveArgs = ['tsx', path.join(KEEL_DIR, 'scripts', 'lib', 'google-drive.ts'), args.action];
+        const driveArgs = ['tsx', path.join(ALIENKIND_DIR, 'scripts', 'lib', 'google-drive.ts'), args.action];
         if (args.query) driveArgs.push(args.query);
         if (args.file_id) driveArgs.push(args.file_id);
         if (args.folder_id) driveArgs.push(args.folder_id);
         if (args.output_path) driveArgs.push(args.output_path);
         const result = spawnSync('npx', driveArgs, {
-          cwd: KEEL_DIR,
+          cwd: ALIENKIND_DIR,
           timeout: 30000,
           encoding: 'utf8',
           env: googleEnv,
@@ -734,11 +734,11 @@ function executeTool(
       }
 
       case 'memory_search': {
-        const searchArgs = [path.join(KEEL_DIR, 'scripts', 'lib', 'memory-search.ts'), args.query];
+        const searchArgs = [path.join(ALIENKIND_DIR, 'scripts', 'lib', 'memory-search.ts'), args.query];
         if (args.type) searchArgs.push('--type', args.type);
         if (args.limit) searchArgs.push('--limit', String(args.limit));
         const result = spawnSync('node', searchArgs, {
-          cwd: KEEL_DIR,
+          cwd: ALIENKIND_DIR,
           timeout: 15000,
           encoding: 'utf8',
           env: supabaseEnv,
@@ -753,12 +753,12 @@ function executeTool(
         for (const key of NOTION_ENV_KEYS) {
           if (process.env[key]) notionEnv[key] = process.env[key]!;
         }
-        const notionArgs = ['tsx', path.join(KEEL_DIR, 'scripts', 'lib', 'notion.ts'), args.action];
+        const notionArgs = ['tsx', path.join(ALIENKIND_DIR, 'scripts', 'lib', 'notion.ts'), args.action];
         if (args.query) notionArgs.push(args.query);
         if (args.id) notionArgs.push(args.id);
         if (args.title) notionArgs.push('--title', args.title);
         const result = spawnSync('npx', notionArgs, {
-          cwd: KEEL_DIR,
+          cwd: ALIENKIND_DIR,
           timeout: 15000,
           encoding: 'utf8',
           env: notionEnv,
@@ -773,14 +773,14 @@ function executeTool(
         for (const key of ASANA_ENV_KEYS) {
           if (process.env[key]) asanaEnv[key] = process.env[key]!;
         }
-        const asanaArgs = ['tsx', path.join(KEEL_DIR, 'scripts', 'lib', 'asana.ts'), args.action];
+        const asanaArgs = ['tsx', path.join(ALIENKIND_DIR, 'scripts', 'lib', 'asana.ts'), args.action];
         if (args.project_id) asanaArgs.push(args.project_id);
         if (args.task_id) asanaArgs.push(args.task_id);
         if (args.name) asanaArgs.push('--name', args.name);
         if (args.text) asanaArgs.push('--text', args.text);
         if (args.query) asanaArgs.push(args.query);
         const result = spawnSync('npx', asanaArgs, {
-          cwd: KEEL_DIR,
+          cwd: ALIENKIND_DIR,
           timeout: 15000,
           encoding: 'utf8',
           env: asanaEnv,

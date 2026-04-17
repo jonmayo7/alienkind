@@ -24,8 +24,8 @@ const fs = require('fs');
 const path = require('path');
 const http = require('http');
 
-const KEEL_DIR = path.resolve(__dirname, '..', '..');
-const CONFIG_PATH = path.join(KEEL_DIR, 'scripts', 'lib', 'discernment-config.json');
+const ALIENKIND_DIR = path.resolve(__dirname, '..', '..');
+const CONFIG_PATH = path.join(ALIENKIND_DIR, 'scripts', 'lib', 'discernment-config.json');
 
 // ─── Types ───────────────────────────────────────────────────────
 

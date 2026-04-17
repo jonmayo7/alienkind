@@ -33,7 +33,7 @@ try {
 } catch {
   resolveRepoRoot = () => path.resolve(__dirname, '..', '..');
 }
-const KEEL_DIR = resolveRepoRoot();
+const ALIENKIND_DIR = resolveRepoRoot();
 const VLLM_PORT = 8000;
 const VLLM_MODEL = 'mlx-community/Qwen3.5-27B-4bit';
 const TIMEOUT_MS = 15000; // 15 second cap — don't block the developer
@@ -99,17 +99,17 @@ async function main() {
   let diff = '';
   let commitMsg = '';
   try {
-    commitMsg = execSync('git log -1 --format=%B', { cwd: KEEL_DIR, encoding: 'utf8', timeout: 5000 }).trim();
+    commitMsg = execSync('git log -1 --format=%B', { cwd: ALIENKIND_DIR, encoding: 'utf8', timeout: 5000 }).trim();
     // Verify the commit is fresh (within last 30 seconds)
-    const commitTime = execSync('git log -1 --format=%ct', { cwd: KEEL_DIR, encoding: 'utf8', timeout: 5000 }).trim();
+    const commitTime = execSync('git log -1 --format=%ct', { cwd: ALIENKIND_DIR, encoding: 'utf8', timeout: 5000 }).trim();
     if (Math.abs(Date.now() / 1000 - parseInt(commitTime)) > 30) process.exit(0);
-    diff = execSync('git diff HEAD~1 --stat', { cwd: KEEL_DIR, encoding: 'utf8', timeout: 5000 });
+    diff = execSync('git diff HEAD~1 --stat', { cwd: ALIENKIND_DIR, encoding: 'utf8', timeout: 5000 });
   } catch { process.exit(0); }
 
   // Get the actual changes for key files (not just stat)
   let diffContent = '';
   try {
-    diffContent = execSync('git diff HEAD~1 --name-only', { cwd: KEEL_DIR, encoding: 'utf8', timeout: 5000 });
+    diffContent = execSync('git diff HEAD~1 --name-only', { cwd: ALIENKIND_DIR, encoding: 'utf8', timeout: 5000 });
   } catch { process.exit(0); }
 
   const changedFiles = diffContent.trim().split('\n').filter(Boolean);
@@ -146,7 +146,7 @@ async function main() {
         try {
           const grepResult = execSync(
             `grep -rl "${pat.old}" scripts/ config/ --include="*.ts" --include="*.json" 2>/dev/null | grep -v node_modules | grep -v ".git" | head -5`,
-            { cwd: KEEL_DIR, encoding: 'utf8', timeout: 5000 }
+            { cwd: ALIENKIND_DIR, encoding: 'utf8', timeout: 5000 }
           ).trim();
           if (grepResult) {
             warnings.push(`INTENT COMPLETION — Commit mentions "${pat.old}" migration but stale references remain:`);
@@ -186,10 +186,10 @@ async function main() {
   // This catches the Phase 5.2 failure: morning brief blog built but env var never set.
   try {
     const addedLines = execSync('git diff HEAD~1 -U0 -- "*.ts" 2>/dev/null', {
-      cwd: KEEL_DIR, encoding: 'utf8', timeout: 5000,
+      cwd: ALIENKIND_DIR, encoding: 'utf8', timeout: 5000,
     });
     const removedLines = execSync('git diff HEAD~1 -U0 -- "*.ts" 2>/dev/null', {
-      cwd: KEEL_DIR, encoding: 'utf8', timeout: 5000,
+      cwd: ALIENKIND_DIR, encoding: 'utf8', timeout: 5000,
     });
 
     // Extract env var names from added lines only
@@ -213,7 +213,7 @@ async function main() {
     if (newEnvVars.length > 0) {
       let knownVars = new Set<string>();
       try {
-        const envContent = fs.readFileSync(path.join(KEEL_DIR, '.env'), 'utf8');
+        const envContent = fs.readFileSync(path.join(ALIENKIND_DIR, '.env'), 'utf8');
         for (const line of envContent.split('\n')) {
           const key = line.split('=')[0]?.trim();
           if (key && !key.startsWith('#')) knownVars.add(key);
@@ -235,7 +235,7 @@ async function main() {
   if (warnings.length > 0) {
     try {
       const sessionId = hookData.session_id || process.ppid || 'unknown';
-      const trackFile = `/tmp/keel-build-cycle-${sessionId}.json`;
+      const trackFile = `/tmp/alienkind-build-cycle-${sessionId}.json`;
       let tracking: any = {};
       try { tracking = JSON.parse(fs.readFileSync(trackFile, 'utf8')); } catch {}
       tracking.forwardLookIssues = warnings;
@@ -260,7 +260,7 @@ async function main() {
     // Clean — clear any prior forward-look issues
     try {
       const sessionId = hookData.session_id || process.ppid || 'unknown';
-      const trackFile = `/tmp/keel-build-cycle-${sessionId}.json`;
+      const trackFile = `/tmp/alienkind-build-cycle-${sessionId}.json`;
       let tracking: any = {};
       try { tracking = JSON.parse(fs.readFileSync(trackFile, 'utf8')); } catch {}
       if (tracking.forwardLookIssues) {
@@ -286,7 +286,7 @@ async function main() {
     const firstLine = commitMsg.split('\n')[0].trim();
     if (firstLine && firstLine.length > 5 && process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY) {
       const { spawn } = require('child_process');
-      const body = JSON.stringify({ what: firstLine, terminal_id: process.env.KEEL_TERMINAL_ID || 'unknown', open: false });
+      const body = JSON.stringify({ what: firstLine, terminal_id: process.env.ALIENKIND_TERMINAL_ID || 'unknown', open: false });
       const child = spawn('curl', [
         '-s', '--max-time', '5',
         '-X', 'POST',

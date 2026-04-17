@@ -32,7 +32,7 @@ try {
 } catch {
   resolveRepoRoot = () => path.resolve(__dirname, '..', '..');
 }
-const KEEL_DIR = resolveRepoRoot();
+const ALIENKIND_DIR = resolveRepoRoot();
 
 // Files that MUST be read after compaction for proper re-grounding
 const REQUIRED_PATTERNS = [
@@ -54,8 +54,8 @@ async function main() {
   try { hookData = JSON.parse(input); } catch { process.exit(0); }
 
   const sessionId = hookData.session_id || 'unknown';
-  const compactionFile = `/tmp/keel-compaction-audit-${sessionId}.json`;
-  const trackFile = `/tmp/keel-build-cycle-${sessionId}.json`;
+  const compactionFile = `/tmp/alienkind-compaction-audit-${sessionId}.json`;
+  const trackFile = `/tmp/alienkind-build-cycle-${sessionId}.json`;
 
   // Load compaction tracking state
   let state = { compactionDetected: false, auditPassed: false, responsesSinceCompaction: 0 };
@@ -94,7 +94,7 @@ async function main() {
       let consciousnessState: any = null;
       // Try local file first (fastest)
       try {
-        const myceliumPath = require('path').join(KEEL_DIR, 'scripts', 'lib', 'mycelium.ts');
+        const myceliumPath = require('path').join(ALIENKIND_DIR, 'scripts', 'lib', 'mycelium.ts');
         const { readConsciousnessState } = require(myceliumPath);
         consciousnessState = readConsciousnessState();
       } catch {}
@@ -104,7 +104,7 @@ async function main() {
           const { execSync } = require('child_process');
           const result = execSync(
             `node -e "const{supabaseGet}=require('./scripts/lib/supabase.ts');supabaseGet('consciousness_entries','order=created_at.desc&limit=1').then(r=>console.log(JSON.stringify(r[0]||{})))"`,
-            { cwd: KEEL_DIR, encoding: 'utf8', timeout: 5000 }
+            { cwd: ALIENKIND_DIR, encoding: 'utf8', timeout: 5000 }
           ).trim();
           if (result && result !== '{}') consciousnessState = JSON.parse(result);
         } catch {}

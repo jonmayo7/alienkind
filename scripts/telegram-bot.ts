@@ -18,7 +18,7 @@ const { execSync } = require('child_process');
 const { Bot, InputFile } = require('grammy');
 const { autoRetry } = require('@grammyjs/auto-retry');
 
-const KEEL_DIR = path.resolve(__dirname, '..');
+const ALIENKIND_DIR = path.resolve(__dirname, '..');
 const { loadEnv, createLogger, classifyMessage } = require('./lib/shared.ts');
 const { processMessage, CHANNELS } = require('./lib/keel-engine.ts');
 const { TIMEZONE, WHISPER, MEDIA, TTS, PLATFORM } = require('./lib/constants.ts');
@@ -35,13 +35,13 @@ const env = loadEnv();
 for (const [k, v] of Object.entries(env) as [string, string][]) {
   if (!process.env[k]) process.env[k] = v;
 }
-const { log } = createLogger(path.join(KEEL_DIR, 'logs', 'telegram-bot.log'));
+const { log } = createLogger(path.join(ALIENKIND_DIR, 'logs', 'telegram-bot.log'));
 
 const BOT_TOKEN = env.TELEGRAM_BOT_TOKEN;
 const DM_CHAT_ID = env.TELEGRAM_CHAT_ID;
 const ALERTS_CHAT_ID = env.TELEGRAM_ALERTS_CHAT_ID;
 const COMMS_COORD_CHAT_ID = env.TELEGRAM_COMMS_COORD_CHAT_ID;
-const WHISPER_MODEL_PATH = path.join(KEEL_DIR, WHISPER.modelPath);
+const WHISPER_MODEL_PATH = path.join(ALIENKIND_DIR, WHISPER.modelPath);
 
 if (!BOT_TOKEN) { log('ERROR', 'TELEGRAM_BOT_TOKEN missing'); process.exit(1); }
 if (!DM_CHAT_ID) { log('ERROR', 'TELEGRAM_CHAT_ID missing'); process.exit(1); }
@@ -322,7 +322,7 @@ async function flushMessages(chatId: string): Promise<void> {
     // --- Daily Memory Logging ---
     try {
       const today = new Date().toISOString().slice(0, 10);
-      const dmMemPath = path.join(KEEL_DIR, 'memory', 'daily', `${today}.md`);
+      const dmMemPath = path.join(ALIENKIND_DIR, 'memory', 'daily', `${today}.md`);
       const time = getNowCT();
       const channelTag = channel === 'telegram_dm' ? 'DM' : channel === 'telegram_alerts' ? 'Alerts' : 'CommsCoord';
       fs.appendFileSync(dmMemPath, `- **[${channelTag} ${time}] [HUMAN]:** ${combinedText.slice(0, 200)}\n`);
@@ -570,7 +570,7 @@ process.on('unhandledRejection', (err: any) => {
 function shutdown(signal: string) {
   log('INFO', `Received ${signal}. Shutting down.`);
   bot.stop();
-  try { fs.unlinkSync(path.join(KEEL_DIR, 'logs', 'telegram-bot.lock')); } catch {}
+  try { fs.unlinkSync(path.join(ALIENKIND_DIR, 'logs', 'telegram-bot.lock')); } catch {}
   process.exit(0);
 }
 process.on('SIGTERM', () => shutdown('SIGTERM'));

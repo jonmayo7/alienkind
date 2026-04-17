@@ -23,8 +23,8 @@ const https = require('https');
 const fs = require('fs');
 const path = require('path');
 
-const KEEL_DIR = path.resolve(__dirname, '..', '..');
-const ENV_PATH = path.join(KEEL_DIR, '.env');
+const ALIENKIND_DIR = path.resolve(__dirname, '..', '..');
+const ENV_PATH = path.join(ALIENKIND_DIR, '.env');
 
 // Inline env loader (hooks must be self-contained — no shared.js import for perf)
 function loadEnv() {

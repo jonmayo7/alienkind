@@ -28,12 +28,12 @@ const path = require('path');
 const { execSync } = require('child_process');
 const { logToDaily, getNowCT } = require('./lib/keel-env.ts');
 
-const KEEL_DIR = path.resolve(__dirname, '..');
+const ALIENKIND_DIR = path.resolve(__dirname, '..');
 
 // --- Git helpers ---
 
 function gitExec(cmd: string): string {
-  return execSync(cmd, { cwd: KEEL_DIR, encoding: 'utf8', timeout: 15000 }).trim();
+  return execSync(cmd, { cwd: ALIENKIND_DIR, encoding: 'utf8', timeout: 15000 }).trim();
 }
 
 function getTodaysCommits(): Array<{ hash: string; message: string; files: string[] }> {
@@ -138,7 +138,7 @@ function auditCommit(commit: { hash: string; message: string; files: string[] })
     if (script.startsWith('scripts/lib/') || script.startsWith('scripts/tools/')) {
       const baseName = path.basename(script, '.ts');
       const testFile = `scripts/tests/test-${baseName}.ts`;
-      if (!commit.files.includes(testFile) && !fs.existsSync(path.join(KEEL_DIR, testFile))) {
+      if (!commit.files.includes(testFile) && !fs.existsSync(path.join(ALIENKIND_DIR, testFile))) {
         findings.push({
           commit: shortHash, commitMessage: commit.message, type: 'missing_test',
           description: `New script ${script} has no test file (expected: ${testFile})`,
@@ -157,7 +157,7 @@ async function fixFinding(finding: AuditFinding, log: Function): Promise<{ fixed
   if (finding.severity !== 'fix') return { fixed: false, summary: `Surfaced: ${finding.description}` };
 
   const { loadEnv } = require('./lib/shared.ts');
-  Object.assign(process.env, loadEnv(path.join(KEEL_DIR, '.env')));
+  Object.assign(process.env, loadEnv(path.join(ALIENKIND_DIR, '.env')));
   const { processMessage, CHANNELS } = require('./lib/keel-engine.ts');
 
   const originalBranch = gitExec('git rev-parse --abbrev-ref HEAD');
@@ -183,8 +183,8 @@ async function fixFinding(finding: AuditFinding, log: Function): Promise<{ fixed
 
     const prompt = `The nightly intent-audit found a gap.\n${taskDesc}\nYou are on a preview branch. Fix the issue, verify, stop. Do NOT push. Keep changes minimal.`;
 
-    const daemonSessionId = process.env.KEEL_DAEMON_SESSION_ID;
-    const daemonSessionResume = process.env.KEEL_DAEMON_SESSION_RESUME === 'true';
+    const daemonSessionId = process.env.ALIENKIND_DAEMON_SESSION_ID;
+    const daemonSessionResume = process.env.ALIENKIND_DAEMON_SESSION_RESUME === 'true';
     const result = await processMessage(prompt, {
       channelConfig: CHANNELS.intent_audit,
       log: (level: string, msg: string) => log(level, msg),
@@ -223,9 +223,9 @@ async function fixFinding(finding: AuditFinding, log: Function): Promise<{ fixed
 
 async function main() {
   const { loadEnv, createLogger, checkAuth } = require('./lib/shared.ts');
-  Object.assign(process.env, loadEnv(path.join(KEEL_DIR, '.env')));
+  Object.assign(process.env, loadEnv(path.join(ALIENKIND_DIR, '.env')));
 
-  const LOG_DIR = path.join(KEEL_DIR, 'logs');
+  const LOG_DIR = path.join(ALIENKIND_DIR, 'logs');
   fs.mkdirSync(LOG_DIR, { recursive: true });
   const DATE = new Date().toISOString().split('T')[0];
   const { log } = createLogger(path.join(LOG_DIR, `intent-audit-${DATE}.log`));

@@ -6,7 +6,7 @@
  * FINAL nightly act — reads everything including analysis output.
  */
 const {
-  KEEL_DIR, LOG_DIR, DATE, TIME,
+  ALIENKIND_DIR, LOG_DIR, DATE, TIME,
   fs, path, execSync, execFileSync,
   log, sendTelegram, formatAlert, appendToDigest,
   attemptGrowthCycle,
@@ -99,7 +99,7 @@ function verifyIdentitySync() {
   const lines: string[] = [];
   // CLAUDE.md sync date
   try {
-    const claudeMd = fs.readFileSync(path.join(KEEL_DIR, 'CLAUDE.md'), 'utf-8');
+    const claudeMd = fs.readFileSync(path.join(ALIENKIND_DIR, 'CLAUDE.md'), 'utf-8');
     const syncMatch = claudeMd.match(/Identity synced from identity kernel: (\d{4}-\d{2}-\d{2})/);
     const syncDate = syncMatch ? syncMatch[1] : 'not found';
     lines.push(`CLAUDE.md sync date: ${syncDate}`);
@@ -109,7 +109,7 @@ function verifyIdentitySync() {
   }
 
   // Daily self-reflection section
-  const dailyFile = path.join(KEEL_DIR, 'memory', 'daily', `${DATE}.md`);
+  const dailyFile = path.join(ALIENKIND_DIR, 'memory', 'daily', `${DATE}.md`);
   try {
     const content = fs.readFileSync(dailyFile, 'utf-8');
     const hasReflection = content.includes('## Nightly Self-Reflection');
@@ -121,7 +121,7 @@ function verifyIdentitySync() {
 
   // Identity kernel git status
   try {
-    const gitStatus = execSync(`git -C "${KEEL_DIR}" status --porcelain identity/`, { timeout: 5000, encoding: 'utf-8' }).trim();
+    const gitStatus = execSync(`git -C "${ALIENKIND_DIR}" status --porcelain identity/`, { timeout: 5000, encoding: 'utf-8' }).trim();
     lines.push(`Identity file git status: ${gitStatus || 'clean'}`);
   } catch {
     lines.push('Identity kernel git status: ERROR');
@@ -223,7 +223,7 @@ async function runIdentitySync() {
   // Count identity kernel file changes from git
   let identityFilesChanged = 0;
   try {
-    const gitDiff = execSync(`git -C "${KEEL_DIR}" diff --name-only identity/`, { timeout: 5000, encoding: 'utf-8' }).trim();
+    const gitDiff = execSync(`git -C "${ALIENKIND_DIR}" diff --name-only identity/`, { timeout: 5000, encoding: 'utf-8' }).trim();
     if (gitDiff) identityFilesChanged = gitDiff.split('\n').length;
   } catch { /* ok */ }
 

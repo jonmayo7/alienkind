@@ -27,8 +27,8 @@ async function main() {
   try { hookData = JSON.parse(input); } catch { process.exit(0); }
 
   const sessionId = hookData.session_id || 'unknown';
-  const counterFile = `/tmp/keel-boot-verify-${sessionId}`;
-  const trackFile = `/tmp/keel-build-cycle-${sessionId}.json`;
+  const counterFile = `/tmp/alienkind-boot-verify-${sessionId}`;
+  const trackFile = `/tmp/alienkind-build-cycle-${sessionId}.json`;
 
   // Count responses
   let count = 0;

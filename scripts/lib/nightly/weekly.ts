@@ -11,7 +11,7 @@
  * - Write: sections to daily file + summary to notification outbox
  */
 const {
-  KEEL_DIR, LOG_DIR, DATE, TIME,
+  ALIENKIND_DIR, LOG_DIR, DATE, TIME,
   fs, path,
   log, sendTelegram, formatAlert, appendToDigest,
   attemptGrowthCycle, buildAwarenessContext,
@@ -60,7 +60,7 @@ ${buildAwarenessContext({ selfNodeId: 'daemon' })}`;
 
 function verifyWeekly() {
   const lines: string[] = [];
-  const dailyFile = path.join(KEEL_DIR, 'memory', 'daily', `${DATE}.md`);
+  const dailyFile = path.join(ALIENKIND_DIR, 'memory', 'daily', `${DATE}.md`);
   try {
     const content = fs.readFileSync(dailyFile, 'utf-8');
     lines.push(`Weekly Progress Review: ${content.includes('## Weekly Progress Review') ? 'written' : 'missing'}`);
