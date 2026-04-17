@@ -194,25 +194,25 @@ function getSupabaseContext() {
     Object.entries(channels).forEach(([ch, count]) => ctx.push(`  - ${ch}: ${count} messages`));
   }
 
-  const experiences = querySupabase('keel_experiences', `select=observation,domain,significance,tags,created_at&created_at=gte.${DATE}T00:00:00&order=significance.desc&limit=15`);
+  const experiences = querySupabase('experiences', `select=observation,domain,significance,tags,created_at&created_at=gte.${DATE}T00:00:00&order=significance.desc&limit=15`);
   if (experiences && experiences.length > 0) {
     ctx.push('Today\'s experiences (calibration layer):');
     experiences.forEach((e: any) => ctx.push(`  - [${e.domain}, sig=${e.significance}] ${e.observation.slice(0, 120)} (${e.created_at})`));
   }
 
-  const predictions = querySupabase('keel_predictions', `select=id,prediction,confidence,domain,resolved,created_at&created_at=gte.${DATE}T00:00:00&order=created_at.desc&limit=10`);
+  const predictions = querySupabase('predictions', `select=id,prediction,confidence,domain,resolved,created_at&created_at=gte.${DATE}T00:00:00&order=created_at.desc&limit=10`);
   if (predictions && predictions.length > 0) {
     ctx.push('Today\'s predictions:');
     predictions.forEach((p: any) => ctx.push(`  - [${p.domain}, conf=${p.confidence}] ${p.prediction.slice(0, 120)} (resolved: ${p.resolved})`));
   }
 
-  const outcomes = querySupabase('keel_outcomes', `select=outcome,delta_score,surprise_signal,learning,domain,created_at&created_at=gte.${DATE}T00:00:00&order=created_at.desc&limit=10`);
+  const outcomes = querySupabase('outcomes', `select=outcome,delta_score,surprise_signal,learning,domain,created_at&created_at=gte.${DATE}T00:00:00&order=created_at.desc&limit=10`);
   if (outcomes && outcomes.length > 0) {
     ctx.push('Today\'s outcomes (prediction results):');
     outcomes.forEach((o: any) => ctx.push(`  - [${o.domain}, delta=${o.delta_score}${o.surprise_signal ? ', SURPRISE' : ''}] ${o.outcome.slice(0, 100)}${o.learning ? ' → ' + o.learning.slice(0, 80) : ''}`));
   }
 
-  const unresolvedPreds = querySupabase('keel_predictions', 'select=id,prediction,confidence,domain,created_at&resolved=eq.false&order=created_at.asc&limit=20');
+  const unresolvedPreds = querySupabase('predictions', 'select=id,prediction,confidence,domain,created_at&resolved=eq.false&order=created_at.asc&limit=20');
   if (unresolvedPreds && unresolvedPreds.length > 0) {
     const byDomain: Record<string, number> = {};
     unresolvedPreds.forEach((p: any) => { byDomain[p.domain] = (byDomain[p.domain] || 0) + 1; });
@@ -226,7 +226,7 @@ function getSupabaseContext() {
     }
   }
 
-  const recentOutcomes = querySupabase('keel_outcomes', 'select=domain,delta_score,surprise_signal&order=created_at.desc&limit=25');
+  const recentOutcomes = querySupabase('outcomes', 'select=domain,delta_score,surprise_signal&order=created_at.desc&limit=25');
   if (recentOutcomes && recentOutcomes.length > 0) {
     const domainDeltas: Record<string, { total: number; count: number; surprises: number }> = {};
     recentOutcomes.forEach((o: any) => {
@@ -242,7 +242,7 @@ function getSupabaseContext() {
     });
   }
 
-  const orientationExp = querySupabase('keel_experiences', 'select=observation,domain,significance,created_at&orientation_relevant=eq.true&order=created_at.desc&limit=10');
+  const orientationExp = querySupabase('experiences', 'select=observation,domain,significance,created_at&orientation_relevant=eq.true&order=created_at.desc&limit=10');
   if (orientationExp && orientationExp.length > 0) {
     ctx.push('Recent orientation-relevant experiences (for identity/orientation.md updates):');
     orientationExp.forEach((e: any) => ctx.push(`  - [${e.domain}, sig=${e.significance}] ${e.observation.slice(0, 120)}`));

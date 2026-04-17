@@ -1,7 +1,7 @@
 -- Decisions table — what we chose and why.
 -- Separate from activity/conversations. The signal, not the noise.
 -- Read by getSessionBrief() → consciousness engine.
--- Written by logDecision() in keel-env.ts.
+-- Written by logDecision() in the env utility module.
 
 CREATE TABLE IF NOT EXISTS decisions (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,

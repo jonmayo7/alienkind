@@ -43,7 +43,7 @@ async function calibrateComplexity(baseClassification: ComplexityLevel, _message
     }
 
     const since = new Date(Date.now() - CALIBRATION.lookbackDays * 86400000).toISOString();
-    const rows = await supabaseGet('keel_experiences',
+    const rows = await supabaseGet('experiences',
       `select=tags,significance&domain=eq.interaction&created_at=gte.${since}&order=created_at.desc&limit=20`,
       { timeout: 5000 }
     );
@@ -96,7 +96,7 @@ async function getCalibrationContext(): Promise<string> {
 
     const since = new Date(Date.now() - CALIBRATION.lookbackDays * 86400000).toISOString();
 
-    const outcomes = await supabaseGet('keel_outcomes',
+    const outcomes = await supabaseGet('outcomes',
       `select=delta_score,surprise_signal,learning&created_at=gte.${since}&order=created_at.desc&limit=20`,
       { timeout: 5000 }
     );

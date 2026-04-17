@@ -11,8 +11,8 @@
 --
 -- Scope: Fixes the 6 reported tables PLUS 9 additional tables found with the
 -- same USING (true) vulnerability in migration history:
---   case_studies, podcast_episodes, memory_chunks, keel_predictions,
---   keel_outcomes, keel_experiences, content_feedback, review_messages,
+--   case_studies, podcast_episodes, memory_chunks, predictions,
+--   outcomes, experiences, content_feedback, review_messages,
 --   mistakes
 -- (learning_ledger and proposals were renamed/superseded — included for safety)
 --
@@ -132,26 +132,26 @@ DROP POLICY IF EXISTS "Allow service role full access" ON memory_chunks;
 ALTER TABLE memory_chunks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE memory_chunks FORCE ROW LEVEL SECURITY;
 
--- 10. keel_predictions (created in 008 — safe)
-DROP POLICY IF EXISTS "Allow all for authenticated" ON keel_predictions;
-DROP POLICY IF EXISTS "service_role_full_access" ON keel_predictions;
-DROP POLICY IF EXISTS "Allow service role full access" ON keel_predictions;
-ALTER TABLE keel_predictions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE keel_predictions FORCE ROW LEVEL SECURITY;
+-- 10. predictions (created in 008 — safe)
+DROP POLICY IF EXISTS "Allow all for authenticated" ON predictions;
+DROP POLICY IF EXISTS "service_role_full_access" ON predictions;
+DROP POLICY IF EXISTS "Allow service role full access" ON predictions;
+ALTER TABLE predictions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE predictions FORCE ROW LEVEL SECURITY;
 
--- 11. keel_outcomes (created in 008 — safe)
-DROP POLICY IF EXISTS "Allow all for authenticated" ON keel_outcomes;
-DROP POLICY IF EXISTS "service_role_full_access" ON keel_outcomes;
-DROP POLICY IF EXISTS "Allow service role full access" ON keel_outcomes;
-ALTER TABLE keel_outcomes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE keel_outcomes FORCE ROW LEVEL SECURITY;
+-- 11. outcomes (created in 008 — safe)
+DROP POLICY IF EXISTS "Allow all for authenticated" ON outcomes;
+DROP POLICY IF EXISTS "service_role_full_access" ON outcomes;
+DROP POLICY IF EXISTS "Allow service role full access" ON outcomes;
+ALTER TABLE outcomes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE outcomes FORCE ROW LEVEL SECURITY;
 
--- 12. keel_experiences (created in 008 — safe)
-DROP POLICY IF EXISTS "Allow all for authenticated" ON keel_experiences;
-DROP POLICY IF EXISTS "service_role_full_access" ON keel_experiences;
-DROP POLICY IF EXISTS "Allow service role full access" ON keel_experiences;
-ALTER TABLE keel_experiences ENABLE ROW LEVEL SECURITY;
-ALTER TABLE keel_experiences FORCE ROW LEVEL SECURITY;
+-- 12. experiences (created in 008 — safe)
+DROP POLICY IF EXISTS "Allow all for authenticated" ON experiences;
+DROP POLICY IF EXISTS "service_role_full_access" ON experiences;
+DROP POLICY IF EXISTS "Allow service role full access" ON experiences;
+ALTER TABLE experiences ENABLE ROW LEVEL SECURITY;
+ALTER TABLE experiences FORCE ROW LEVEL SECURITY;
 
 -- 13. content_feedback (not created in included migrations — guard)
 DO $$ BEGIN

@@ -191,7 +191,7 @@ function logExperience(envVars, { observation, domain, significance, tags, sourc
     if (typeof console !== 'undefined') console.warn(`[log-conversation] logExperience skipped: missing ${!observation ? 'observation' : 'domain'}`);
     return;
   }
-  supabasePost(envVars, 'keel_experiences', {
+  supabasePost(envVars, 'experiences', {
     observation,
     domain,
     significance: significance || 5,
@@ -515,7 +515,7 @@ async function main() {
 
       // Log terminal interaction as experience for calibration layer.
       // Terminal is the richest work channel — this closes the gap where
-      // terminal sessions were invisible to keel_experiences.
+      // terminal sessions were invisible to experiences.
       const responseLen = lastMsg.length;
       const isLong = responseLen > 2000;
       logExperience(envVars, {

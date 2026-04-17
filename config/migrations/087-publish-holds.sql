@@ -1,14 +1,13 @@
 -- Publish Holds: privacy-gate as a discernment engine.
 --
--- Origin: 2026-04-11. Closing-question audit found that scripts/lib/privacy-gate.ts
--- (built 2026-03-26 after [PRIVACY_INCIDENT] was published in an autonomous
--- article) had ZERO callers. The original wiring was deleted because the regex
+-- Origin: built after an audit found that scripts/lib/privacy-gate.ts
+-- (a regex scanner for sensitive content) had ZERO callers in the publish path. The original wiring was deleted because the regex
 -- was too noisy and brittle to ship as a hard block. Re-wiring as-is would
 -- recreate the original failure mode.
 --
 -- The fix: scan → hold → surface → resolve. This table is the "hold" layer.
 -- When privacyGate() matches in any external publish path, the publish is
--- halted and a row lands here. Telegram + dashboard surface it. [HUMAN] resolves
+-- halted and a row lands here. Telegram + dashboard surface it. the human resolves
 -- with approve / deny / mark-false-positive. Default to BLOCK after 24h with
 -- no response — fail closed, the whole point is to never silently publish.
 --
@@ -22,7 +21,7 @@ CREATE TABLE IF NOT EXISTS publish_holds (
 
   -- What was held
   channel         text NOT NULL,           -- 'x', 'linkedin', 'email', 'gmail', etc.
-  target          text,                    -- '[@PARTNER_HANDLE]', '[human_first]-linkedin', recipient email, etc.
+  target          text,                    -- '[@PARTNER_HANDLE]', 'the human-linkedin', recipient email, etc.
   content         text NOT NULL,           -- the full text that was about to publish
   content_hash    text NOT NULL,           -- sha256 prefix for dedup + reference
 
@@ -37,13 +36,13 @@ CREATE TABLE IF NOT EXISTS publish_holds (
 
   -- Resolution
   status          text NOT NULL DEFAULT 'pending',
-    -- pending: held, awaiting [HUMAN]
-    -- approved: [HUMAN] approved, publish should fire
-    -- denied: [HUMAN] denied, publish killed permanently
-    -- false_positive: [HUMAN] marked as overbroad, publish fires + pattern exception added
+    -- pending: held, awaiting the human
+    -- approved: the human approved, publish should fire
+    -- denied: the human denied, publish killed permanently
+    -- false_positive: the human marked as overbroad, publish fires + pattern exception added
     -- expired: 24h elapsed without response, defaulted to BLOCK (fail closed)
-  resolved_by     text,                    -- '[human_first]', 'auto-expire', etc.
-  resolution_notes text,                   -- [human_first]'s reason if provided
+  resolved_by     text,                    -- 'the human', 'auto-expire', etc.
+  resolution_notes text,                   -- the human's reason if provided
 
   -- Timestamps
   created_at      timestamptz DEFAULT now(),
@@ -69,4 +68,4 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
-COMMENT ON TABLE publish_holds IS 'Privacy-gate discernment engine: holds external publishes when privacyGate() matches. Surfaces to [HUMAN] via Telegram + brief dashboard. Resolves to approved/denied/false-positive/expired. Default to BLOCK on 24h no-response. Origin: 2026-04-11 closing-question audit (privacy-gate dead defense after Mar 26 [PRIVACY_INCIDENT]).';
+COMMENT ON TABLE publish_holds IS 'Privacy-gate discernment engine: holds external publishes when privacyGate() matches. Surfaces to the human via your notification channel + dashboard. Resolves to approved/denied/false-positive/expired. Default to BLOCK on 24h no-response — fail closed, never silently publish.';

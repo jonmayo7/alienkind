@@ -1,12 +1,14 @@
--- Migration 051: VGE Infrastructure — system_events + pipeline_traces + facts
+-- Migration 051: System Events + Pipeline Traces + Facts
 --
--- Three tables that wire disconnected AIREs into a Verifiable Growth Ecosystem:
---   1. system_events — append-only event store. Every AIRE emits events.
---   2. pipeline_traces — observability. Every pipeline run proves what it did.
+-- Three generic observability + knowledge-graph primitives:
+--   1. system_events — append-only event store. Any subsystem emits events.
+--      Downstream subsystems subscribe. Supabase Realtime gives push propagation.
+--   2. pipeline_traces — every pipeline run records what it did for verification.
 --   3. facts + fact_edges — knowledge graph with provenance and staleness cascade.
 --
--- Together these replace the pattern where deep_process_outputs is the only
--- shared table and no AIRE validates another AIRE's output.
+-- Together these enable cross-subsystem observability and verifiable outputs —
+-- any scheduled analysis can validate another analysis's output instead of
+-- each component being a black box.
 
 -- ═══════════════════════════════════════
 -- SYSTEM EVENTS — the nervous system

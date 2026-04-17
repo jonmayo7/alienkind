@@ -1,8 +1,8 @@
--- Migration 061: keel_assumptions table
+-- Migration 061: assumptions table
 -- Fallibilism Phase 3: Structured assumption tracking.
 -- Every belief the organism holds can be challenged, verified, or retired.
 
-CREATE TABLE IF NOT EXISTS keel_assumptions (
+CREATE TABLE IF NOT EXISTS assumptions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   assumption TEXT NOT NULL,
   evidence TEXT,
@@ -16,15 +16,15 @@ CREATE TABLE IF NOT EXISTS keel_assumptions (
 );
 
 -- Index for common queries
-CREATE INDEX IF NOT EXISTS idx_keel_assumptions_status ON keel_assumptions(status);
-CREATE INDEX IF NOT EXISTS idx_keel_assumptions_domain ON keel_assumptions(domain);
+CREATE INDEX IF NOT EXISTS idx_assumptions_status ON assumptions(status);
+CREATE INDEX IF NOT EXISTS idx_assumptions_domain ON assumptions(domain);
 
 -- RLS: service role only (matches pattern from other keel_ tables)
-ALTER TABLE keel_assumptions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE assumptions ENABLE ROW LEVEL SECURITY;
 
 -- Allow service role full access
-DROP POLICY IF EXISTS "service_role_all" ON keel_assumptions;
-CREATE POLICY "service_role_all" ON keel_assumptions
+DROP POLICY IF EXISTS "service_role_all" ON assumptions;
+CREATE POLICY "service_role_all" ON assumptions
   FOR ALL
   USING (auth.role() = 'service_role')
   WITH CHECK (auth.role() = 'service_role');

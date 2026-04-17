@@ -1,9 +1,10 @@
 -- ============================================================
 -- MIGRATION 018: Learning Ledger
--- Captures behavioral corrections and reinforcements.
--- Enables pattern frequency tracking and upsert on repeats.
--- Phase 2: auto-detect corrections from conversation patterns.
--- Date: 2026-02-26
+-- Captures behavioral corrections and reinforcements the partner receives.
+-- Every correction from the human becomes a row; repeats increment occurrence_count.
+-- Counterfactual tracking: what the partner said, what it should have said.
+-- Causal confidence: how sure we are about the attribution, enabling revisions
+-- instead of overwrites when a pattern turns out to have a different root cause.
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS learning_ledger (
@@ -22,14 +23,25 @@ CREATE TABLE IF NOT EXISTS learning_ledger (
   -- Frequency tracking (upsert increments on repeat patterns)
   occurrence_count integer DEFAULT 1,
 
+  -- Counterfactual tracking
+  partner_response text,                         -- what the partner said that triggered the correction
+  should_have text,                              -- what the partner should have said instead (synthesized)
+  should_have_generated_at timestamptz,          -- when should_have was computed (prevents reprocessing)
+
+  -- Revision trajectories
+  causal_confidence real DEFAULT NULL,           -- 0-1, confidence in causal attribution; NULL = not assessed
+
   -- Source metadata
-  source_channel text,                           -- terminal, telegram_dm, discord, partner_collab, nightly, etc.
+  source_channel text,                           -- terminal, telegram_dm, discord, etc.
   session_id text,
 
   -- Metadata
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
 );
+
+COMMENT ON COLUMN learning_ledger.causal_confidence IS 'Confidence in causal attribution (0-1). NULL = not assessed. Low confidence signals "this may get revised as I learn more."';
+COMMENT ON COLUMN learning_ledger.should_have IS 'Counterfactual directive: what the partner should have done instead of its triggering response.';
 
 -- Indexes for common queries
 CREATE INDEX IF NOT EXISTS idx_learning_ledger_pattern ON learning_ledger (pattern_name);

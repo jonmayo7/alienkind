@@ -1,7 +1,8 @@
 -- ============================================================
--- MIGRATION 002: Add Discord + Slack Channels to Conversations
--- Run in Supabase SQL Editor: https://supabase.com/dashboard/project/[SUPABASE_PROJECT_ID]/sql/new
--- Date: 2026-02-18
+-- MIGRATION 002: Channel Types — multi-platform conversation support
+-- Adds channel values for terminal, telegram, discord, slack, heartbeat, nightly, web.
+-- Each row in `conversations` is tagged with the channel it came from — enables
+-- per-channel prompting, filtering, and trust-level routing.
 -- ============================================================
 
 -- Drop and recreate the channel CHECK constraint to include new channels

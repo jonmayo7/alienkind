@@ -1,20 +1,20 @@
--- Mission Packets: single source of truth for all working group findings.
+-- Mission Packets: single source of truth for working group findings.
 -- Every gap found, every solution proposed, every evaluation, every ship.
--- The triage AIRE scores entries here. Opus reads from here.
--- [HUMAN] can see this on the dashboard. Verification loop writes back here.
+-- A triage scorer ranks entries; a heavier evaluator reads the top-ranked packets.
+-- The human can see this on a dashboard. Verification loop writes back here.
 
 CREATE TABLE IF NOT EXISTS mission_packets (
   id              uuid DEFAULT gen_random_uuid() PRIMARY KEY,
 
   -- What was found
-  organ           text NOT NULL,           -- consciousness-engine, trading-engine, security, etc.
+  organ           text NOT NULL,           -- which subsystem the finding belongs to
   finding         text NOT NULL,           -- what's wrong or missing
   evidence        text,                    -- files read, data found, connections traced
   finding_type    text NOT NULL DEFAULT 'gap',  -- gap, dead-code, wiring, assumption, design-smell
 
   -- Who found it
-  created_by      text NOT NULL,           -- working-group-gap-scanner, working-group-code-hunter, etc.
-  models_used     text[],                  -- which models contributed (e.g. {'122B', 'coder-next', '27B'})
+  created_by      text NOT NULL,           -- which working group produced this
+  models_used     text[],                  -- which models contributed
   debate_rounds   int DEFAULT 0,           -- how many diverge/challenge/converge rounds
 
   -- Proposed solution
@@ -36,8 +36,8 @@ CREATE TABLE IF NOT EXISTS mission_packets (
     -- shipped: fix committed and ACTIVATED
     -- rejected: Opus rejected with reason
     -- deferred: real but not priority now
-    -- escalated: needs [HUMAN]
-  evaluated_by    text,                    -- opus, [human_first], auto (for auto-ship items)
+    -- escalated: needs the human
+  evaluated_by    text,                    -- model name, 'human', or 'auto' (for auto-ship items)
   evaluation_notes text,                   -- why approved/rejected/deferred
   commit_sha      text,                    -- if shipped, the commit hash
 
@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS mission_packets (
   risk_notes      text,                    -- what could break
 
   -- Escalation
-  escalation_reason text,                  -- why this needs [HUMAN] (if escalated)
+  escalation_reason text,                  -- why this needs the human (if escalated)
 
   -- Timestamps
   created_at      timestamptz DEFAULT now(),

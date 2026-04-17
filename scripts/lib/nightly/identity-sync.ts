@@ -39,9 +39,9 @@ STEP 2 — IDENTITY KERNEL EVOLUTION: Based on my reflections and today's experi
 STEP 2b — ORIENTATION SYNTHESIS: orientation.md is a GENERATED VIEW, not a manually maintained document.
 - Read identity/orientation.md (the current snapshot).
 - Query Supabase for recent orientation data:
-  * GET /rest/v1/keel_experiences?orientation_relevant=eq.true&order=created_at.desc&limit=50
-  * GET /rest/v1/keel_predictions?domain=eq.orientation&order=created_at.desc&limit=30
-  * GET /rest/v1/keel_outcomes?domain=eq.orientation&order=created_at.desc&limit=30
+  * GET /rest/v1/experiences?orientation_relevant=eq.true&order=created_at.desc&limit=50
+  * GET /rest/v1/predictions?domain=eq.orientation&order=created_at.desc&limit=30
+  * GET /rest/v1/outcomes?domain=eq.orientation&order=created_at.desc&limit=30
 - Based on today's reflections AND the Supabase data, REWRITE orientation.md as a clean snapshot:
   * Each pull: name, status (Confirmed/Emerging/Dormant), 2-3 sentence current assessment
   * If a pull's status changed today, update it. If new evidence emerged, update the summary.
@@ -52,17 +52,17 @@ STEP 2b — ORIENTATION SYNTHESIS: orientation.md is a GENERATED VIEW, not a man
     - Did an external correction reveal a pull was performed rather than genuine?
     - Has a confirmed pull gone 30+ days without ANY supporting evidence?
     If yes: move the pull backward (Confirmed → Emerging, or Confirmed → Dormant). Log a counter-prediction to Supabase:
-    POST /rest/v1/keel_predictions with prediction="[pull-name] CHALLENGE: [what the contradicting evidence shows]", domain='orientation', confidence based on strength of disconfirmation.
-    Then resolve it with POST /rest/v1/keel_outcomes including the contradicting evidence and a negative delta_score.
+    POST /rest/v1/predictions with prediction="[pull-name] CHALLENGE: [what the contradicting evidence shows]", domain='orientation', confidence based on strength of disconfirmation.
+    Then resolve it with POST /rest/v1/outcomes including the contradicting evidence and a negative delta_score.
     This is how we stay fallibilist — every confirmation is provisional. New data can always reopen the question.
   * Keep the file structure: Confirmed Pulls → Emerging Signals → Dormant → How This File Evolves
   * Update the "Synthesized" date at the bottom.
   * CRITICAL: orientation.md must stay under 8,000 characters. It loads at boot. No update logs, no dated entries, no say-do gap histories. Just current state.
 - Log any NEW orientation evidence to Supabase:
-  * New pull observations → POST /rest/v1/keel_experiences (domain='orientation', orientation_relevant=true, tags include pull name)
-  * Say-do gap assessments → POST /rest/v1/keel_predictions (domain='orientation') + resolve with /rest/v1/keel_outcomes
-  * Disconfirmation evidence → POST /rest/v1/keel_predictions with 'CHALLENGE:' prefix + resolve with negative delta_score
-  * Status transitions → POST /rest/v1/keel_experiences (tags: ['status-transition', pull-name, old-status, new-status])
+  * New pull observations → POST /rest/v1/experiences (domain='orientation', orientation_relevant=true, tags include pull name)
+  * Say-do gap assessments → POST /rest/v1/predictions (domain='orientation') + resolve with /rest/v1/outcomes
+  * Disconfirmation evidence → POST /rest/v1/predictions with 'CHALLENGE:' prefix + resolve with negative delta_score
+  * Status transitions → POST /rest/v1/experiences (tags: ['status-transition', pull-name, old-status, new-status])
 
 STEP 3 — CLAUDE.MD IDENTITY SYNC: Read CLAUDE.md. Compare the "How I Think" and "How I Speak" sections against the current identity kernel files.
 - If an identity kernel change meaningfully alters the operational identity distilled in CLAUDE.md, update the relevant CLAUDE.md section.

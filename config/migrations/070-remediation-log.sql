@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS remediation_log (
   action_taken TEXT NOT NULL,        -- restart_service, clear_lock, rotate_session, truncate_log
   mode TEXT NOT NULL,                -- operator or builder (what mode the remediation ran in)
   outcome TEXT NOT NULL CHECK (outcome IN ('success', 'failed', 'escalated')),
-  escalation_reason TEXT,            -- if outcome=escalated, why (needs code change, needs [HUMAN])
+  escalation_reason TEXT,            -- if outcome=escalated, why (needs code change, needs the human)
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 

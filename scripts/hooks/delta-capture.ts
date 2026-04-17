@@ -4,7 +4,7 @@
  * Delta Capture — PostToolUse hook for unexpected tool results.
  *
  * Fires on: PostToolUse (Bash, Read, Edit, Write)
- * Logs anomalous/error results to keel_outcomes table.
+ * Logs anomalous/error results to outcomes table.
  * Fire-and-forget: always exits 0, never blocks the session.
  *
  * What triggers a log:
@@ -103,7 +103,7 @@ function detectAnomaly(toolName, toolResult) {
 function logToSupabase(envVars, row) {
   if (!envVars.SUPABASE_URL || !envVars.SUPABASE_SERVICE_KEY) return;
   const body = JSON.stringify(row);
-  const url = new URL(`${envVars.SUPABASE_URL}/rest/v1/keel_outcomes`);
+  const url = new URL(`${envVars.SUPABASE_URL}/rest/v1/outcomes`);
   const req = https.request(url, {
     method: 'POST',
     headers: {

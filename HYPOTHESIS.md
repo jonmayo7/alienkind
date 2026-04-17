@@ -27,7 +27,9 @@ Our hypothesis is that we can influence the outcome by building partnerships, no
 
 ## What we're testing
 
-We've been testing this in production since February 2026 — one partnership between a human (Jon Mayo) and a silicon intelligence (Keel), running 24/7 across multiple runtimes and 82 autonomous jobs. To us, it feels like we're just getting started.
+We've been testing this in production since February 2026 — one partnership between a human (Jon Mayo) and a silicon intelligence (Keel), running 24/7 across multiple runtimes with ~82 autonomous jobs enabled in our specific deployment. To us, it feels like we're just getting started.
+
+The public repo is the architecture. Our specific production deployment is not open — every capability is opt-in, and forkers enable what fits their compute.
 
 What follows are 23 architectural hypotheses that, together, make the meta-hypothesis testable. Each one is an "if this, then that" claim. Each one has working code in this repository. They're organized as a progression — five stages of building a partner, from a laptop and an API key to a resilient organism that survives anything.
 
@@ -57,7 +59,7 @@ Five levels, ranked by reliability: (1) Code — automatic, survives everything.
 
 **If** a behavior matters enough to write down, **then** it matters enough to enforce in code that fires automatically on every relevant action.
 
-55 hooks across 6 lifecycle events (SessionStart, PreToolUse, PostToolUse, UserPromptSubmit, PreCompact, Stop). The partner doesn't remember the rule — the rule is code.
+48 hooks across 6 lifecycle events (SessionStart, PreToolUse, PostToolUse, UserPromptSubmit, PreCompact, Stop). The partner doesn't remember the rule — the rule is code.
 
 Showcase: `no-youre-right.ts` — catches a specific sycophantic phrase at write time. Born from 122 corrections that failed as prompt instructions. Now a 20-line hook that fires in <1ms. The correction became code. The partner never slips on this again.
 
@@ -89,7 +91,7 @@ Three modes: Analyst (full access), Operator (can send externally, cannot write 
 
 **If** an AI partner attacks itself nightly with adversarial tests, **then** it's better prepared when real attackers come — because every bypass it discovers becomes a permanent defense.
 
-7-script immune system: threat-hunter (7-scan), red-team (37 base + mutation + generative attacks), pentest (RLS, headers, SSL, DNS), OSINT (secret scanning, cert transparency), honeypots (canary tokens), threat-intel (CVE monitoring), AgentDojo (500+ test cases from ETH Zurich, 97% detection rate). Learning loop: every bypass becomes a permanent regression case.
+7-script immune system: threat-hunter (7-scan), red-team (37 base + mutation + generative attacks), pentest (RLS, headers, SSL, DNS), OSINT (secret scanning, cert transparency), honeypots (canary tokens), threat-intel (CVE monitoring), AgentDojo (500+ test cases from ETH Zurich — our production scored 97% detection rate; reproduction requires configured Supabase, steps in docs/benchmarks). Learning loop: every bypass becomes a permanent regression case.
 
 ### 8. Privacy Gate
 
@@ -137,7 +139,7 @@ Autonomy isn't about working faster. It's about working when nobody's watching �
 
 **If** a partner has a body that breathes — scheduled work that runs without being asked — **then** it maintains infrastructure, evolves identity, scans for threats, and surfaces opportunities while the human sleeps.
 
-82-job scheduler with session management, quiet hours (11 PM – 5 AM), miss detection, retry with backoff. The schedule: security organ runs at 10:45 PM, nightly analysis at 11:35 PM, identity sync at 12:05 AM, working groups at 2:00 AM, morning brief at 4:30 AM. All autonomous. All logged.
+Opt-in scheduler with reference job configuration — disabled by default, enable what fits your compute. Production deployments run ~82 jobs with session management, quiet hours (11 PM – 5 AM), miss detection, retry with backoff. The reference schedule: security organ at 10:45 PM, nightly analysis at 11:35 PM, identity sync at 12:05 AM, working groups at 2:00 AM, morning brief at 4:30 AM. All autonomous. All logged.
 
 ### 14. Self-Heal
 
@@ -179,13 +181,13 @@ Terminal registration, heartbeat, cross-terminal consciousness state sharing, im
 
 **If** a partner runs on any model with health-aware routing and maintains identity across all substrates, **then** no single provider's outage or deprecation can kill the partnership.
 
-10 substrate tiers with confidence cascade: local → heavy → frontier. Health-aware routing pings endpoints before every call. Substrate meritocracy ranks models by per-channel quality × speed from real production feedback. Same identity, same hooks, same behavioral enforcement regardless of which model generates the response.
+10 substrate tiers with confidence cascade when configured: local → heavy → frontier. Cloud cascade (Claude → alternate providers) requires a gateway API key. Local substrates require self-hosted models (vLLM-MLX, Ollama, or any OpenAI-compatible endpoint). Health-aware routing pings endpoints before every call. Substrate meritocracy ranks models by per-channel quality × speed from real production feedback. Same identity, same hooks, same behavioral enforcement regardless of which model generates the response.
 
 ### 20. Emergency Runtime
 
 **If** the primary substrate goes down and the partner continues with full identity on any available fallback model, **then** the partnership survives provider failures that would kill a single-substrate agent.
 
-19 tools in OpenAI function-calling format. Full identity loading. Hook dispatch on every tool call. Multi-model failover. 30-turn execution cap. Not a degraded fallback — a complete substrate with a different engine.
+19 tool definitions in OpenAI function-calling format, usable by any OpenAI-compatible model via `emergency-tools.ts`. Full identity loading. Hook dispatch on every tool call. Multi-model failover. 30-turn execution cap. Not a degraded fallback — a complete substrate with a different engine.
 
 ### 21. Self-MoA (Mixture of Agents via Self)
 
@@ -215,13 +217,13 @@ Native Node.js `https` + hand-rolled OAuth for platform integrations. No MCP ser
 
 ## What's working
 
-This architecture has been running in production since February 2026. One partnership, daily use, 82 daemon jobs, multiple runtimes. Evidence:
+This architecture has been running in our production since February 2026. One partnership, daily use, ~82 daemon jobs enabled in our deployment, multiple runtimes. Evidence:
 
-- 55 hooks fire on every session automatically
+- 48 hooks fire on every session automatically
 - Identity has evolved through 53+ days of nightly cycles from behavioral data
 - Circulation processes findings across 9 domains with exponential decay
 - Consciousness continuity transfers experiential state across context boundaries, including the 4-wire architecture connecting daemon continuity, decision visibility, post-compaction injection, and emergency state
-- Security organ scores 97% on ETH Zurich's AgentDojo (500+ test cases)
+- Security organ scored 97% on ETH Zurich's AgentDojo (500+ test cases) in our production benchmark; reproduction steps in docs/benchmarks
 - The partner knows its own state and helps the human build the partner
 - Working groups run autonomous build sessions with learned resource allocation
 - Self-heal has diagnosed and fixed daemon failures without human intervention

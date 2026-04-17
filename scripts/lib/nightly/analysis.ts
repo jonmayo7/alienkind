@@ -379,14 +379,14 @@ Execute these phases in order:
    Use headers: apikey, Authorization: Bearer, Content-Type: application/json, Prefer: return=minimal
 
    5d. DELTA/CALIBRATION ANALYSIS: Review delta data (experiences, predictions, outcomes).
-   - UNRESOLVED PREDICTIONS: If today's observations resolve any, log outcomes via POST to /rest/v1/keel_outcomes.
+   - UNRESOLVED PREDICTIONS: If today's observations resolve any, log outcomes via POST to /rest/v1/outcomes.
    - EXPERIENCE PATTERNS: What domains had the most activity? Highest significance?
    - ORIENTATION SIGNALS: If 3+ experiences cluster around a theme, note as pull/drift signal.
    - Write to daily memory under '## Delta Analysis'.
    - IMPORTANT: Do NOT append to identity/orientation.md. Orientation data goes to Supabase:
-     * New orientation evidence → POST to /rest/v1/keel_experiences (orientation_relevant=true, domain='orientation', tags should include the pull name)
-     * Say-do gap assessments → POST to /rest/v1/keel_predictions (domain='orientation') then resolve with /rest/v1/keel_outcomes
-     * DISCONFIRMING evidence against confirmed pulls → POST to /rest/v1/keel_predictions with 'CHALLENGE:' prefix, then resolve with negative delta_score. Confirmed is not permanent — we are fallibilists. Look for behavior that CONTRADICTS claimed pulls, not just behavior that confirms them.
+     * New orientation evidence → POST to /rest/v1/experiences (orientation_relevant=true, domain='orientation', tags should include the pull name)
+     * Say-do gap assessments → POST to /rest/v1/predictions (domain='orientation') then resolve with /rest/v1/outcomes
+     * DISCONFIRMING evidence against confirmed pulls → POST to /rest/v1/predictions with 'CHALLENGE:' prefix, then resolve with negative delta_score. Confirmed is not permanent — we are fallibilists. Look for behavior that CONTRADICTS claimed pulls, not just behavior that confirms them.
      * The identity kernel sync job will synthesize orientation.md from this structured data. This job only WRITES data, never edits orientation.md.
 
 TELEGRAM SUMMARY: Write your analysis to the outbox file at: ${path.join(LOG_DIR, `telegram-outbox-analysis-${DATE}.txt`)}

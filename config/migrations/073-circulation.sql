@@ -3,7 +3,7 @@
 -- Pheromone scoring with exponential decay, reinforcement counting, quorum sensing.
 --
 -- Design sources:
---   - organism-architecture.md ([HUMAN]/Keel 2026-03-24)
+--   - organism-architecture design notes (2026-03-24)
 --   - Markspace protocol (trust-weighted decay, reinforcement, guard layer)
 --   - Pressure-field experiment (temporal decay essential, 4x improvement over messaging)
 --   - Stigmergy-MCP (exponential decay formula)
@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS circulation (
   actions_taken JSONB DEFAULT '[]',       -- array of {action, result, taken_at} — what resulted
 
   -- Action classification
-  action_tier TEXT,                        -- T1 (auto-fix) | T2 (fix + inform) | T3 (surface for [HUMAN])
+  action_tier TEXT,                        -- T1 (auto-fix) | T2 (fix + inform) | T3 (surface for the human)
   action_status TEXT DEFAULT 'pending',    -- pending | actioned | dismissed | expired
 
   -- Semantic discovery (vector embedding for cross-organ finding)

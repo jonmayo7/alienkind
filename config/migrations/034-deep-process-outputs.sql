@@ -1,12 +1,13 @@
--- Migration 034: Growth Engine Layer 1 — deep_process_outputs
--- Parallel deep processes write structured findings here.
--- Layer 2 incorporation runner reads and acts on them sequentially.
--- Architecture: memory/architecture-parallel-processes.md
+-- Migration 034: Deep Process Outputs — parallel analysis + incorporation primitive
+-- Any scheduled deep analysis job writes structured findings here.
+-- A downstream incorporation runner reads and acts on them sequentially.
+-- Generic pattern: parallel scanners produce findings in isolation, then a single
+-- serialized step incorporates them so changes don't collide.
 
 CREATE TABLE deep_process_outputs (
   id BIGSERIAL PRIMARY KEY,
-  domain TEXT NOT NULL,               -- 'trading', 'world', 'self', 'content', 'coaching', 'security'
-  process_name TEXT NOT NULL,         -- specific job that produced this (e.g. 'trading-analysis', 'self-assessment')
+  domain TEXT NOT NULL,               -- your domain taxonomy (examples: 'security', 'content', 'infrastructure')
+  process_name TEXT NOT NULL,         -- specific job that produced this (e.g. 'log-scanner', 'self-assessment')
   findings JSONB NOT NULL,            -- structured output from the deep process
   summary TEXT,                       -- one-paragraph human-readable summary
   priority INTEGER DEFAULT 5          -- 1-10, how important for incorporation

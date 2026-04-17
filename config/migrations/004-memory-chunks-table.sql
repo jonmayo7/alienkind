@@ -32,4 +32,4 @@ ALTER TABLE memory_chunks ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow all for authenticated" ON memory_chunks FOR ALL USING (true);
 
 -- Grant readonly access
-GRANT SELECT ON memory_chunks TO keel_readonly;
+GRANT SELECT ON memory_chunks TO partner_readonly;

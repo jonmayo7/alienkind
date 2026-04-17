@@ -2,9 +2,9 @@
  * Delta Tracker — Prediction/Outcome/Experience tracking for Keel's calibration layer.
  *
  * Three tables:
- *   keel_predictions — logged BEFORE an action/assertion
- *   keel_outcomes    — logged AFTER the result is known, linked to prediction
- *   keel_experiences — raw observations, domain-tagged, orientation-flagged
+ *   predictions — logged BEFORE an action/assertion
+ *   outcomes    — logged AFTER the result is known, linked to prediction
+ *   experiences — raw observations, domain-tagged, orientation-flagged
  *
  * Usage:
  *   const { logPrediction, logOutcome, logExperience } = require('./delta-tracker.ts');
@@ -75,7 +75,7 @@ async function logPrediction({ prediction, confidence, domain, context, sourceCh
     return null;
   }
   try {
-    const rows = await supabasePost('keel_predictions', {
+    const rows = await supabasePost('predictions', {
       prediction: pred,
       confidence,
       domain: dom,
@@ -101,7 +101,7 @@ async function logOutcome({ predictionId, outcome, deltaScore, surpriseSignal, l
     return null;
   }
   try {
-    const rows = await supabasePost('keel_outcomes', {
+    const rows = await supabasePost('outcomes', {
       prediction_id: predictionId || null,
       outcome: out,
       delta_score: deltaScore,
@@ -116,7 +116,7 @@ async function logOutcome({ predictionId, outcome, deltaScore, surpriseSignal, l
 
     // Mark the prediction as resolved
     if (predictionId && outcomeId) {
-      await supabasePatch('keel_predictions', `id=eq.${predictionId}`, { resolved: true }).catch(() => {});
+      await supabasePatch('predictions', `id=eq.${predictionId}`, { resolved: true }).catch(() => {});
     }
 
     return outcomeId;
@@ -137,7 +137,7 @@ async function logExperience({ observation, domain, significance, tags, sourceCh
     return null;
   }
   try {
-    const rows = await supabasePost('keel_experiences', {
+    const rows = await supabasePost('experiences', {
       observation: obs,
       domain: dom,
       significance: significance || 5,
@@ -161,7 +161,7 @@ async function getUnresolvedPredictions(opts: GetOptions = {}): Promise<any[]> {
     let query = 'select=*&resolved=eq.false&order=created_at.desc';
     if (opts.domain) query += `&domain=eq.${opts.domain}`;
     query += `&limit=${opts.limit || 50}`;
-    return await supabaseGet('keel_predictions', query);
+    return await supabaseGet('predictions', query);
   } catch (err: any) {
     if (typeof console !== 'undefined') console.error('[delta-tracker] getUnresolvedPredictions failed:', err.message);
     return [];
@@ -176,8 +176,8 @@ async function getDeltaSummary(opts: GetOptions = {}): Promise<DeltaSummary> {
   const since = new Date(Date.now() - days * 86400000).toISOString();
 
   try {
-    const predictions = await supabaseGet('keel_predictions', `select=*&created_at=gte.${since}&order=created_at.desc`);
-    const outcomes = await supabaseGet('keel_outcomes', `select=*&created_at=gte.${since}&order=created_at.desc`);
+    const predictions = await supabaseGet('predictions', `select=*&created_at=gte.${since}&order=created_at.desc`);
+    const outcomes = await supabaseGet('outcomes', `select=*&created_at=gte.${since}&order=created_at.desc`);
 
     const byDomain: Record<string, DomainSummary> = {};
     for (const o of (outcomes || [])) {
@@ -221,7 +221,7 @@ async function getOrientationExperiences(opts: GetOptions = {}): Promise<any[]> 
   const since = new Date(Date.now() - days * 86400000).toISOString();
 
   try {
-    return await supabaseGet('keel_experiences',
+    return await supabaseGet('experiences',
       `select=*&orientation_relevant=eq.true&created_at=gte.${since}&order=significance.desc,created_at.desc&limit=${opts.limit || 100}`
     );
   } catch (err: any) {

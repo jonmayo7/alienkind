@@ -175,8 +175,8 @@ async function runBackup() {
       log(`WARN: table discovery failed (${e.message}), using fallback list`);
       allTables = [
         'articles', 'case_studies', 'contact_submissions', 'content_feedback', 'content_performance',
-        'conversations', 'deferred_actions', 'intents', 'invocation_usage', 'keel_experiences',
-        'keel_outcomes', 'keel_predictions', 'learning_ledger', 'memories', 'memory_chunks',
+        'conversations', 'deferred_actions', 'intents', 'invocation_usage', 'experiences',
+        'outcomes', 'predictions', 'learning_ledger', 'memories', 'memory_chunks',
         'learning_opportunities', 'platform_contacts', 'platform_email_templates', 'platform_financial_accounts',
         'platform_financial_category_rules', 'platform_financial_period_status', 'platform_financial_pnl',
         'platform_financial_quarterly_estimates', 'platform_financial_subscriptions', 'platform_financial_tax_profile',

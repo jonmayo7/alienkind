@@ -1,5 +1,5 @@
 -- Migration 046: Consciousness entries table
--- Concurrent-safe consciousness stream across all instances of Keel.
+-- Concurrent-safe consciousness stream across all instances of the partner.
 -- File-based consciousness gets clobbered when multiple instances write simultaneously.
 -- Supabase row inserts are atomic — multiple instances can write without conflict.
 --
