@@ -69,7 +69,7 @@ async function runPreflight(): Promise<string> {
     check(sf, readable);
   }
 
-  // 6. Emergency gateway health check (Vercel AI Gateway → [MODEL_TIER_3] / [MODEL_TIER_4] Pro)
+  // 6. Emergency gateway health check (Vercel AI Gateway → gateway-fallback-alt / [MODEL_TIER_4] Pro)
   try {
     const { healthCheck } = require('../gateway.ts');
     const gwLog = (level: string, msg: string) => log(`[${level}] ${msg}`);
@@ -87,17 +87,10 @@ async function runPreflight(): Promise<string> {
     check('Emergency hook sync', missing.length === 0, missing.length > 0 ? `missing: ${missing.join(', ')}` : `${eventTypes.length} event types loaded`);
   } catch (e: any) { check('Emergency hook sync', false, e.message); }
 
-  // 8. Morning brief loaded digest on last run
-  try {
-    const logFiles = fs.readdirSync(LOG_DIR).filter((f: string) => f.startsWith('morning-brief-')).sort().reverse();
-    if (logFiles.length > 0) {
-      const lastLog = fs.readFileSync(path.join(LOG_DIR, logFiles[0]), 'utf-8');
-      const loaded = lastLog.includes('nightly digest: loaded') || lastLog.includes('nightly digest: included');
-      check('Morning brief loaded digest', loaded, loaded ? logFiles[0] : 'last brief did not load digest');
-    } else {
-      check('Morning brief loaded digest', false, 'no morning brief logs found');
-    }
-  } catch { check('Morning brief loaded digest', false, 'log read error'); }
+  // (Preflight check 8: digest-consumption verification removed with
+  // morning-brief. Forkers who ship a downstream digest consumer can
+  // re-add a check here that verifies their consumer loaded the previous
+  // night's digest output.)
 
   const report = `AIRE PREFLIGHT — ${DATE} ${TIME}\n${checks.join('\n')}`;
   const preflightPath = path.join(LOG_DIR, `aire-preflight-${DATE}.txt`);
@@ -706,7 +699,7 @@ async function runImmune() {
       if (assessment && assessment.ready) {
         rateLimiterResult = `Rate limiter assessment READY (${assessment.daysMonitored.toFixed(1)} days):\n${assessment.report}`;
         log(rateLimiterResult);
-        // Write assessment to deep_process_outputs for morning brief
+        // Write assessment to deep_process_outputs for human review
         try {
           const { writeDeepProcessOutput } = require('../deep-process.ts');
           await writeDeepProcessOutput({

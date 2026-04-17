@@ -54,7 +54,7 @@ When primary accounts are unavailable, traffic routes through a gateway to alter
 | `conversations` | telegram-listener.ts, discord-engine.ts, log-conversation.ts | recent-context.ts, ground.sh | All messages, all channels |
 | `patterns` | nightly-cycle.ts | heartbeat.ts, ground.sh | Behavioral patterns (AIRE) |
 | `circulation` | Any organ (deposit) | circulation-pump.ts (route) | Stigmergic blackboard |
-| `mission_packets` | working-group-steward.ts | keel-operator.ts | Autonomous findings for human review |
+| `mission_packets` | working-group-steward.ts | partner's operator script (fork-wired) | Autonomous findings for human review |
 | `learning_ledger` | correction analysis | nightly analysis, ground.sh | Correction history |
 | `memory_chunks` | memory-indexer.ts | memory-search.ts | Full-text search index |
 | `capability_requests` | Steward pipelines | working-group-steward.ts | Detected gaps awaiting analysis |
@@ -124,15 +124,15 @@ Working group steward (nightly at 2:00 AM)
   -> consult() with 4 role prompts on local substrates
   -> triage-aire.ts: score finding
   -> deposit mission_packet to Supabase
-  -> keel-operator picks up packet on next 90-min cycle
-  -> human reviews in morning brief
+  -> partner's operator picks up packet on next cycle (fork-specific)
+  -> human reviews via whatever review surface the fork wires
 ```
 
 | Writer | File/Table | Reader |
 |--------|------------|--------|
 | Steward pipelines | Supabase `capability_requests` | `working-group-steward.ts` |
-| `working-group-steward.ts` | Supabase `mission_packets` | `keel-operator.ts`, morning brief |
-| Human (approve/deny) | Supabase `mission_packets` (status update) | `keel-operator.ts` (executes approved) |
+| `working-group-steward.ts` | Supabase `mission_packets` | partner's operator script, human review surface |
+| Human (approve/deny) | Supabase `mission_packets` (status update) | partner's operator (executes approved) |
 
 ---
 
@@ -175,7 +175,7 @@ Working group steward (nightly at 2:00 AM)
 | Level | Access | Used By |
 |-------|--------|---------|
 | `analyst` | Full access — identity, memory, external messaging, code | Interactive terminal, nightly analysis |
-| `operator` | Can send externally, cannot write identity/memory | Listeners, heartbeat, morning-brief |
+| `operator` | Can send externally, cannot write identity/memory | Listeners, heartbeat, scheduled digest/reporting jobs |
 | `builder` | Code files only — no identity/personal data, no external messaging | CI/CD, working groups, tests |
 
 ---

@@ -310,7 +310,7 @@ Reasoning: ${parsed.fix_reasoning.slice(0, 400)}${scopeNote}
 
 ## Critical
 
-Your output goes directly to the human partner's morning brief as a recommendation panel. It must start with "RECOMMENDATION:" on the first line. Do not write anything before it.`;
+Your output goes directly to the human partner's review queue as a recommendation panel. It must start with "RECOMMENDATION:" on the first line. Do not write anything before it.`;
 
   try {
     const substrate = "studio2-daily";
@@ -625,7 +625,7 @@ async function run() {
 
     log('INFO', `Triage score: ${triageScore} (finding=${parsed.finding_type}, risk=${parsed.risk_level}, ring=${parsed.ring})`);
 
-    // Generate AI-voice recommendation for the human's morning brief
+    // Generate AI-voice recommendation for the human's review queue
     const recommendation = await generateRecommendation(
       gap,
       organ,

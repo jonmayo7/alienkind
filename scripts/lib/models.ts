@@ -25,7 +25,7 @@
  *   import roles from here (CLASSIFIER, STUDIO1_DAILY, etc.). Any future
  *   model swap is one constant change in one file.
  *
- * Created: 2026-04-10 by Keel + [HUMAN], after the 9B silent breakage.
+ * Created: 2026-04-10 by Keel + the human, after the 9B silent breakage.
  */
 
 export type ModelStatus = 'active' | 'deprecated' | 'dead';
@@ -167,7 +167,7 @@ export const MODELS = {
     thinkingByDefault: true,
     host: 'studio2',
     diskGB: 70,
-    use: 'Studio 2 heavyweight substrate (runtime.ts substrate "studio2-heavy"). 10B active params per token. SWE-bench 72.0. Used by working group challenge/converge phases, [CLIENT_PROJECT]-intelligence, deep code analysis, injection-detector L2.5.',
+    use: 'Studio 2 heavyweight substrate (runtime.ts substrate "studio2-heavy"). 10B active params per token. SWE-bench 72.0. Used by working group challenge/converge phases, a client project-intelligence, deep code analysis, injection-detector L2.5.',
     status: 'active',
   },
 

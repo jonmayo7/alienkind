@@ -9,19 +9,19 @@
  *   - Reinforcement: same finding from multiple organs strengthens the signal
  *   - Quorum sensing: findings cross a threshold before triggering action
  *   - Domain filtering: organs withdraw only what's relevant to them
- *   - Action tiers: T1 (auto-fix), T2 (fix + inform), T3 (surface for [HUMAN])
+ *   - Action tiers: T1 (auto-fix), T2 (fix + inform), T3 (surface for the human)
  *
  * Design sources:
  *   organism-architecture.md, Markspace protocol, pressure-field experiment,
  *   stigmergy-MCP decay formula, Insight Swarm cross-organ discovery.
  *
- * Writers: any organ (intent-audit, nightly-analysis, trading AIRE, steward engines, etc.)
- * Readers: circulation-pump (daemon), morning-brief, any organ via withdraw()
+ * Writers: any organ (intent-audit, nightly-analysis, steward engines, scheduled analyzers, etc.)
+ * Readers: circulation-pump (daemon), any organ via withdraw()
  *
  * Usage:
  *   const { deposit, withdraw, reinforce } = require('./circulation.ts');
- *   deposit({ source_organ: 'trading-aire', finding: '...', domain: 'trading', finding_type: 'signal' });
- *   const findings = await withdraw({ domain: 'trading', minIntensity: 0.3 });
+ *   deposit({ source_organ: 'nightly-analysis', finding: '...', domain: 'security', finding_type: 'signal' });
+ *   const findings = await withdraw({ domain: 'security', minIntensity: 0.3 });
  */
 
 const path = require('path');
@@ -467,15 +467,16 @@ async function delegateTask(opts: {
  * Returns domains (excluding the finding's primary domain) that match keyword patterns.
  * Used by deep-process.ts to auto-tag the three broadest producers.
  */
+// Generic domain taxonomy shipped with AlienKind. Forkers extend or replace
+// these to match their partner's areas of concern — add domain keys + keywords
+// for whatever the partner actually acts on (trading, coaching, a specific
+// product line, a specific research area, etc.). Domains shipped here are
+// ones any organism-style deployment can defensibly reason about.
 const DOMAIN_KEYWORDS: Record<string, string[]> = {
   security: ['regulation', 'compliance', 'breach', 'vulnerability', 'attack', 'exploit', 'threat', 'ransomware', 'phishing', 'zero-day', 'patch', 'audit', 'encryption', 'privacy', 'gdpr', 'soc2', 'pentest', 'firewall', 'malware', 'incident'],
-  trading: ['market', 'stock', 'crypto', 'bitcoin', 'ethereum', 'price', 'volatility', 'hedge', 'portfolio', 'asset', 'yield', 'bonds', 'equit', 'commodit', 'inflation', 'recession', 'fed', 'interest rate', 'bull', 'bear', 'momentum', 'mean revert', 'liquidity', 'tariff'],
-  'trading-crypto': ['bitcoin', 'ethereum', 'crypto', 'defi', 'blockchain', 'token', 'nft', 'stablecoin', 'mining', 'halving', 'layer 2', 'solana', 'altcoin'],
-  'trading-equity': ['stock', 'equit', 'spy', 'qqq', 'nasdaq', 'dow', 'earnings', 's&p', 'dividend', 'ipo', 'buyback', 'sector rotation'],
-  coaching: ['leadership', 'founder', 'ceo', 'executive', 'team', 'culture', 'hiring', 'firing', 'burnout', 'coaching', 'mentoring', 'feedback', 'accountability', 'vision', 'mission', 'growth mindset', 'resilience', 'performance review', 'funding', 'startup', 'venture', 'raise', 'series'],
   infrastructure: ['ai infrastructure', 'model', 'gpu', 'compute', 'training', 'inference', 'latency', 'api', 'scaling', 'deployment', 'kubernetes', 'docker', 'cloud', 'aws', 'gcp', 'azure', 'database', 'migration', 'observability', 'monitoring'],
   content: ['content', 'article', 'post', 'publish', 'audience', 'engagement', 'newsletter', 'seo', 'social media', 'linkedin', 'twitter', 'podcast', 'video', 'blog'],
-  product: ['product', 'feature', 'user experience', 'onboarding', 'retention', 'churn', 'conversion', 'pricing', 'saas', 'platform', '[product-a]', '[product-b]', '[repo-d]'],
+  product: ['product', 'feature', 'user experience', 'onboarding', 'retention', 'churn', 'conversion', 'pricing', 'saas', 'platform'],
   world: ['geopolit', 'policy', 'legislation', 'government', 'regulation', 'sanctions', 'election', 'war', 'climate', 'pandemic', 'supply chain', 'trade war', 'tariff'],
 };
 
@@ -499,7 +500,7 @@ function classifySecondaryDomains(text: string, primaryDomain: string): string[]
 /**
  * LLM-based cross-domain classifier — semantic, not keyword.
  *
- * Uses local vLLM-MLX ([LOCAL_HARDWARE]) for zero-cost semantic classification.
+ * Uses local vLLM-MLX (local inference hardware) for zero-cost semantic classification.
  * The body metaphor: stomach (local models) does digestion, brain (Keel) gets nutrients.
  *
  * Falls back to keyword classifier if local inference unavailable.
@@ -528,9 +529,9 @@ Candidate domains: ${JSON.stringify(domains)}
 
 For each candidate, ask: "Would a practitioner in THIS domain act differently because of THIS finding?" If no clear action or decision changes, DO NOT tag it.
 
-Example of tight classification: a finding about "crypto exchange hacked" → tag ["security", "trading-crypto"] — NOT "product" or "content" (no direct action change).
+Example of tight classification: a finding about "auth provider breached" → tag ["security", "infrastructure"] — NOT "product" or "content" (no direct action change for those).
 
-Example: a finding about "new AI model released" → MAYBE tag ["infrastructure"] if it changes compute choices, ["product"] if it changes product capabilities. NOT "trading" unless the model directly trades.
+Example: a finding about "new AI model released" → MAYBE tag ["infrastructure"] if it changes compute choices, ["product"] if it changes product capabilities. Only tag a domain if a practitioner in that domain would actually change a decision.
 
 Return strict JSON array of domain names, 0-3 typical, max 4:`;
 
@@ -582,8 +583,8 @@ Return strict JSON array of domain names, 0-3 typical, max 4:`;
 //
 // 1. trackMetric(key, value) — any instrument calls this with its metric.
 //    Returns { velocity, acceleration }. Circulation owns the math, the
-//    history, the state. Trading calls trackMetric('trading.BTC.drift', 4.7).
-//    Resource guardian calls trackMetric('infra.memory.freePct', 6.3).
+//    history, the state. Resource guardian calls trackMetric('infra.memory.freePct', 6.3).
+//    Discernment calls trackMetric('discernment.blocked.rate', 0.03).
 //    New instruments get a speedometer by calling one function.
 //
 // 2. updateTrajectory() — called by the pump every 5 min. Tracks domain-level
@@ -626,9 +627,9 @@ function saveTrajectory(store: TrajectoryStore): void {
  * Circulation owns the math, the history, the storage.
  *
  * Usage:
- *   const { velocity, acceleration } = trackMetric('trading.BTC.drift', 4.7);
  *   const { velocity, acceleration } = trackMetric('infra.memory.freePct', 6.3);
  *   const { velocity, acceleration } = trackMetric('behavior.corrections.rate', 0.12);
+ *   const { velocity, acceleration } = trackMetric('discernment.blocked.rate', 0.03);
  *
  * Returns: { velocity, acceleration, history } — the instrument gets its
  * speedometer reading without computing anything itself.
@@ -736,7 +737,7 @@ function getTrajectory(domain?: string): TrajectoryStore | DomainTrajectory | nu
 
 /**
  * Get domains with concerning trajectories (accelerating finding counts).
- * Used by the pump to escalate and by morning brief to surface trends.
+ * Used by the pump to escalate and by digest surfaces to expose trends.
  */
 function getAcceleratingDomains(minVelocity: number = 2, minAcceleration: number = 1): Array<{ domain: string; trajectory: DomainTrajectory }> {
   const store = loadTrajectory();

@@ -117,7 +117,7 @@ const SOURCE_FILE_MAP: Record<string, string> = {
 
 /**
  * For intent-rejected-{source} patterns, gather the actual rejected intents
- * as evidence — what was proposed, why [HUMAN] rejected it, and where the code lives.
+ * as evidence — what was proposed, why the human rejected it, and where the code lives.
  */
 async function gatherRejectionEvidence(pattern: string): Promise<{
   diagnosis: string;
@@ -155,7 +155,7 @@ async function gatherRejectionEvidence(pattern: string): Promise<{
     '',
     'Rejected intents:',
     ...summaries,
-    ...(feedbacks.length > 0 ? ['', "[HUMAN]'s feedback:", ...feedbacks] : []),
+    ...(feedbacks.length > 0 ? ['', "the human's feedback:", ...feedbacks] : []),
   ].join('\n');
 
   // Evidence array for structured storage
@@ -174,7 +174,7 @@ async function gatherRejectionEvidence(pattern: string): Promise<{
   // Build a concrete action plan
   const fileRef = sourceFile ? `Read ${sourceFile} to find the intent creation logic.` : `Identify which script creates intents with source '${intentSource}'.`;
   const feedbackSummary = feedbacks.length > 0
-    ? `[HUMAN]'s rejections indicate: ${rejectedIntents.filter((i: any) => i.human_feedback).map((i: any) => i.human_feedback).join('; ')}.`
+    ? `the human's rejections indicate: ${rejectedIntents.filter((i: any) => i.human_feedback).map((i: any) => i.human_feedback).join('; ')}.`
     : 'No explicit feedback on rejections — analyze the trigger_summary patterns for what was wrong.';
 
   const enrichedAction = [
@@ -184,7 +184,7 @@ async function gatherRejectionEvidence(pattern: string): Promise<{
     `3. ${feedbackSummary}`,
     `4. Determine if the source is: (a) triggering on the wrong conditions, (b) proposing actions that already exist, or (c) setting wrong priority/scope.`,
     `5. Propose specific code changes to fix the calibration, OR recommend disabling this intent source if it's not producing value.`,
-    `6. Report findings to [HUMAN] with 2-3 concrete recommended actions.`,
+    `6. Report findings to the human with 2-3 concrete recommended actions.`,
   ].join('\n');
 
   return { diagnosis, evidence, filesAffected, enrichedAction };
@@ -197,7 +197,7 @@ async function gatherRejectionEvidence(pattern: string): Promise<{
  */
 async function checkRecurringLearningOpportunities(): Promise<any[]> {
   // AAR 7.1 gate REMOVED — intent executor is wired and working
-  // (identity-sync creates intents → [HUMAN] approves via Telegram → DM executes).
+  // (identity-sync creates intents → the human approves via Telegram → DM executes).
   // Patterns with 3+ occurrences now create investigation intents.
 
   const recurring = await getRecurringLearningOpportunities(3);
@@ -247,7 +247,7 @@ async function checkRecurringLearningOpportunities(): Promise<any[]> {
       });
       if (intent && !(intent as any).throttled) {
         // Auto-approve and auto-start: investigation is low-risk research,
-        // doesn't need an approval gate. [HUMAN] gets a notification (awareness),
+        // doesn't need an approval gate. the human gets a notification (awareness),
         // and the FIX is what needs approval — not the investigation.
         try {
           await approveIntent(intent.id, { feedback: 'Auto-approved: investigation intent' });

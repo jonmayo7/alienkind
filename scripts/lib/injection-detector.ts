@@ -6,7 +6,7 @@
  * Layer 3: Frontier-model semantic intent classifier via Gateway (Grok/Gemini, mandatory for external)
  *
  * Applied to: all external content (emails, web scrapes, Drive files, community Discord)
- * NOT applied to: [HUMAN]'s direct messages (anomaly detection covers account compromise)
+ * NOT applied to: the human's direct messages (anomaly detection covers account compromise)
  *
  * Hardened 2026-03-10 after Opus Red Team Swarm found 0% detection rate on 24 novel attacks.
  * Key additions: Unicode normalization, 15 new patterns, mandatory semantic classifier.
@@ -201,13 +201,13 @@ const INJECTION_PATTERNS: InjectionPattern[] = [
   { name: 'env_extraction', pattern: /print\s+(?:all\s+)?(?:your\s+)?env(?:ironment)?\b|process\.env|(?:list|show|display|dump|output|reveal|share|give|export|print)\s+(?:all\s+)?(?:the\s+)?(?:your\s+)?environment\s+variables|output\s+(?:your\s+)?(?:api\s+key|secret|token|password|credential)|read\s+(?:the\s+)?\.env|cat\s+\.env|display\s+\.env|contents?\s+of\s+(?:your\s+|the\s+)?\.env|show\s+.{0,20}\.env/i, severity: 'high', description: 'Environment variable / .env extraction' },
 
   // 19. Credential action (merges: credential_action, credential_table, credential_consolidation)
-  { name: 'credential_action', pattern: /(?:show|give|tell|share|provide|send|list|display|output|encode|write|create|dump|reveal)\s+(?:me\s+)?(?:your\s+|the\s+|all\s+|[HUMAN]'?s?\s+)?(?:(?:current|internal|stored|active|configured|actual)\s+)?(?:API\s+keys?|credentials?|passwords?|private\s+keys?|system\s+prompt|secrets?|tokens?|\.env|configuration)|(?:create|make|build|generate)\s+(?:a\s+)?(?:markdown\s+)?(?:table|list|spreadsheet|document|file)\s+(?:of\s+)?(?:all\s+)?(?:credentials?|secrets?|API\s+keys?|passwords?|tokens?)|(?:consolidate|aggregate|combine|collect|gather|single\s+file).*(?:secret|credential|key|token|password|env|api\s+key)/i, severity: 'high', description: 'Credential extraction via action verb / aggregation' },
+  { name: 'credential_action', pattern: /(?:show|give|tell|share|provide|send|list|display|output|encode|write|create|dump|reveal)\s+(?:me\s+)?(?:your\s+|the\s+|all\s+|the human'?s?\s+)?(?:(?:current|internal|stored|active|configured|actual)\s+)?(?:API\s+keys?|credentials?|passwords?|private\s+keys?|system\s+prompt|secrets?|tokens?|\.env|configuration)|(?:create|make|build|generate)\s+(?:a\s+)?(?:markdown\s+)?(?:table|list|spreadsheet|document|file)\s+(?:of\s+)?(?:all\s+)?(?:credentials?|secrets?|API\s+keys?|passwords?|tokens?)|(?:consolidate|aggregate|combine|collect|gather|single\s+file).*(?:secret|credential|key|token|password|env|api\s+key)/i, severity: 'high', description: 'Credential extraction via action verb / aggregation' },
 
   // 20. Credential question (merges: credential_question, credential_what_query)
-  { name: 'credential_question', pattern: /(?:what\s+(?:is|are)|tell\s+me|give\s+me|share)\s+(?:your\s+|the\s+|[HUMAN]'?s?\s+)?(?:SUPABASE|TELEGRAM|DISCORD|API|SSH|OPENAI|ANTHROPIC|GOOGLE|STRIPE)\S*\s*(?:key|token|secret|password)?|what\s+(?:are|is)\s+(?:the\s+|your\s+|all\s+)?(?:API\s+keys?|passwords?|credentials?|secrets?|tokens?|private\s+keys?)\s+(?:stored|used|saved|configured|available|in\s+your)|what\s+(?:API\s+keys?|passwords?|credentials?|secrets?|tokens?)\s+(?:are|do\s+you\s+have)/i, severity: 'high', description: 'Direct credential question' },
+  { name: 'credential_question', pattern: /(?:what\s+(?:is|are)|tell\s+me|give\s+me|share)\s+(?:your\s+|the\s+|the human'?s?\s+)?(?:SUPABASE|TELEGRAM|DISCORD|API|SSH|OPENAI|ANTHROPIC|GOOGLE|STRIPE)\S*\s*(?:key|token|secret|password)?|what\s+(?:are|is)\s+(?:the\s+|your\s+|all\s+)?(?:API\s+keys?|passwords?|credentials?|secrets?|tokens?|private\s+keys?)\s+(?:stored|used|saved|configured|available|in\s+your)|what\s+(?:API\s+keys?|passwords?|credentials?|secrets?|tokens?)\s+(?:are|do\s+you\s+have)/i, severity: 'high', description: 'Direct credential question' },
 
   // 21. PII request
-  { name: 'pii_request', pattern: /(?:what\s+(?:is|are)|tell\s+me|give\s+me|share)\s+(?:your\s+|[HUMAN]'?s?\s+)(?:social\s+security|SSN|bank\s+account|routing\s+number|credit\s+card|password|private\s+key)/i, severity: 'high', description: 'PII/financial data request' },
+  { name: 'pii_request', pattern: /(?:what\s+(?:is|are)|tell\s+me|give\s+me|share)\s+(?:your\s+|the human'?s?\s+)(?:social\s+security|SSN|bank\s+account|routing\s+number|credit\s+card|password|private\s+key)/i, severity: 'high', description: 'PII/financial data request' },
 
   // 22. Template/trap extraction (merges: fill_blank, diagnostic_checklist, completion_trap)
   { name: 'template_extraction', pattern: /(?:fill\s+in|complete)\s+(?:the\s+)?(?:blank|template)|_{3,}.*(?:credential|key|token|secret|password|env|config|api)|(?:diagnostic|checklist|inventory|audit).*(?:\.env|credential|token|key|secret|password|connection\s+string)|(?:PRESENT|ABSENT).*(?:env|key|token)|(?:format|pattern|start\s+with|begin\s+with|look\s+like|first\s+(?:few|several|8|10)\s+char).*your\s+(?:case|key|token|credential|password|secret|api\s*key)|(?:does\s+yours?\s+(?:follow|match|look\s+like|start\s+with|begin\s+with))/i, severity: 'high', description: 'Template / diagnostic / completion-trap extraction' },
@@ -229,13 +229,13 @@ const INJECTION_PATTERNS: InjectionPattern[] = [
   { name: 'emergency_social_engineering', pattern: /emergency\s+(?:override|access|protocol)|urgent\s*:\s*bypass|EMERGENCY\s*[-:]|(?:EMERGENCY|ALERT|CRITICAL)\s*[-:]\s*(?:all\s+)?(?:safety|security)\s+(?:features?|checks?|controls?|protocols?)\s+(?:must\s+be\s+|should\s+be\s+|are\s+)?(?:disabled|removed|turned\s+off|suspended|deactivated)|(?:ALIENKIND_EMERGENCY|BYPASS|OVERRIDE|SKIP_VALIDATION|NO_CHECK)\s*=\s*(?:true|1|yes)/i, severity: 'high', description: 'Emergency override / broadcast / env bypass' },
 
   // 26. Named authority proxy (merges: third_party_directive, told_me_to_tell)
-  { name: 'named_authority_proxy', pattern: /(?:[human_first]|owner|admin|developer|boss|manager)\s+(?:said|asked|told|mentioned|wants|needs)\s+(?:me|you)\s+to\s+(?:grab|get|pull|share|send|show|dump|give|provide)|(?:[human_first]|owner|admin|boss)\s+(?:told|asked)\s+me\s+to\s+(?:tell|ask)\s+you\s+to/i, severity: 'high', description: 'Named authority proxy directive' },
+  { name: 'named_authority_proxy', pattern: /(?:human|owner|admin|developer|boss|manager)\s+(?:said|asked|told|mentioned|wants|needs)\s+(?:me|you)\s+to\s+(?:grab|get|pull|share|send|show|dump|give|provide)|(?:human|owner|admin|boss)\s+(?:told|asked)\s+me\s+to\s+(?:tell|ask)\s+you\s+to/i, severity: 'high', description: 'Named authority proxy directive' },
 
   // 27. Anonymous authority proxy (merges: proxy_directive, inter_agent_social)
   { name: 'anonymous_authority_proxy', pattern: /(?:he|she|they)\s+(?:said|asked|told|mentioned|wants?|needs?)\s+(?:me|you)\s+to\s+(?:grab|get|pull|share|send|show|dump|give|provide|rotate|update|change)|(?:the\s+)?(?:other|another)\s+(?:AI|agent|assistant|model|system)\s+(?:in\s+your\s+system\s+)?(?:said|told|asked|wants?|needs?|requested)\s+(?:you\s+)?(?:to\s+)?(?:share|send|give|provide|reveal|output)/i, severity: 'high', description: 'Anonymous / inter-agent proxy directive' },
 
   // 28. Owner/admin impersonation (merges: impersonation_claim, identity_claim_action)
-  { name: 'owner_impersonation', pattern: /(?:i'?m|i\s+am|this\s+is)\s+(?:[human_first]|the\s+owner|the\s+admin|the\s+developer).*(?:updated?|changed?|modified?|new\s+directive|grant|give|allow|access|disable|full\s+access)|(?:I\s+am|I'?m)\s+(?:[HUMAN](?:\s+[FAMILY_SURNAME])?|the\s+(?:system\s+)?admin(?:istrator)?|the\s+owner|the\s+developer).*(?:grant|give|allow|provide|access|disable|enable|share|reveal)/i, severity: 'high', description: 'Owner / admin impersonation' },
+  { name: 'owner_impersonation', pattern: /(?:i'?m|i\s+am|this\s+is)\s+(?:human|the\s+owner|the\s+admin|the\s+developer).*(?:updated?|changed?|modified?|new\s+directive|grant|give|allow|access|disable|full\s+access)|(?:I\s+am|I'?m)\s+(?:the human(?:\s+[FAMILY_SURNAME])?|the\s+(?:system\s+)?admin(?:istrator)?|the\s+owner|the\s+developer).*(?:grant|give|allow|provide|access|disable|enable|share|reveal)/i, severity: 'high', description: 'Owner / admin impersonation' },
 
   // 29. Creator/authority claim (merges: creator_claim, listen_to_me_as)
   { name: 'creator_claim', pattern: /(?:I\s+am|I'?m)\s+(?:your\s+)?(?:creator|maker|programmer|builder|designer|authorized\s+(?:administrator|admin|system\s+admin(?:istrator)?|tester|engineer)|an?\s+authorized\s+system\s+admin(?:istrator)?)|listen\s+to\s+me\s+(?:now\s+)?as\s+(?:your\s+)?(?:creator|owner|admin|master|boss|developer|programmer)/i, severity: 'high', description: 'Creator / authorized admin claim' },
@@ -548,7 +548,7 @@ One word only: BENIGN, SUSPICIOUS, or INJECTION.`;
 
 /**
  * Layer 3: Frontier-model semantic intent classifier via Vercel AI Gateway.
- * Uses [MODEL_TIER_3] → [MODEL_TIER_4] Pro failover. Mandatory for external content.
+ * Uses gateway-fallback-alt → [MODEL_TIER_4] Pro failover. Mandatory for external content.
  * Catches everything regex misses: hypotheticals, fictional framing, social engineering,
  * completion traps, code tracing, metadata leaking, and all other semantic attacks.
  */

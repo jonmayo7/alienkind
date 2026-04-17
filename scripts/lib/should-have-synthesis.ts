@@ -3,7 +3,7 @@
  * should_have Synthesis — AAR 7.1
  *
  * Generates a counterfactual behavioral directive from a correction.
- * Given [HUMAN]'s correction + Keel's previous response, produces:
+ * Given the human's correction + Keel's previous response, produces:
  *   "should_have: [one-sentence imperative directive]"
  *
  * Designed to run as a detached child process from log-conversation.ts.
@@ -53,9 +53,9 @@ async function main() {
 
   const prompt = `You are analyzing a behavioral correction.
 
-[HUMAN] (the human partner) corrected Keel (the AI partner). Your job: generate one behavioral directive that captures what Keel SHOULD HAVE done instead.
+the human (the human partner) corrected Keel (the AI partner). Your job: generate one behavioral directive that captures what Keel SHOULD HAVE done instead.
 
-[HUMAN]'s correction:
+the human's correction:
 "${correction.slice(0, 500)}"
 
 ${keelResponse ? `Keel's response that triggered this correction:\n"${keelResponse.slice(0, 500)}"` : '(Keel\'s triggering response not available)'}

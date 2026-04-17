@@ -9,8 +9,8 @@ process.env.TZ = TIMEZONE;
  * pending action) and routes them to the appropriate response:
  *
  *   T1 (auto-fix): spawn builder-mode session on preview branch
- *   T2 (fix + inform): execute fix, send Telegram alert to [HUMAN]
- *   T3 (surface): queue for morning brief, send Telegram summary
+ *   T2 (fix + inform): execute fix, send Telegram alert to the human
+ *   T3 (surface): surface to human review queue, send Telegram summary
  *
  * Also handles:
  *   - Reinforcement detection: finds similar recent deposits from different
@@ -170,7 +170,7 @@ async function detectAndReinforce(): Promise<number> {
  * Cascade findings get action_tier 'escalate', bypass normal decay (168h),
  * and route to Telegram alerts immediately.
  *
- * The [CLIENT_NAME] synthesis corruption (2026-04-03) ran 4 hours through 4+
+ * The a client synthesis corruption (2026-04-03) ran 4 hours through 4+
  * pump cycles undetected because each finding was processed individually.
  * This sliding window catches that pattern within 30 minutes.
  *
@@ -478,7 +478,7 @@ async function routeActionable(): Promise<{ build: number; fix: number; report: 
         }
 
         case 'fix': {
-          // FIX: something broken. Queue for intent-audit to repair on preview branch + inform [HUMAN].
+          // FIX: something broken. Queue for intent-audit to repair on preview branch + inform the human.
           try {
             const { supabasePost: sbPost } = require('./lib/supabase.ts');
             await sbPost('capability_requests', {
@@ -489,7 +489,7 @@ async function routeActionable(): Promise<{ build: number; fix: number; report: 
               status: 'detected',
             });
           } catch {}
-          // Also inform [HUMAN] via Telegram outbox
+          // Also inform the human via Telegram outbox
           try {
             const outboxFile = path.join(ALIENKIND_DIR, 'logs', 'circulation-telegram-outbox.txt');
             const msg = `[FIX] ${finding.source_organ} (${finding.domain}): ${finding.finding.slice(0, 300)}`;
@@ -528,7 +528,7 @@ async function routeActionable(): Promise<{ build: number; fix: number; report: 
 
         case 'report':
         default: {
-          // REPORT: observation, pattern, insight. Surface in morning brief.
+          // REPORT: observation, pattern, insight. Surface to human review queue.
           // Telegram only if urgent (security critical, time-sensitive).
           logToDaily(`REPORT: ${finding.source_organ}: ${finding.finding.slice(0, 200)}`, 'Pump');
           // Telegram for urgent reports (security anomalies, critical findings)
@@ -539,7 +539,7 @@ async function routeActionable(): Promise<{ build: number; fix: number; report: 
               fs.appendFileSync(outboxFile, msg + '\n---TELEGRAM_MSG---\n');
             } catch {}
           }
-          await recordAction(finding.id, 'reported', `REPORT: morning brief + ${finding.domain === 'security' ? 'Telegram' : 'daily file only'}`, log);
+          await recordAction(finding.id, 'reported', `REPORT: human review queue + ${finding.domain === 'security' ? 'Telegram' : 'daily file only'}`, log);
           counts.report++;
           log('INFO', `REPORT: ${finding.finding.slice(0, 80)}`);
           break;

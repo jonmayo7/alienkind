@@ -16,7 +16,7 @@ const CLAUDE_PATH: string = require('./constants.ts').PATHS.claude;
 /**
  * Get today's date string in ${TZ:-UTC} timezone (YYYY-MM-DD).
  * Single source of truth for CDT/CST date — handles DST automatically.
- * Use this for all [HUMAN]-facing date operations: file names, budget resets,
+ * Use this for all the human-facing date operations: file names, budget resets,
  * daily logs, scheduling. Internal storage (Supabase, X API) stays UTC.
  */
 function getCDTDate(d?: Date): string {

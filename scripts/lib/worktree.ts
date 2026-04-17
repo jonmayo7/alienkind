@@ -24,7 +24,7 @@
  * Programmatic:
  *   import { createWorktree, removeWorktree, listWorktrees, runInWorktree } from './worktree.ts';
  *
- * Readers: daemon jobs, working groups, dependency-updater, keel-cycle.
+ * Readers: daemon jobs, working groups, dependency-updater, partner operator cycle.
  * Writers: stateless — operates on git worktree primitives.
  */
 

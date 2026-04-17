@@ -1,7 +1,7 @@
 /**
  * Learning Ledger — Behavioral correction and reinforcement tracking for Keel.
  *
- * Captures patterns that [HUMAN] corrects or reinforces. Upserts on repeat patterns
+ * Captures patterns that the human corrects or reinforces. Upserts on repeat patterns
  * (increments occurrence_count). Enables frequency-weighted gap prioritization.
  *
  * Usage:
@@ -260,7 +260,7 @@ const CORRECTION_SIGNALS = [
   /\bno\b/i, /\bwrong\b/i, /\bthat'?s not\b/i, /\bi said\b/i,
   /\bi meant\b/i, /\bstop doing\b/i, /\bdon'?t do that\b/i,
   /\bnever do\b/i, /\bwrong approach\b/i, /\bthat'?s wrong\b/i,
-  // [HUMAN]'s actual correction patterns (learned 2026-03-19, pruned 2026-03-20):
+  // the human's actual correction patterns (learned 2026-03-19, pruned 2026-03-20):
   // Kept: emotional intensity signals unambiguously indicating corrections
   /\bpissed off\b/i, /\bfrustrat(?:ed|ing)\b/i,
   /\bis this a platitude\b/i,
@@ -292,15 +292,15 @@ const REINFORCEMENT_SIGNALS = [
 function detectCorrection(message: string): DetectionResult | null {
   if (!message || message.length < 2) return null;
 
-  // Extract [HUMAN]'s actual message from system preambles.
+  // Extract the human's actual message from system preambles.
   // System prompts contain signal words that cause false positives.
   // Multiple extraction strategies, from most to least specific.
   let text = message;
 
-  // Strategy 1: Telegram prompt has "[HUMAN]'s message:" marker
-  const humanMsgMarker = text.lastIndexOf("[HUMAN]'s message:");
+  // Strategy 1: Telegram prompt has "the human's message:" marker
+  const humanMsgMarker = text.lastIndexOf("the human's message:");
   if (humanMsgMarker !== -1) {
-    text = text.slice(humanMsgMarker + "[HUMAN]'s message:".length).trim();
+    text = text.slice(humanMsgMarker + "the human's message:".length).trim();
   }
   // Strategy 2: Terminal sessions — the user's text is the actual message,
   // but hooks inject system context. If we see system preamble markers,

@@ -29,7 +29,6 @@
 const MODE_OVERRIDES: Record<string, 'analyst' | 'operator' | 'builder'> = {
   // Analyst: full identity access, external comms via queues only
   'nightly-analysis': 'analyst',
-  'keel-cycle': 'analyst',
 
   // Builder: code + domain files, no external messaging, no personal data
   'resource-guardian': 'builder',
@@ -49,9 +48,6 @@ const RESOURCE_REQUIREMENTS: Record<string, string[]> = {
   'working-group-self-improvement': ['studio2'],
   'working-group-infra-watch': ['studio2'],
 
-  // Morning brief uses local inference for learning synthesis
-  'morning-brief': ['studio1'],
-
   // Everything else: no resource constraint — runs freely
 };
 
@@ -60,32 +56,6 @@ function getJobMode(jobName: string): 'analyst' | 'operator' | 'builder' {
 }
 
 const JOBS = [
-  // ─── Daily Morning Pipeline ───────────────────────────────────────────
-  {
-    name: 'morning-brief',
-    schedule: { hour: 3, minute: 45 },
-    runner: 'node',
-    script: 'scripts/morning-brief.ts',
-    args: [],
-    runOnMiss: true,
-    useSession: true,
-    sessionChannel: 'daemon_morning',
-    expectsOutput: true,
-    description: 'Daily learning brief — synthesizes overnight developments, web research, and Growth Engine data into actionable intelligence. Isolated session to prevent daemon context bleed.',
-  },
-  {
-    name: 'heartbeat',
-    schedule: { hour: 4, minute: 30 },
-    runner: 'node',
-    script: 'scripts/heartbeat.ts',
-    args: ['morning'],
-    runOnMiss: true,
-    useSession: true,
-    sessionChannel: 'daemon_morning',  // shared with morning-brief — heartbeat builds on brief's context
-    expectsOutput: true,
-    description: 'Morning heartbeat — reads daily file, yesterday file, git log, calendar. Writes the morning briefing section. Orients the organism to the day.',
-  },
-
   // ─── High-Frequency Infrastructure ────────────────────────────────────
   {
     name: 'operational-pulse',
@@ -166,18 +136,11 @@ const JOBS = [
   },
 
   // ─── Autonomous Cycles ────────────────────────────────────────────────
-  {
-    name: 'keel-cycle',
-    schedule: { intervalMs: 5400000 },  // every 90 minutes
-    runner: 'node',
-    script: 'scripts/keel-operator.ts',
-    args: [],
-    // No quiet hours — the organism works around the clock. The session decides what to do.
-    runOnMiss: false,
-    useSession: true,
-    expectsOutput: true,
-    description: 'Autonomous wake-up with full capability. Assess system state, daily file, open threads, active terminals. Do real work if it exists — fix infrastructure, execute pending tasks, respond to pending messages. Exit quickly (2 min) if nothing actionable, up to 90 min if real work exists. Not a scan — a session.',
-  },
+  // Forkers wire their own autonomous operator here. The script referenced
+  // below is partner-specific (it embodies the partner's judgment about
+  // what work to pick up on each wake). AlienKind ships the pattern — the
+  // cron shape, the session channel, the quiet-hours policy — but not the
+  // operator's decision logic itself.
 ];
 
 module.exports = { JOBS, getJobMode, MODE_OVERRIDES, RESOURCE_REQUIREMENTS };

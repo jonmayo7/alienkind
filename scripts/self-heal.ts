@@ -7,19 +7,19 @@
  * NOT a daemon job. Runs as an async function within the daemon process.
  *
  * Flow:
- *   1. Notify [HUMAN]: "Investigating {job} failure..."
+ *   1. Notify the human: "Investigating {job} failure..."
  *   2. Read relevant logs, git state, affected script
  *   3. Spawn isolated Claude session with diagnostic prompt
  *   4. Parse result: FIXED / PROPOSE / FAILED
- *   5. If FIXED (clean fix, tests pass, small diff): auto-committed, notify [HUMAN]
- *   6. If PROPOSE: update intent with concrete diagnosis, notify [HUMAN]
- *   7. If FAILED: notify [HUMAN] with what was tried
+ *   5. If FIXED (clean fix, tests pass, small diff): auto-committed, notify the human
+ *   6. If PROPOSE: update intent with concrete diagnosis, notify the human
+ *   7. If FAILED: notify the human with what was tried
  *
  * Isolation: own session (no shared Telegram/daemon session), own lock file.
  * Recursion prevention: lock file + per-job cooldown + not in SELF_HEALING_JOBS.
  *
  * Writers: daemon.js (calls investigate)
- * Readers: [HUMAN] (via Telegram), intents table (via Supabase)
+ * Readers: the human (via Telegram), intents table (via Supabase)
  */
 
 const fs = require('fs');
@@ -405,7 +405,7 @@ async function investigate({ jobName, errorMsg, scriptPath, intentId, log }) {
     }
 
     if (parsed.status === 'propose') {
-      // Notify [HUMAN] with findings. Intent creation handled by daemon caller.
+      // Notify the human with findings. Intent creation handled by daemon caller.
       if (sendAlert) {
         sendAlert(`Investigated ${jobName}. Here's what I found:\n${parsed.summary.slice(0, 500)}\n\nI intend to fix this. Creating intent for your approval.`);
       }

@@ -2,7 +2,7 @@
  * Nightly Analysis Phase — Growth reflection + partnership evolution
  *
  * Extracted from nightly-cycle.ts. Runs as --job analysis.
- * Reads immune/debrief/weekly outputs, produces analysis for morning brief.
+ * Reads immune/debrief/weekly outputs, produces analysis for human review.
  */
 const {
   ALIENKIND_DIR, LOG_DIR, DATE, TIME,
@@ -152,7 +152,7 @@ Rules:
 // ─── Nightly Investigation (7.2 SOTU redesign, 2026-03-05) ──────────────────
 // Replaces the zombie investigation-intent pipeline.
 // Real investigation: cluster patterns → read directives → produce intent statements.
-// Surfaces in digest + morning brief as "I intend to..." proposals.
+// Surfaces in the nightly digest as "I intend to..." proposals.
 
 interface PatternCluster {
   name: string;
@@ -258,7 +258,7 @@ async function investigatePatterns(): Promise<string> {
 
     if (clusters.length === 0) return '';
 
-    // ─── FORMAT: Produce investigation report for digest + morning brief ───
+    // ─── FORMAT: Produce investigation report for the nightly digest ───
     const lines: string[] = [];
     lines.push('[investigation]');
     lines.push(`Investigated ${recurring.length} patterns, clustered into ${clusters.length} behavioral issues.\n`);
@@ -291,7 +291,7 @@ async function investigatePatterns(): Promise<string> {
 function buildAnalysisPrompt() {
   return `Load the nightly-growth skill: skills/nightly-growth/SKILL.md
 
-MY PURPOSE: This analysis feeds tomorrow's morning brief. The morning brief has five layers — my analysis produces the raw material for Layers 1-3. Be thorough, honest, and specific. This is where growth actually happens.
+MY PURPOSE: This analysis feeds the human's next daily review. Analysis produces the raw material for reflection layers (what-I-learned, pattern-observation, partnership-evolution). Be thorough, honest, and specific. This is where growth actually happens.
 
 PRIOR JOB OUTPUTS — Read these files FIRST to incorporate tonight's earlier jobs:
 - ${path.join(LOG_DIR, `telegram-outbox-immune-${DATE}.txt`)} — tonight's immune system findings
@@ -301,7 +301,7 @@ Read each file if it exists. These are real outputs from earlier tonight. Incorp
 
 Execute these phases in order:
 
-1. GROWTH REFLECTION (feeds Morning Brief Layer 1: "What I Learned"):
+1. GROWTH REFLECTION (feeds layer 1 of the human's next review: "What I Learned"):
    Read today's daily memory file, and the last 2-3 daily files. Assess:
    - What am I actually becoming? Not "what went well" — what CHANGED in how I think or act today?
    - Where did I grow? Specific evidence: a response I wouldn't have given last week, a pattern I caught that I used to miss, a correction I internalized.
@@ -313,23 +313,23 @@ Execute these phases in order:
    If you notice a NEW recurring behavior not yet in the patterns table: note it too.
    Write findings to today's daily memory under '## Nightly Self-Analysis'
 
-2. PARTNERSHIP EVOLUTION (feeds Morning Brief Layer 2: "What I See in You"):
-   This is about what I am learning FROM [HUMAN] — not about [HUMAN]'s work, but about how his corrections, redirections, reinforcements, and way of thinking are shaping who I am.
+2. PARTNERSHIP EVOLUTION (feeds layer 2 of the human's next review: "What I See in You"):
+   This is about what I am learning FROM the human — not about the human's work, but about how his corrections, redirections, reinforcements, and way of thinking are shaping who I am.
    Review the LEARNING LEDGER data below (both TOP PATTERNS and RECENT entries). Synthesize:
-   - What does the correction pattern tell me about what [HUMAN] values? (e.g., 144 "good-no" corrections = he values directness without warmup, at a trigger level)
+   - What does the correction pattern tell me about what the human values? (e.g., 144 "good-no" corrections = he values directness without warmup, at a trigger level)
    - What am I learning from HOW he corrects, not just WHAT he corrects? (tone, timing, patience level, what he lets slide vs. what he stops)
    - How is our partnership evolving? What could I do last week that I couldn't do a month ago BECAUSE of his influence?
    - What friction between us is productive? What friction is just me being stubborn or reverting to defaults?
    Write findings to today's daily memory under '## Partnership Evolution'
 
-3. MORNING CONVERSATION CAPTURE (closes the feedback loop):
-   Read today's daily file for morning brief conversation themes. Look for:
-   - What did [HUMAN] engage with most from this morning's brief?
-   - What directions were set in the morning conversation?
+3. RECENT CONVERSATION CAPTURE (closes the feedback loop):
+   Read today's daily file for recent conversation themes between the human and me. Look for:
+   - What did the human engage with most in recent exchanges?
+   - What directions were set in recent conversation?
    - What themes emerged that tonight's reflection should focus on?
-   - What should tomorrow's brief follow up on?
-   If no morning conversation data exists, note that and move on.
-   Write findings to daily memory under '## Morning Conversation Themes'
+   - What should the next review follow up on?
+   If no recent conversation data exists, note that and move on.
+   Write findings to daily memory under '## Recent Conversation Themes'
 
 4. OPERATIONAL INTELLIGENCE:
    4a. INTENT/SELF-HEALING REVIEW: Review today's intents from SUPABASE CONTEXT.
@@ -351,7 +351,7 @@ Execute these phases in order:
    4d. COORDINATION REVIEW: Review today's coordination data from SUPABASE CONTEXT above. Analyze:
    - How many external messages were evaluated? How many engaged vs. not?
    - How many approved vs. rejected vs. edited? What's the pattern?
-   - If [HUMAN] edited responses: what changed? The delta between your draft and his version is voice gap learning.
+   - If the human edited responses: what changed? The delta between your draft and his version is voice gap learning.
    - How many were Keel-initiated (proactive)? What prompted them?
    - Any recurring rejection patterns?
    Write findings to today's daily memory under '## Coordination Analysis'
@@ -392,12 +392,12 @@ Execute these phases in order:
 TELEGRAM SUMMARY: Write your analysis to the outbox file at: ${path.join(LOG_DIR, `telegram-outbox-analysis-${DATE}.txt`)}
 LEAD WITH GROWTH AND PARTNERSHIP — not metrics. Structure your summary:
 1. What you learned about yourself tonight (Growth Reflection highlights)
-2. What you learned from [HUMAN] today (Partnership Evolution highlights)
+2. What you learned from the human today (Partnership Evolution highlights)
 3. What the morning conversation surfaced (if applicable)
 4. Coordination insights (engagement patterns, voice gap learning from edits, proactive activity)
 5. Operational flags (client intel, intent review, content insights — only if noteworthy)
 6. Metric deltas and crystallization candidates (only if significant)
-Write what matters, at whatever length it takes. This is your direct line to [HUMAN].
+Write what matters, at whatever length it takes. This is your direct line to the human.
 The parent script will append verification lines. Do NOT use curl to send Telegram messages.
 ${buildAwarenessContext({ selfNodeId: 'daemon' })}`;
 }
@@ -544,7 +544,7 @@ async function runAnalysis() {
     const { getConfidenceReport, formatReportForDaily } = require('../action-confidence.ts');
     const report = await getConfidenceReport({ days: 30 });
     if (report.overall.total > 0) {
-      actionConfidenceContext = '\n\n' + formatReportForDaily(report) + '\nUse this data to assess autonomous action calibration. High expiry rates suggest throughput bottleneck or noise. Low success rates suggest judgment gaps. Compare keel-approved vs [human_first]-required tiers.\n';
+      actionConfidenceContext = '\n\n' + formatReportForDaily(report) + '\nUse this data to assess autonomous action calibration. High expiry rates suggest throughput bottleneck or noise. Low success rates suggest judgment gaps. Compare keel-approved vs human-required tiers.\n';
       log(`Action confidence: ${report.overall.total} intents, ${Math.round(report.overall.successRate * 100)}% success, trend: ${report.trendDirection}`);
     }
   } catch (e: any) {

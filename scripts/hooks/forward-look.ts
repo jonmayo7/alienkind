@@ -183,7 +183,7 @@ async function main() {
   // --- Check 4: ENV VAR ACTIVATION — new env var references need external deployment ---
   // If the diff introduces new process.env.SOMETHING references, warn that the
   // env var needs to be set in the deployment environment (Vercel, .env, etc.)
-  // This catches the Phase 5.2 failure: morning brief blog built but env var never set.
+  // This catches a common deploy failure: feature built but env var never set.
   try {
     const addedLines = execSync('git diff HEAD~1 -U0 -- "*.ts" 2>/dev/null', {
       cwd: ALIENKIND_DIR, encoding: 'utf8', timeout: 5000,

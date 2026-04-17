@@ -41,7 +41,7 @@ interface InvokeKeelOptions {
   systemPrompt?: string;
   /** Session mode for capability separation (Containment Fields).
    *  analyst: full access, external comms via queues only (interactive terminal, nightly soul-sync, analysis)
-   *  operator: can send externally, cannot write identity/memory state files (listeners, heartbeat, morning-brief)
+   *  operator: can send externally, cannot write identity/memory state files (listeners, heartbeat, digest jobs)
    *  builder: code files only, no identity/personal data, no external messaging (CI/CD, feature work, tests) */
   mode?: 'analyst' | 'operator' | 'builder';
   log: LogFn;
@@ -121,7 +121,7 @@ function invokeKeel(message: string, opts: InvokeKeelOptions): Promise<string | 
   const IDENTITY_REQUIRED_PATTERNS = [
     'keel', 'writing', 'research', 'debrief', 'calibration',
     'correction', 'incorporation', 'review-responder', 'analysis', 'identity',
-    'social', 'telegram', 'discord', 'morning-brief', 'heartbeat',
+    'social', 'telegram', 'discord', 'heartbeat',
     'war-room',
   ];
   const IDENTITY_EXEMPT_PATTERNS = [

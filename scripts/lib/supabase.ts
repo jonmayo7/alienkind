@@ -137,11 +137,11 @@ async function supabaseGet(table: string, query: string = '', opts: QueryOptions
  * Fence principle verified before changing the default:
  *   - Every production caller that explicitly needed 'return=minimal'
  *     already passes it as an option (lib/trust-provenance.ts,
- *     lib/terminal-state.ts, [CLIENT_PRODUCT_B]/*, etc.). Those are unaffected.
+ *     lib/terminal-state.ts, a client product/*, etc.). Those are unaffected.
  *   - Fire-and-forget callers (~110 sites) don't read the return value,
  *     so a slightly larger response body they never look at is negligible.
  *   - No bulk-insert callers rely on minimal for performance via the
- *     default path; the one bulk insert ([CLIENT_PROJECT]-intelligence.ts) is a
+ *     default path; the one bulk insert (a client project-intelligence.ts) is a
  *     single-element array.
  *
  * Callers that want the old behavior can still opt in with

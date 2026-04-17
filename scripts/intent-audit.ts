@@ -12,7 +12,7 @@ process.env.TZ = TIMEZONE;
  *
  * For each finding:
  *   - Bounded + codeable → fix it (builder mode, preview branch, no compute caps)
- *   - Needs judgment → surface in morning brief with specific recommendation
+ *   - Needs judgment → surface to human review with specific recommendation
  *
  * Daemon job: runs at 1:00 AM (after nightly analysis, before keel-research).
  * Builder mode. No compute caps.

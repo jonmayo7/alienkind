@@ -8,7 +8,7 @@
  *
  * Called by:
  *   - Working groups: after creating findings, score them
- *   - keel-cycle: rank pending packets by triage_score for Opus evaluation
+ *   - partner operator cycle: rank pending packets by triage_score for Opus evaluation
  *   - Nightly: adjust cyclical weights from daily outcomes
  *
  * The triage AIRE prevents chasing the good idea fairy. High-value findings
@@ -226,7 +226,7 @@ function checkScopeLock(organKey: string, proposedFiles: string[]): { passed: bo
 /**
  * Verify shipped mission packets — did the fix improve anything?
  * Uses rate-of-change monitoring (item 13) to compare before/after.
- * Called by keel-cycle after evaluating packets.
+ * Called by partner operator cycle after evaluating packets.
  */
 async function verifyShippedPackets(): Promise<{ verified: number; failed: number; skipped: number }> {
   try {

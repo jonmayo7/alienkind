@@ -108,7 +108,7 @@ async function main() {
     if (isBlocked) {
       console.error(`BLOCKED by session mode: ${sessionMode} mode cannot read ${relPath}`);
       if (blocked === '.env') {
-        console.error('Service keys require analyst mode (interactive terminal with [HUMAN]).');
+        console.error('Service keys require analyst mode (interactive terminal with the human).');
       } else if (blocked.startsWith('identity/')) {
         console.error('Identity files require analyst mode.');
       } else if (blocked.startsWith('memory/synthesis/clients/')) {

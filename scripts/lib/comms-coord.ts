@@ -2,10 +2,10 @@
  * Comms Coordination — Data helpers for coordination requests.
  *
  * Provides read-only data access to the coordination_requests table
- * for morning-brief, nightly/immune, and other reporting consumers.
+ * for nightly/immune, scheduled analyzers, and other reporting consumers.
  *
  * Data flows:
- *   Readers: morning-brief, nightly analysis, nightly/immune
+ *   Readers: nightly analysis, nightly/immune, any scheduled reporter
  *   Table: coordination_requests (Supabase)
  */
 
@@ -35,7 +35,7 @@ interface CoordinationRequest {
 
 /**
  * Format internal channel identifiers as human-readable labels.
- * discord_partner_collab → #[CHANNEL_NAME], telegram_group → #[CHANNEL_NAME], etc.
+ * discord_partner_collab → #a channel, telegram_group → #a channel, etc.
  */
 function formatChannelLabel(channel: string): string {
   if (!channel) return channel;
@@ -49,7 +49,7 @@ function formatChannelLabel(channel: string): string {
 // --- Data Access Functions ---
 
 /**
- * Get pending coordination requests (status = 'evaluated', waiting for [HUMAN]).
+ * Get pending coordination requests (status = 'evaluated', waiting for the human).
  */
 async function getPendingCoordRequests(): Promise<CoordinationRequest[]> {
   return supabaseGet(
@@ -60,7 +60,7 @@ async function getPendingCoordRequests(): Promise<CoordinationRequest[]> {
 
 /**
  * Get coordination request stats for a date range.
- * Used by nightly analysis and morning brief.
+ * Used by nightly analysis and scheduled reporters.
  */
 async function getCoordStats(dateFrom: string): Promise<{
   total: number;
@@ -94,8 +94,8 @@ async function getCoordStats(dateFrom: string): Promise<{
 }
 
 /**
- * Get coordination requests with [HUMAN]'s edits (for learning analysis).
- * Returns requests where [HUMAN] changed the proposed response.
+ * Get coordination requests with the human's edits (for learning analysis).
+ * Returns requests where the human changed the proposed response.
  */
 async function getEditedRequests(dateFrom: string): Promise<CoordinationRequest[]> {
   try {

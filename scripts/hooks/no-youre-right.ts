@@ -2,7 +2,7 @@
  * no-youre-right.ts — Blocks "You're right" from Keel's output.
  *
  * Chris Voss distinction: "you're right" = dismissal. "That's right" = breakthrough.
- * [HUMAN] catches this immediately. 122+ learning-ledger corrections confirm it's wired
+ * the human catches this immediately. 122+ learning-ledger corrections confirm it's wired
  * at the trigger level. Prompt instructions failed. This hook enforces.
  *
  * Event: PreToolUse (Edit, Write)

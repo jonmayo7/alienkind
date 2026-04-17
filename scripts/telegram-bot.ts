@@ -227,12 +227,12 @@ async function flushMessages(chatId: string): Promise<void> {
         const killCmd = parseKillCommand(messageForEngine, 'owner');
         if (killCmd) {
           if (killCmd.action === 'lockdown') {
-            setKillLevel(killCmd.level || 3, '[HUMAN] LOCKDOWN via Telegram', 'telegram-bot');
+            setKillLevel(killCmd.level || 3, 'the human LOCKDOWN via Telegram', 'telegram-bot');
             await lastCtx.reply(`LOCKDOWN activated — level ${killCmd.level || 3}. All affected actions halted. Send UNLOCK to resume.`);
             log('WARN', `[KILL SWITCH] LOCKDOWN level ${killCmd.level || 3}`);
             return;
           } else if (killCmd.action === 'unlock') {
-            clearKillSwitch('[HUMAN] UNLOCK via Telegram', 'telegram-bot');
+            clearKillSwitch('the human UNLOCK via Telegram', 'telegram-bot');
             await lastCtx.reply('UNLOCK — kill switch cleared. All systems normal.');
             log('INFO', '[KILL SWITCH] Cleared');
             return;
@@ -258,18 +258,18 @@ async function flushMessages(chatId: string): Promise<void> {
     // Always use 'heavy' for Telegram — user-facing conversations need full Keel identity.
     // 'light' routes to local models which lack identity/history. classifyMessage is for daemon tasks.
     const complexity = 'heavy' as const;
-    const senderName = lastCtx.from?.first_name || '[HUMAN]';
+    const senderName = lastCtx.from?.first_name || 'the human';
 
     // Instruct model to READ attached files (critical for multimodal)
     let mediaInstructions = combinedMedia;
     if (mediaInstructions) {
       mediaInstructions = mediaInstructions.replace(
         /\[Photo attached: ([^\]]+)\]/g,
-        '[HUMAN] sent a photo. Use the Read tool to view it at: $1'
+        'the human sent a photo. Use the Read tool to view it at: $1'
       );
       mediaInstructions = mediaInstructions.replace(
         /\[Document attached: ([^\]]+)\]/g,
-        '[HUMAN] sent a document. Use the Read tool to read it at: $1'
+        'the human sent a document. Use the Read tool to read it at: $1'
       );
     }
 
@@ -281,7 +281,7 @@ async function flushMessages(chatId: string): Promise<void> {
       log,
       complexity,
       injectIdentity: true,
-      sender: '[human_first]',
+      sender: 'human',
       senderDisplayName: senderName,
       additionalContext: mediaInstructions || undefined,
       ...(session.isResume
@@ -325,7 +325,7 @@ async function flushMessages(chatId: string): Promise<void> {
       const dmMemPath = path.join(ALIENKIND_DIR, 'memory', 'daily', `${today}.md`);
       const time = getNowCT();
       const channelTag = channel === 'telegram_dm' ? 'DM' : channel === 'telegram_alerts' ? 'Alerts' : 'CommsCoord';
-      fs.appendFileSync(dmMemPath, `- **[${channelTag} ${time}] [HUMAN]:** ${combinedText.slice(0, 200)}\n`);
+      fs.appendFileSync(dmMemPath, `- **[${channelTag} ${time}] the human:** ${combinedText.slice(0, 200)}\n`);
       fs.appendFileSync(dmMemPath, `- **[${channelTag} ${time}] Keel:** ${response.slice(0, 300)}\n`);
     } catch {}
 
@@ -400,7 +400,7 @@ bot.on('message:text', async (ctx: any) => {
   if (!channel) return;
 
   // --- LinkedIn Engagement Interceptor (deterministic, no AI) ---
-  // When [HUMAN] replies to a LinkedIn draft message, route directly to processApprovalReply.
+  // When the human replies to a LinkedIn draft message, route directly to processApprovalReply.
   // This replaces the old path where a full Claude session spawned and improvised.
   const replyTo = ctx.message.reply_to_message;
   if (replyTo?.message_id && (channel === 'telegram_comms_coord' || channel === 'telegram_dm')) {
@@ -468,11 +468,11 @@ bot.on('message:voice', async (ctx: any) => {
       text = transcription;
     } else {
       text = '';
-      mediaContext = `[HUMAN] sent a voice note (${ctx.message.voice.duration}s) but transcription failed. Ask him to type it or try again.`;
+      mediaContext = `the human sent a voice note (${ctx.message.voice.duration}s) but transcription failed. Ask him to type it or try again.`;
     }
   } catch (err: any) {
     log('WARN', `Voice download failed: ${err.message}`);
-    mediaContext = '[HUMAN] sent a voice note but download failed.';
+    mediaContext = 'the human sent a voice note but download failed.';
   }
 
   // Schedule cleanup

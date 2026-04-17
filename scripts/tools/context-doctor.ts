@@ -16,7 +16,7 @@
  *   npx tsx scripts/tools/context-doctor.ts --json     # machine-readable output
  *   npx tsx scripts/tools/context-doctor.ts --brief    # one-line summary
  *
- * Readers: interactive sessions, keel-cycle, memory-checkpoint hook.
+ * Readers: interactive sessions, partner operator cycle, memory-checkpoint hook.
  * Writers: stateless — reads file system only.
  */
 

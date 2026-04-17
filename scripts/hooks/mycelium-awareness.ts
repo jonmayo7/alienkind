@@ -6,7 +6,7 @@
  * awareness of what other instances are doing before responding.
  *
  * Enhanced with:
- *   - Activity display (what Keel is actually doing, not just [HUMAN]'s prompt)
+ *   - Activity display (what Keel is actually doing, not just the human's prompt)
  *   - Repo context (which repo each terminal is working in)
  *   - File conflict warnings (files touched by multiple terminals)
  *
@@ -15,7 +15,7 @@
 
 const path = require('path');
 
-const STALE_MS = 2 * 60 * 60 * 1000; // 2 hours — [HUMAN] works across 7+ terminals, some idle 30+ min between interactions
+const STALE_MS = 2 * 60 * 60 * 1000; // 2 hours — the human works across 7+ terminals, some idle 30+ min between interactions
 
 async function main() {
   try {
@@ -45,7 +45,7 @@ async function main() {
         const activity = (t.activity || '').slice(0, 120).replace(/\n/g, ' ');
         const focus = (t.focus || '').slice(0, 120).replace(/\n/g, ' ');
 
-        // Build display: prefer activity (what Keel is doing) over focus (what [HUMAN] said)
+        // Build display: prefer activity (what Keel is doing) over focus (what the human said)
         let display = activity || focus;
 
         // Add repo context if different from keel

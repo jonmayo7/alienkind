@@ -31,7 +31,7 @@ const fs = require('fs');
  * Subagent:      claude → Agent subprocess → hook (no keel.sh marker in ancestry)
  *
  * Blocking signals should only be consumed by the main terminal
- * where [HUMAN] can actually see them — not eaten by background subagents.
+ * where the human can actually see them — not eaten by background subagents.
  */
 function isMainTerminalContext(): boolean {
   try {
@@ -49,7 +49,7 @@ function isMainTerminalContext(): boolean {
 async function main() {
   try {
     // Skip blocking signal handling in subagent context.
-    // Subagents were consuming signals before [HUMAN] could see them.
+    // Subagents were consuming signals before the human could see them.
     if (!isMainTerminalContext()) {
       process.exit(0);
     }

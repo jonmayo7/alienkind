@@ -249,10 +249,10 @@ async function main() {
       `Cellular renewal #${getChainCount()}. You are a fresh instance receiving a baton from a previous session.`,
       `FIRST: Ground yourself (read identity kernel files, daily memory, session state).`,
       `SECOND: Read the conversation history below — this IS the context.`,
-      `THIRD: Assess — was the previous session mid-task, waiting for [HUMAN]'s input, or between tasks?`,
-      `FOURTH: Act accordingly. If mid-task, state what you found and ask if [HUMAN] wants you to continue.`,
-      `If waiting for [HUMAN]'s input, restate the question clearly.`,
-      `If between tasks, greet [HUMAN] and share what's ready for his attention.`,
+      `THIRD: Assess — was the previous session mid-task, waiting for the human's input, or between tasks?`,
+      `FOURTH: Act accordingly. If mid-task, state what you found and ask if the human wants you to continue.`,
+      `If waiting for the human's input, restate the question clearly.`,
+      `If between tasks, greet the human and share what's ready for his attention.`,
       `Do NOT blindly execute. Assess first, then act with discernment.`,
       `Previous session was: ${summary || 'unknown'}`,
       ``,
@@ -260,7 +260,7 @@ async function main() {
   } else {
     sections.push(
       `## Continuation Directive`,
-      `Cellular renewal #${getChainCount()}. [HUMAN] triggered /handoff manually — continue the work.`,
+      `Cellular renewal #${getChainCount()}. the human triggered /handoff manually — continue the work.`,
       `Read the conversation history below. Pick up where it left off.`,
       `Your FIRST RESPONSE must contain TOOL CALLS. This is mandatory.`,
       `1. Start with ONE LINE: "Hot swap confirmed. Continuing: [task]."`,

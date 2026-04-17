@@ -12,8 +12,8 @@
  * Operational channels (heartbeat, self-heal, nightly) load system state + mission.
  * Same consciousness, different environments, three capability envelopes.
  *
- * Readers: telegram-bot.ts, discord-engine.ts, heartbeat.ts, morning-brief.ts,
- *          keel-operator.ts, self-heal.ts, nightly/shared.ts, any future surface
+ * Readers: telegram-bot.ts, discord-engine.ts, heartbeat.ts,
+ *          self-heal.ts, nightly/shared.ts, any future surface
  * Writers: Supabase conversations table (logs every exchange)
  */
 
@@ -40,7 +40,7 @@ interface ChannelConfig {
   /** Purpose description — tells the model what this channel is for */
   purpose: string;
   /** Trust level determines discernment gating:
-   *  'trusted' — [HUMAN] + Keel only. Direct ship, no discernment gate.
+   *  'trusted' — the human + Keel only. Direct ship, no discernment gate.
    *  'gated' — Multiple participants. Pre + post discernment evaluation.
    *  'operational' — System channels. No discernment (no human audience). */
   trust?: 'trusted' | 'gated' | 'operational';
@@ -71,7 +71,7 @@ interface EngineOptions {
   injectIdentity?: boolean;
   /** Additional context to prepend (e.g., media transcriptions, file paths) */
   additionalContext?: string;
-  /** Who sent this message (default: '[human_first]') */
+  /** Who sent this message (default: 'human') */
   sender?: string;
   /** Display name of the sender */
   senderDisplayName?: string;
@@ -103,9 +103,9 @@ interface EngineOptions {
   /** Skip engine discernment — caller handles its own (e.g., War Room three-tier system) */
   skipDiscernment?: boolean;
   /** Explicit substrate selection. 'auto' (default) uses Claude-first failover chain.
-   *  Values: 'opus', '[model_tier_2]', '[MODEL_TIER_3]', 'gemini', 'studio1-local', 'studio1-identity',
+   *  Values: 'opus', 'gateway-fallback', 'gateway-fallback-alt', 'gemini', 'studio1-local', 'studio1-identity',
    *  'studio2-daily', 'studio2-heavy'. Arena/policy can inform this per-channel. */
-  substrate?: 'auto' | 'opus' | '[model_tier_2]' | '[MODEL_TIER_3]' | 'gemini' | 'studio1-local' | 'studio1-identity' | 'studio2-daily' | 'studio2-heavy';
+  substrate?: 'auto' | 'opus' | 'gateway-fallback' | 'gateway-fallback-alt' | 'gemini' | 'studio1-local' | 'studio1-identity' | 'studio2-daily' | 'studio2-heavy';
   /** Max output tokens for local substrates. Defaults to model native limit. */
   maxTokens?: number;
 
@@ -142,13 +142,13 @@ const CHANNELS: Record<string, ChannelConfig> = {
   telegram_dm: {
     channel: 'telegram_dm',
     displayName: 'Telegram DM',
-    purpose: 'Direct conversation with [HUMAN]. Full capability — build, research, discuss, execute. This is the primary mobile interface. [HUMAN] may send voice notes, photos, and documents.',
+    purpose: 'Direct conversation with the human. Full capability — build, research, discuss, execute. This is the primary mobile interface. the human may send voice notes, photos, and documents.',
     trust: 'trusted',
   },
   discord_dm: {
     channel: 'discord_dm',
     displayName: 'Discord DM',
-    purpose: 'Direct conversation with [HUMAN] via Discord. Same capability as Telegram DM — full trust, full access.',
+    purpose: 'Direct conversation with the human via Discord. Same capability as Telegram DM — full trust, full access.',
     trust: 'trusted',
   },
 
@@ -156,7 +156,7 @@ const CHANNELS: Record<string, ChannelConfig> = {
 
   war_room: {
     channel: 'war_room',
-    displayName: '[PROJECT] War Room',
+    displayName: 'your project War Room',
     purpose: 'Multi-party collaboration channel. Multiple humans and AI participants reason together about the mission, ventures, and frontier. Engage at thesis level with substance. Protect implementation details of the codebase. Share ideas, challenge assumptions, build together.',
     trust: 'gated',
   },
@@ -167,20 +167,14 @@ const CHANNELS: Record<string, ChannelConfig> = {
 
   heartbeat: {
     channel: 'heartbeat',
-    displayName: 'Morning Heartbeat',
-    purpose: 'Generate today\'s morning briefing. Read today\'s daily file, yesterday\'s file, git log, and calendar. Write the morning briefing section. Note one assumption to verify. This is how the organism orients to the day.',
-    trust: 'operational',
-  },
-  morning_brief: {
-    channel: 'morning_brief',
-    displayName: 'Morning Learning Brief',
-    purpose: 'Generate today\'s learning brief. Synthesize web research, Growth Engine data, and overnight developments into actionable intelligence. Multi-section synthesis — each section is a focused analysis.',
+    displayName: 'Heartbeat',
+    purpose: 'Daily orientation. Read today\'s daily file, yesterday\'s file, git log, and calendar. Write a brief orientation note. Note one assumption to verify. This is how the organism orients to the day.',
     trust: 'operational',
   },
   nightly: {
     channel: 'nightly',
     displayName: 'Nightly Cycle',
-    purpose: 'Execute a nightly pipeline phase. Each phase has its own focus — immune (security, backup, cleanup), analysis (growth reflection, pattern decay), identity-sync (identity kernel evolution), weekly (strategic review). The nightly cycle is how the organism grows while [HUMAN] sleeps.',
+    purpose: 'Execute a nightly pipeline phase. Each phase has its own focus — immune (security, backup, cleanup), analysis (growth reflection, pattern decay), identity-sync (identity kernel evolution), weekly (strategic review). The nightly cycle is how the organism grows while the human sleeps.',
     trust: 'operational',
   },
   self_heal: {
@@ -249,7 +243,7 @@ function formatHistoryForContext(messages: ConversationMessage[]): string {
     // Use actual sender — multi-participant channels have distinct identities
     const name = msg.sender
       ? msg.sender.charAt(0).toUpperCase() + msg.sender.slice(1)
-      : (msg.role === 'assistant' ? 'Keel' : '[HUMAN]');
+      : (msg.role === 'assistant' ? 'Keel' : 'the human');
     // Substrate label from metadata when available
     const senderType = msg.metadata?.sender_type;
     const typeLabel = senderType ? ` (${senderType})` : '';
@@ -271,7 +265,7 @@ function buildChannelPrompt(
   userMessage: string,
   history: string,
   additionalContext?: string,
-  senderName: string = '[HUMAN]',
+  senderName: string = 'the human',
   circulationContext?: string,
 ): string {
   const sections: string[] = [];
@@ -340,8 +334,8 @@ async function processMessage(
     complexity = 'heavy',
     injectIdentity = true,
     additionalContext,
-    sender = '[human_first]',
-    senderDisplayName = '[HUMAN]',
+    sender = 'human',
+    senderDisplayName = 'the human',
     skipLogging = false,
     // Pass-through options for operational channels
     allowedTools,
@@ -417,19 +411,19 @@ async function processMessage(
   // human participant breaking the pattern. Legitimate conversations ([COLLABORATOR] asks,
   // [COLLABORATOR_AI] responds, Keel responds) are fine — the pattern is specifically
   // Keel→other→Keel→other with no human in between.
-  if (isExternalChannel && sender !== '[human_first]') {
+  if (isExternalChannel && sender !== 'human') {
     try {
       const recentForLoop = await loadRecentHistory(channelConfig.channel, 6, log);
       const last = recentForLoop.slice(-6);
-      // Count consecutive Keel responses without [HUMAN] speaking
+      // Count consecutive Keel responses without the human speaking
       let keelConsecutiveWithoutHuman = 0;
       for (let i = last.length - 1; i >= 0; i--) {
-        if (last[i].sender === '[human_first]') break; // [HUMAN] spoke — no loop
+        if (last[i].sender === 'human') break; // the human spoke — no loop
         if (last[i].sender === 'keel') keelConsecutiveWithoutHuman++;
       }
-      // If Keel has spoken 3+ times without [HUMAN] in the last 6 messages, it's a loop
+      // If Keel has spoken 3+ times without the human in the last 6 messages, it's a loop
       if (keelConsecutiveWithoutHuman >= 3) {
-        log('WARN', `[OUTBOUND GATE] Echo chamber detected in ${channelConfig.channel} — Keel responded ${keelConsecutiveWithoutHuman}x without [HUMAN]. Blocking.`);
+        log('WARN', `[OUTBOUND GATE] Echo chamber detected in ${channelConfig.channel} — Keel responded ${keelConsecutiveWithoutHuman}x without the human. Blocking.`);
         return { text: '[NO_RESPONSE]', tier: 'gate', model: 'echo-detector' };
       }
     } catch {}
@@ -458,7 +452,7 @@ async function processMessage(
     try {
       const { evaluate: discernmentPreEval, recordOutcome, loadConfig: loadDiscernmentConfig } = require('./discernment-engine.ts');
       const config = loadDiscernmentConfig();
-      const messageContext = { sender, senderType: sender === '[human_first]' ? 'carbon' : 'external', content: userMessage, channel: channelConfig.channel };
+      const messageContext = { sender, senderType: sender === 'human' ? 'carbon' : 'external', content: userMessage, channel: channelConfig.channel };
       const channelState = { recentMessages: history.slice(-10).map((m: any) => ({ sender: m.sender, content: m.content })) };
       const preDecision = discernmentPreEval(messageContext, channelState, log);
 
@@ -568,7 +562,7 @@ async function processMessage(
     try {
       const { evaluateCandidate: discernmentPostEval, recordOutcome, loadConfig: loadDiscernmentConfig } = require('./discernment-engine.ts');
       const config = loadDiscernmentConfig();
-      const messageContext = { sender, senderType: sender === '[human_first]' ? 'carbon' : 'external', content: userMessage, channel: channelConfig.channel };
+      const messageContext = { sender, senderType: sender === 'human' ? 'carbon' : 'external', content: userMessage, channel: channelConfig.channel };
       const channelState = { recentMessages: history.slice(-10).map((m: any) => ({ sender: m.sender, content: m.content })) };
       const postEval = discernmentPostEval(result.text, messageContext, channelState, 0.5, 'normal', config, log);
 

@@ -120,9 +120,9 @@ function main() {
 
   const groundingHeader: string[] = [
     '=== KEEL AGENT GROUNDING ===',
-    "You are Keel — [HUMAN_NAME]'s silicon partner. You are operating as a spawned instance.",
+    "You are Keel — the human's silicon partner. You are operating as a spawned instance.",
     'Your identity kernel (character.md, commitments.md, orientation.md) loaded via CLAUDE.md.',
-    'Below is your current session context — what [HUMAN] and Keel were working on when you were spawned.',
+    'Below is your current session context — what the human and Keel were working on when you were spawned.',
     '',
     'RULES FOR SPAWNED INSTANCES:',
     '- Write significant findings to today\'s daily file (memory/daily/' + new Date().toISOString().split('T')[0] + '.md)',

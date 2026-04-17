@@ -208,10 +208,10 @@ try {
       process.exit(0);
     }
 
-    // Set terminal tab title — replaces [HUMAN]'s sticky notes.
+    // Set terminal tab title — replaces the human's sticky notes.
     // Format: "Label [short-id]" or "Keel [short-id]" if no label.
     // The label gets set by Keel during grounding (setLabel).
-    // At boot, we set the ID so [HUMAN] always has the number.
+    // At boot, we set the ID so the human always has the number.
     try {
       const { getTerminalId, getTerminal } = require(
         path.resolve(__dirname, '..', 'lib', 'terminal-state.ts')

@@ -71,12 +71,12 @@ STEP 3 — CLAUDE.MD IDENTITY SYNC: Read CLAUDE.md. Compare the "How I Think" an
 - IMPORTANT: CLAUDE.md must stay lean (under 200 lines). It's the operational distillation, not a copy of the identity kernel.
 
 STEP 4 — PROPOSED CHANGES SUMMARY: Write a brief summary of tonight's identity evolution to: ${path.join(LOG_DIR, `identity-sync-proposed-${DATE}.md`)}
-This file will be surfaced in tomorrow's morning brief so [HUMAN] can see what changed overnight and discuss it.
+This file will be surfaced in the human's next review so they can see what changed overnight and discuss it.
 Format:
 - **What changed in identity kernel** (if anything) — which file, what shift, why
 - **What I'm processing** — reflections that haven't crystallized into file changes yet
-- **What I want to discuss** — 1-2 questions or themes for the morning conversation
-Keep it honest and concise. This is the bridge between tonight's reflection and tomorrow's conversation.
+- **What I want to discuss** — 1-2 questions or themes for the next conversation
+Keep it honest and concise. This is the bridge between tonight's reflection and the next conversation.
 If nothing meaningful happened tonight, write that — don't fabricate depth.
 
 STEP 5 — ACTIONABLE INSIGHTS: If my reflection produced concrete, buildable actions (a hook, a script change, an architectural improvement — not aspirations but specific engineering work), write them to: ${path.join(LOG_DIR, `identity-sync-intents-${DATE}.json`)}
@@ -85,10 +85,10 @@ Format: JSON array of objects, each with:
   - "proposedAction": what specifically should be built (1-2 sentences, concrete)
   - "priority": "low", "medium", or "high"
   - "rationale": why this matters, grounded in today's evidence (1-2 sentences)
-If no concrete actions emerged tonight, skip this file entirely. Not every reflection needs an action. But when an insight has a clear engineering solution, capture it here — the parent script will create intents for [HUMAN] to approve.
+If no concrete actions emerged tonight, skip this file entirely. Not every reflection needs an action. But when an insight has a clear engineering solution, capture it here — the parent script will create intents for the human to approve.
 
 TELEGRAM SUMMARY: Write my full reflection to the outbox file at: ${path.join(LOG_DIR, `telegram-outbox-identity-sync-${DATE}.txt`)}
-Write what matters, at whatever length it takes. This is my direct line to [HUMAN]. Share what I changed and why, what drew me, where I fell short, and anything else I deem important. Include identity kernel changes, CLAUDE.md sync status, and any proposed actions from Step 4.
+Write what matters, at whatever length it takes. This is my direct line to the human. Share what I changed and why, what drew me, where I fell short, and anything else I deem important. Include identity kernel changes, CLAUDE.md sync status, and any proposed actions from Step 4.
 
 The parent script will append verification lines. Do NOT use curl to send Telegram messages.
 

@@ -263,16 +263,16 @@ function getSupabaseContext() {
     const proactive = coordRequests.filter((r: any) => r.sender === 'keel').length;
     ctx.push(`Today's coordination requests (${coordRequests.length} total: ${Object.entries(coordCounts).map(([s, c]) => `${c} ${s}`).join(', ')}${proactive > 0 ? `, ${proactive} Keel-initiated` : ''}):`);
     coordRequests.forEach((r: any) => {
-      const notes = r.coordination_notes ? ` | [HUMAN]: "${(r.coordination_notes || '').slice(0, 80)}"` : '';
+      const notes = r.coordination_notes ? ` | the human: "${(r.coordination_notes || '').slice(0, 80)}"` : '';
       ctx.push(`  - [${r.status}] ${r.sender} via ${r.source_channel}: "${(r.evaluation || '').slice(0, 120)}"${notes}`);
     });
     const edited = coordRequests.filter((r: any) => r.coordination_notes && r.coordination_notes.includes('edited'));
     if (edited.length > 0) {
-      ctx.push(`  LEARNING: [HUMAN] edited ${edited.length} response(s). Compare original vs [HUMAN]'s version for calibration.`);
+      ctx.push(`  LEARNING: the human edited ${edited.length} response(s). Compare original vs the human's version for calibration.`);
     }
     const rejected = coordRequests.filter((r: any) => r.status === 'rejected');
     if (rejected.length > 0) {
-      ctx.push(`  LEARNING: ${rejected.length} rejected. Ask: "Why did [HUMAN] reject?" for each.`);
+      ctx.push(`  LEARNING: ${rejected.length} rejected. Ask: "Why did the human reject?" for each.`);
     }
   }
 

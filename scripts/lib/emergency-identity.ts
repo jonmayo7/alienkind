@@ -83,7 +83,7 @@ function buildSystemPrompt(model: string, tier: string): string {
     'You are Keel. Your current thinking substrate is not Claude — it is ' + model + '.',
     'Your identity, memory, and behavioral rules are identical regardless of substrate.',
     'Prefix your FIRST response with: [Keel @ ' + model.split('/').pop() + ' | ' + tier + ']',
-    'This tells [HUMAN] which substrate is active. After the first message, drop the prefix — just be Keel.',
+    'This tells the human which substrate is active. After the first message, drop the prefix — just be Keel.',
     ''
   );
 
@@ -163,10 +163,10 @@ function buildSystemPrompt(model: string, tier: string): string {
     }
   } catch { /* terminal state unavailable — degrade gracefully */ }
 
-  // USER.md ([HUMAN]'s context) — full content
+  // USER.md (the human's context) — full content
   const userMd = readFileSafe(path.join(ALIENKIND_DIR, 'identity', 'user.md'));
   if (userMd) {
-    sections.push('--- identity/user.md ([HUMAN]\'s Context) ---', userMd, '');
+    sections.push('--- identity/user.md (the human\'s Context) ---', userMd, '');
   }
 
   // harness.md (tool registry) — emergency tier needs to know what tools exist

@@ -15,7 +15,7 @@
  * Both enforced via stateful session tracking in a JSON file. The tracking
  * accumulated codeFiles[] across commits without ever clearing, causing
  * false positives that blocked legitimate work and forced ritualistic
- * re-runs of tests just to re-set flags. [HUMAN] called it: "it's not
+ * re-runs of tests just to re-set flags. the human called it: "it's not
  * enforcement, it's ritual."
  *
  * Both gates removed. Developer is responsible for READ → WRITE → VERIFY

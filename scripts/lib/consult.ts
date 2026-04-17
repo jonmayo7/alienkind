@@ -13,7 +13,7 @@
  *
  *   const result = await consult('Should we build X or Y?', {
  *     channelConfig: CHANNELS.keel_operator,
- *     substrates: ['opus', 'studio2-heavy', 'studio2-daily', '[MODEL_TIER_3]'],
+ *     substrates: ['opus', 'studio2-heavy', 'studio2-daily', 'gateway-fallback-alt'],
  *     synthesizer: 'opus',
  *     log,
  *   });
@@ -27,8 +27,8 @@
 
 type Substrate =
   | 'opus'
-  | '[model_tier_2]'
-  | '[MODEL_TIER_3]'
+  | 'gateway-fallback'
+  | 'gateway-fallback-alt'
   | 'gemini'
   | 'studio1-local'
   | 'studio1-identity'
@@ -214,8 +214,8 @@ async function consult(task: string, opts: ConsultOptions): Promise<ConsultResul
   // Substrate → host mapping (matches LOCAL_SUBSTRATES in runtime.ts)
   const SUBSTRATE_HOST: Record<Substrate, string> = {
     'opus': 'api-anthropic',
-    '[model_tier_2]': 'api-gateway',
-    '[MODEL_TIER_3]': 'api-gateway',
+    'gateway-fallback': 'api-gateway',
+    'gateway-fallback-alt': 'api-gateway',
     'gemini': 'api-gateway',
     'studio1-local': 'studio1',
     'studio1-identity': 'studio1',
@@ -324,7 +324,7 @@ Now produce the final synthesized answer:`;
         tokens_generated: Math.round((r.text || '').length / 4),
         tokens_per_second: r.latencyMs > 0 ? Number((((r.text || '').length / 4) / (r.latencyMs / 1000)).toFixed(1)) : 0,
         cost_estimate_usd: 0,
-        quality_score: null,    // scored later by keel-arena-score or [HUMAN]'s feedback
+        quality_score: null,    // scored later by keel-arena-score or the human's feedback
         scored_by: null,
         scoring_rationale: null,
         scored_at: null,

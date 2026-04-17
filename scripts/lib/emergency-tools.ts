@@ -153,7 +153,7 @@ const TOOL_DEFINITIONS = [
     type: 'function' as const,
     function: {
       name: 'send_telegram',
-      description: 'Send a message to [HUMAN] via Telegram DM.',
+      description: 'Send a message to the human via Telegram DM.',
       parameters: {
         type: 'object',
         properties: {
@@ -234,12 +234,12 @@ const TOOL_DEFINITIONS = [
     type: 'function' as const,
     function: {
       name: 'post_to_x',
-      description: 'Post a tweet to X (Twitter). Supports [HUMAN] ([@YOUR_HANDLE]) or Keel ([@PARTNER_HANDLE]) accounts.',
+      description: 'Post a tweet to X (Twitter). Supports the human ([@YOUR_HANDLE]) or Keel ([@PARTNER_HANDLE]) accounts.',
       parameters: {
         type: 'object',
         properties: {
           text: { type: 'string', description: 'Tweet text' },
-          account: { type: 'string', enum: ['[human_first]', 'keel'], description: 'Which account to post from (default: [human_first])' },
+          account: { type: 'string', enum: ['human', 'keel'], description: 'Which account to post from (default: human)' },
           media: { type: 'string', description: 'Optional: path to media file to attach' },
         },
         required: ['text'],

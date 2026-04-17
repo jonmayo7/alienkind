@@ -228,7 +228,7 @@ function checkUrgentItems(): string[] {
   const urgentPatterns = [
     /(?<!\bnot\s)\bURGENT\b/i,                             // "urgent" but not "not urgent"
     /(?<!\b0\s)\bCRITICAL\b/i,                             // "critical" but not "0 critical"
-    /(?<!\benqueues\s)\bBLOCKED\b(?!\s+(?:in\s+\d|on\s+[HUMAN]))/i, // "blocked" but not "blocked in 60s" or "Blocked on [HUMAN]"
+    /(?<!\benqueues\s)\bBLOCKED\b(?!\s+(?:in\s+\d|on\s+the human))/i, // "blocked" but not "blocked in 60s" or "Blocked on the human"
     /\bFAILED.*(?:deploy|build|service)/i,
   ];
 
@@ -391,7 +391,7 @@ async function checkXMentions(): Promise<string[]> {
       if (ownerResult.meta?.newest_id) state.human_since_id = ownerResult.meta.newest_id;
     }
   } catch (err: any) {
-    log(`WARN: [HUMAN] mentions check failed: ${err.message}`);
+    log(`WARN: the human mentions check failed: ${err.message}`);
   }
 
   // Check [@PARTNER_HANDLE] mentions
@@ -426,7 +426,7 @@ function runRegressionTests(): void {
     'test-daemon.ts', 'test-telegram-session.ts', 'test-telegram-flow.ts',
     'test-discord-flow.ts', 'test-discord-multichannel.ts',
     'test-nightly-flow.ts', 'test-heartbeat-flow.ts',
-    'test-morning-brief-flow.ts', 'test-verify-gap-closure.ts',
+    'test-verify-gap-closure.ts',
     'test-heartbeat-verify.ts', 'test-harness-completeness.ts',
   ];
 
@@ -478,7 +478,7 @@ log(`Operational pulse starting: hour=${HOUR}, minute=${MINUTE}`);
   const calResult = await checkCalendar();
   if (calResult.meetingDetected) parts.push(calResult.briefTriggered ? 'pre-call brief triggered' : 'meeting noted');
 
-  // 2. Urgent items — log only, don't alert [HUMAN] (these are parsed from daily file, not actionable)
+  // 2. Urgent items — log only, don't alert the human (these are parsed from daily file, not actionable)
   const urgentItems = checkUrgentItems();
   if (urgentItems.length > 0) {
     log(`Urgent items detected (logged, not alerted): ${urgentItems.join('; ')}`);
@@ -669,7 +669,7 @@ log(`Operational pulse starting: hour=${HOUR}, minute=${MINUTE}`);
 
   // 10. Intent staleness detection — surfaces intents stuck in executing/approved
   // Intent #218: Intents sitting in 'executing' or 'approved' for >24h indicate
-  // work that was declared but never completed. Pulse logs them; morning brief surfaces.
+  // work that was declared but never completed. Pulse logs them for downstream review.
   try {
     const { supabaseGet: _sbGet } = require('./lib/supabase.ts');
     const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000; // 24h
@@ -702,7 +702,7 @@ log(`Operational pulse starting: hour=${HOUR}, minute=${MINUTE}`);
     log(`WARN: Intent staleness check failed: ${err.message}`);
   }
 
-  // 11. [CLIENT_PRODUCT_C] feedback monitor — notify once per entry with assessment
+  // 11. a client product feedback monitor — notify once per entry with assessment
   try {
     const { supabaseGet, supabasePatch } = require('./lib/supabase.ts');
     const feedback = await supabaseGet(
@@ -726,7 +726,7 @@ log(`Operational pulse starting: hour=${HOUR}, minute=${MINUTE}`);
           recommendation = '\n\nRecommendation: Review and determine if the answer is in the UI (add tooltip/info) or requires a response.';
         }
 
-        const msg = `[CLIENT_PRODUCT_C] Feedback [${severity}]\nPage: ${page}\nType: ${f.type}\nDescription: ${f.description.slice(0, 300)}${recommendation}`;
+        const msg = `a client product Feedback [${severity}]\nPage: ${page}\nType: ${f.type}\nDescription: ${f.description.slice(0, 300)}${recommendation}`;
         log(msg);
         sendTelegram(msg);
 
@@ -803,18 +803,7 @@ log(`Operational pulse starting: hour=${HOUR}, minute=${MINUTE}`);
     log(`WARN: Circulation outbox processing failed: ${err.message}`);
   }
 
-  // 15. Brief execution polling — detect when [HUMAN] clicks EXECUTE on the brief blog
-  try {
-    const { checkBriefExecutions } = require('./lib/brief-execute-poller.ts');
-    const briefResult = await checkBriefExecutions({ log, sendTelegram });
-    if (briefResult.found > 0) {
-      parts.push(`${briefResult.found} brief execution(s) notified`);
-    }
-  } catch (err: any) {
-    log(`WARN: Brief execution check failed: ${err.message}`);
-  }
-
-  // 16. Write pulse entry
+  // 15. Write pulse entry
   const suffix = parts.length > 0 ? ` — ${parts.join(', ')}` : ': all clear';
   appendToDaily(`Pulse ${TIME}${suffix}`);
 

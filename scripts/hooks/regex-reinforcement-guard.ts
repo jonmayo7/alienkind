@@ -4,13 +4,13 @@
  * regex-reinforcement-guard.ts — PreToolUse hook (Edit, Write)
  *
  * ENFORCES: Any new regex-based pattern detection must have a corresponding
- * local model reinforcement layer (Tier 2) unless explicitly approved by [HUMAN].
+ * local model reinforcement layer (Tier 2) unless explicitly approved by the human.
  *
  * The principle: regex catches obvious patterns fast (Tier 1). Local model
  * catches what regex misses via contextual analysis (Tier 2). Both tiers
  * are complementary. Deploying regex without Tier 2 is an incomplete build.
  *
- * [HUMAN] directive 2026-03-28: "We should have a tier one enforced hook that
+ * the human directive 2026-03-28: "We should have a tier one enforced hook that
  * if we ever deploy regex then we reinforce it with our local model unless
  * there's a reason not to. In that case I explicitly approve it."
  *
@@ -93,18 +93,18 @@ function main() {
 
   if (hasTier2Reference) process.exit(0); // Tier 2 companion documented
 
-  // No Tier 2 companion found — warn (not block, since [HUMAN] said "unless there's a reason not to")
+  // No Tier 2 companion found — warn (not block, since the human said "unless there's a reason not to")
   process.stderr.write(
     `⚠ REGEX REINFORCEMENT: New regex-based detection in ${filePath.split('/').pop()}\n` +
     `  without a local model Tier 2 companion documented.\n` +
     `  \n` +
     `  Principle: regex = Tier 1 (fast, obvious). Local model = Tier 2 (nightly, subtle).\n` +
-    `  Both are complementary. Add a Tier 2 reference or get [HUMAN]'s approval.\n` +
+    `  Both are complementary. Add a Tier 2 reference or get the human's approval.\n` +
     `  \n` +
     `  To acknowledge: add a comment with "tier 2" or "local model" reference.\n` +
     `  To exempt: add the file to EXEMPT_PATTERNS in regex-reinforcement-guard.ts.\n`
   );
-  // Exit 0 = warning only. [HUMAN]'s approval is the gate, not the hook.
+  // Exit 0 = warning only. the human's approval is the gate, not the hook.
   process.exit(0);
 }
 

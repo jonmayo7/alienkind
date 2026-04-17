@@ -14,7 +14,7 @@
  *
  * IMPORTANT — this is a SCANNER, not a gate. It should be wrapped by a
  * discernment engine (e.g., publish-hold.ts) which implements the pattern:
- * scan -> hold -> surface to [HUMAN] -> resolve. Using this as a hard block
+ * scan -> hold -> surface to the human -> resolve. Using this as a hard block
  * creates excessive false positives. Wire through a discernment layer so
  * resolutions feed AIRE and the patterns calibrate from real labeled data.
  *
@@ -48,7 +48,7 @@ const FAMILY_MEMBERS = [
 
 // Family relationship terms
 const FAMILY_RELATIONS = [
-  "[HUMAN]'s\\s+(?:father|dad|mother|mom|wife|husband|spouse|partner|son|daughter|sons|brother|sister|parent|parents|family|kid|kids|child|children)",
+  "the human's\\s+(?:father|dad|mother|mom|wife|husband|spouse|partner|son|daughter|sons|brother|sister|parent|parents|family|kid|kids|child|children)",
   "(?:his|her|my)\\s+(?:father|dad|mother|mom|wife|husband|spouse|partner|son|daughter|sons|brother|sister|parent|parents|family|kid|kids|child|children)",
   "(?:father|dad|mother|mom)\\s+(?:has|had|was|is|got|diagnosed|battling|fighting|suffering|undergoing|recovering)",
 ];
@@ -151,7 +151,7 @@ function buildFamilyFinancePatterns(): { pattern: RegExp; name: string }[] {
 
   // Family relation + financial detail
   patterns.push({
-    pattern: new RegExp(`(?:[HUMAN]'s|his|her|my)\\s+(?:wife|husband|spouse|partner|family|father|mother|dad|mom)[^.]{0,80}\\b(?:${FINANCIAL_TERMS.join('|')})`, 'i'),
+    pattern: new RegExp(`(?:the human's|his|her|my)\\s+(?:wife|husband|spouse|partner|family|father|mother|dad|mom)[^.]{0,80}\\b(?:${FINANCIAL_TERMS.join('|')})`, 'i'),
     name: 'family-relation-financial',
   });
 
@@ -228,7 +228,7 @@ function privacyQuickCheck(text: string): boolean {
  * references that regex can't reach.
  *
  * Examples regex misses:
- *   "the person who raised [HUMAN] is fighting something terminal"
+ *   "the person who raised the human is fighting something terminal"
  *   "the youngest child's condition"
  *   "the family went through hell financially that year"
  *

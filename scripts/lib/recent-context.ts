@@ -21,7 +21,7 @@ const { TIMEZONE, CONTEXT: CONTEXT_DEFAULTS } = require('./constants.ts');
 
 const ALIENKIND_DIR = path.resolve(__dirname, '..', '..');
 
-// Direct conversation channels — where [HUMAN] and Keel talk directly
+// Direct conversation channels — where the human and Keel talk directly
 const DM_CHANNELS: string[] = ['terminal', 'telegram_dm', 'discord', 'discord_partner_collab', 'discord_group', 'telegram_comms_coord', 'telegram_alerts'];
 
 const CHANNEL_TAGS: Record<string, string> = {

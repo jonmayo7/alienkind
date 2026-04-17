@@ -6,7 +6,7 @@ process.env.TZ = TIMEZONE;
  * Keel Daemon — Persistent Core (Phase 1)
  *
  * Single Node.js process that replaces all scheduled launchd services.
- * Runs heartbeat, morning brief, nightly cycle, and auto-commit
+ * Runs scheduled jobs, nightly cycle, and auto-commit
  * through a unified scheduler with sequential job execution.
  *
  * Phase 1: Jobs fork existing scripts as child processes (runner: 'node').
@@ -33,7 +33,7 @@ fs.mkdirSync(LOG_DIR, { recursive: true });
 
 // --- Load dependencies ---
 const { createLogger } = require('./lib/shared.ts');
-const { getNowCT } = require('./lib/keel-env.ts');
+const { getNowCT } = require('./lib/env.ts');
 const { acquireLock } = require('./lib/lockfile.ts');
 const { createScheduler } = require('./lib/scheduler.ts');
 const { createSessionManager, readSessionState } = require('./lib/session-manager.ts');
@@ -50,7 +50,7 @@ const { createEventBus } = require('./lib/event-bus.ts');
 
 // Jobs that warrant self-healing intents on failure.
 // Exclude action-router (30s interval, self-recovers) and auto-commit (low-stakes).
-const SELF_HEALING_JOBS = new Set(['morning-heartbeat', 'operational-pulse', 'morning-brief', 'nightly-immune', 'nightly-analysis', 'nightly-identity-sync', 'nightly-weekly']);
+const SELF_HEALING_JOBS = new Set(['operational-pulse', 'nightly-immune', 'nightly-analysis', 'nightly-identity-sync', 'nightly-weekly']);
 
 // --- Error deduplication ---
 // Prevents 5+ duplicate alerts and self-heal investigations for the same root cause.
@@ -546,9 +546,9 @@ function onJob(name, entry) {
   // Capture recovery context from scheduler entry (missed job or retry after failure)
   const recoveryContext = entry?.recoveryContext || null;
 
-  // Nightly and morning jobs get high priority so they jump ahead of
-  // queued interval jobs (30s/1m/5m) that pile up during long-running jobs.
-  const isHighPriority = name.startsWith('nightly-') || name === 'morning-heartbeat' || name === 'morning-brief';
+  // Nightly jobs get high priority so they jump ahead of queued interval
+  // jobs (30s/1m/5m) that pile up during long-running jobs.
+  const isHighPriority = name.startsWith('nightly-');
 
   queue.enqueue({
     name,
@@ -562,8 +562,8 @@ function onJob(name, entry) {
         throw new Error(`Unknown runner: ${jobDef.runner}`);
       }
       // Only count session jobs that actually invoked Claude (>5s runtime).
-      // Scripts that exit early (e.g. morning-brief idempotency guard) complete
-      // in <1s without ever calling Claude, so the session was never created.
+      // Scripts that exit early via idempotency guards complete in <1s without
+      // ever calling Claude, so the session was never created.
       const duration = Date.now() - startTime;
       if (jobDef.useSession && duration > 5000) {
         sessions.recordJob();
@@ -618,7 +618,7 @@ function onJob(name, entry) {
 
         const scriptPath = JOBS.find(j => j.name === name)?.script || `scripts/${name}.js`;
 
-        // Notify [HUMAN] immediately — investigation starts now, not pending approval
+        // Notify the human immediately — investigation starts now, not pending approval
         if (sendAlert) {
           sendAlert(formatJobFailure(name, err.message) + '\nInvestigating automatically.');
         }
@@ -646,7 +646,7 @@ function onJob(name, entry) {
                 proposedAction: result.summary,
                 filesAffected: [scriptPath],
                 riskAssessment: 'Investigation complete — proposed fix needs approval.',
-                priority: name.startsWith('nightly-') || name === 'morning-brief' ? 'high' : 'medium',
+                priority: name.startsWith('nightly-') ? 'high' : 'medium',
               });
               if (intent && !intent.throttled && sendAlert) {
                 sendAlert(formatForTelegram(intent));
@@ -674,65 +674,15 @@ for (const job of JOBS) {
   scheduler.addJob(job);
 }
 
-// --- Event Bus (Phase 4: Nervous System) ---
+// --- Event Bus (Nervous System) ---
 // Replaces polling for file-based events with instant reactions.
 // Signal polling enables cross-terminal coordination.
-const SONAR_INTAKE = path.join(process.env.HOME || '', '.[DICTATION_PIPELINE]', 'intake');
-const AUDIO_EXTENSIONS = new Set(['.wav', '.mp3', '.m4a', '.flac', '.ogg', '.opus', '.aac', '.wma', '.webm', '.mp4', '.caf']);
-
 const eventBus = createEventBus({
   nodeId: 'daemon',
   log: (level: string, msg: string) => log(level, msg),
-  watchPaths: [SONAR_INTAKE],
+  watchPaths: [],
   signalPollMs: 5000,
 });
-
-// Handler: [dictation-pipeline] intake — event-driven audio processing
-// When an audio file lands in ~/.[dictation-pipeline]/intake/, process it immediately
-eventBus.on('file:add', async (event: any) => {
-  const ext = path.extname(event.path || '').toLowerCase();
-  if (!AUDIO_EXTENSIONS.has(ext)) return;
-
-  log('INFO', `[event-bus:[DICTATION_PIPELINE]] Audio file detected: ${path.basename(event.path)}`);
-
-  // Fork [DICTATION_PIPELINE]-process.ts directly for immediate processing
-  const sonarScript = path.resolve(ALIENKIND_DIR, 'scripts', '[DICTATION_PIPELINE]-process.ts');
-  if (!fs.existsSync(sonarScript)) {
-    log('WARN', '[event-bus:[DICTATION_PIPELINE]] [DICTATION_PIPELINE]-process.ts not found');
-    return;
-  }
-
-  try {
-    const child = fork(sonarScript, [event.path], {
-      cwd: ALIENKIND_DIR,
-      env: { ...process.env },
-      stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
-      silent: true,
-      execArgv: ['--import=tsx'],
-    });
-
-    let stderr = '';
-    child.stderr.on('data', (d: Buffer) => { stderr += d.toString(); });
-
-    child.on('close', (code: number | null) => {
-      if (code === 0) {
-        log('INFO', `[event-bus:[DICTATION_PIPELINE]] Processed: ${path.basename(event.path)}`);
-      } else {
-        log('WARN', `[event-bus:[DICTATION_PIPELINE]] Failed (exit ${code}): ${path.basename(event.path)} — ${stderr.slice(0, 200)}`);
-      }
-    });
-
-    // Timeout: 5 minutes for audio processing
-    setTimeout(() => {
-      if (child.exitCode === null) {
-        log('WARN', `[event-bus:[DICTATION_PIPELINE]] Timeout — killing: ${path.basename(event.path)}`);
-        child.kill('SIGTERM');
-      }
-    }, 300000);
-  } catch (e: any) {
-    log('ERROR', `[event-bus:[DICTATION_PIPELINE]] Fork failed: ${e?.message || e}`);
-  }
-}, '[DICTATION_PIPELINE]-intake-watcher');
 
 // Handler: Cross-terminal signals — log and react to incoming signals
 eventBus.on('signal:decision', async (signal: any) => {
@@ -764,9 +714,9 @@ interface WorkCheck {
 }
 
 const WORK_CHECKS: WorkCheck[] = [
-  // action-router.ts and intent-executor.ts removed 2026-04-12:
-  // both scripts deleted (Finding 727), intent processing absorbed into keel-cycle.
-  // Intent pipeline gap tracked as Intent #241.
+  // Reference deployment absorbed intent processing into the partner's
+  // autonomous operator cycle. Forkers wire their own WorkCheck entries
+  // here for pending-work detection.
 ];
 // Note: signup-monitor, [product]-feedback-monitor, and thread-scanner
 // query external Supabase projects or external APIs. They stay as cron jobs
@@ -971,7 +921,7 @@ async function handleConfigChange(changedFile: string): Promise<void> {
 
   // 3. Log to daily memory
   try {
-    const { logToDaily } = require('./lib/keel-env.ts');
+    const { logToDaily } = require('./lib/env.ts');
     logToDaily(`RESTART: config change detected in \`${changedFile}\` — daemon exiting for launchd restart`, 'Config Watchdog');
   } catch (e) {
     log('WARN', `[config-watchdog] Failed to write daily memory: ${(e as Error).message}`);

@@ -17,7 +17,7 @@
  */
 
 type Substrate =
-  | 'opus' | '[model_tier_2]' | '[MODEL_TIER_3]' | 'gemini'
+  | 'opus' | 'gateway-fallback' | 'gateway-fallback-alt' | 'gemini'
   | 'studio1-local' | 'studio1-identity'
   | 'studio2-daily' | 'studio2-heavy';
 
@@ -42,46 +42,22 @@ interface SubstrateStats {
 }
 
 /**
- * Load [HUMAN]'s human preference signal from morning_brief_feedback.
- * Returns per-substrate quality adjustments based on thumbs up/down.
- * This is the most valuable signal — real human preference on real output.
+ * Load the human's preference signal from a feedback table (if one is wired).
+ *
+ * AlienKind ships this function as a no-op default: returns an empty map,
+ * which means no human-preference adjustment is applied to substrate scoring.
+ * Substrate selection falls back to pure arena data (quality, speed, errors).
+ *
+ * Forkers who ship a feedback surface (a review UI that records thumbs-up/
+ * thumbs-down on generated sections, keyed by substrate) can replace this
+ * function to read their own feedback table. The expected return shape is a
+ * map from substrate name to { ups, downs, total, score } where score is
+ * scaled to roughly [-25, +25] so it adds/subtracts quality points from the
+ * composite.
  */
 async function loadHumanFeedback(): Promise<Record<string, { ups: number; downs: number; total: number; score: number }>> {
-  const { supabaseGet } = require('./supabase.ts');
-  const result: Record<string, { ups: number; downs: number; total: number; score: number }> = {};
-  try {
-    const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-    // Get feedback with section substrate info
-    const feedback = await supabaseGet('morning_brief_feedback',
-      `created_at=gte.${cutoff}&select=vote,section_id&order=created_at.desc&limit=200`
-    );
-    if (!feedback || feedback.length === 0) return result;
-
-    const sectionIds = [...new Set(feedback.map((f: any) => f.section_id))];
-    const sections = await supabaseGet('morning_brief_sections',
-      `id=in.(${sectionIds.join(',')})&select=id,substrate`
-    );
-    const substrateMap: Record<string, string> = {};
-    for (const s of sections || []) substrateMap[s.id] = s.substrate;
-
-    for (const f of feedback) {
-      const substrate = substrateMap[f.section_id];
-      if (!substrate) continue;
-      if (!result[substrate]) result[substrate] = { ups: 0, downs: 0, total: 0, score: 0 };
-      result[substrate].total++;
-      if (f.vote === 'up') result[substrate].ups++;
-      if (f.vote === 'down') result[substrate].downs++;
-    }
-
-    // Compute preference score: (ups - downs) / total, scaled to 0-100
-    // 100% ups = +25 quality bonus, 100% downs = -25 quality penalty
-    for (const sub of Object.values(result)) {
-      sub.score = sub.total > 0 ? ((sub.ups - sub.downs) / sub.total) * 25 : 0;
-    }
-  } catch {
-    // Feedback unavailable — no human signal yet
-  }
-  return result;
+  // No-op by default. Replace with a reader for your feedback surface.
+  return {};
 }
 
 /**
@@ -97,7 +73,7 @@ async function getSubstrateStats(channel: string, opts: PolicyOptions = {}): Pro
   const query = `select=substrate,quality_score,latency_ms,error&channel=eq.${encodeURIComponent(channel)}&order=created_at.desc&limit=${limit}`;
   const rows = await supabaseGet('substrate_arena', query);
 
-  // Load human preference signal ([HUMAN]'s morning brief feedback)
+  // Load human preference signal (no-op by default; forkers wire their own)
   const humanFeedback = await loadHumanFeedback();
 
   // Aggregate by substrate
@@ -129,8 +105,8 @@ async function getSubstrateStats(channel: string, opts: PolicyOptions = {}): Pro
     const qualityComponent = (avgQuality ?? 0) * qualityWeight;
     const speedComponent = speedScore * (1 - qualityWeight);
     const errorPenalty = errorRate * 50;  // each 10% error rate = -5 composite points
-    // Human preference: [HUMAN]'s thumbs up/down from morning brief feedback.
-    // Real human preference is the most valuable signal — weighted heavily.
+    // Human preference bonus: zero by default. Forkers who wire a feedback
+    // surface (see loadHumanFeedback above) have this signal weighted heavily.
     const humanBonus = humanFeedback[sub]?.score ?? 0;
     const composite = qualityComponent + speedComponent - errorPenalty + humanBonus;
 

@@ -2,7 +2,7 @@
 -- Logs every confidence-based cascade routing decision for evaluation.
 -- Writers: runtime.ts cascade routing
 -- Readers: nightly-analysis (evaluate cascade quality), substrate-policy (tune thresholds),
---          morning brief (surface escalation patterns)
+--          human review surfaces (surface escalation patterns)
 
 CREATE TABLE IF NOT EXISTS cascade_decisions (
   id BIGSERIAL PRIMARY KEY,

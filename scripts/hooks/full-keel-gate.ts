@@ -4,12 +4,12 @@
  *
  * BLOCKS any code edit that introduces lightweight mode, dead invocation patterns
  * (invokeCommunity, invokeLight), or community-tier invocations in production
- * scripts. [HUMAN] is the sole authority on deviations from full Keel invocation.
+ * scripts. the human is the sole authority on deviations from full Keel invocation.
  *
  * Event: PreToolUse (Edit, Write)
  * Enforcement: exit 2 = hard block
  *
- * Authorized by [HUMAN]: 2026-03-30
+ * Authorized by the human: 2026-03-30
  * "I am the sole source of approving authority on what level is being invoked."
  */
 
@@ -57,10 +57,10 @@ for (const { pattern, name } of BLOCKED_PATTERNS) {
     injectIdentity: true
 
   Lightweight, community, and any non-full-Keel
-  invocation is PROHIBITED without [HUMAN]'s explicit
+  invocation is PROHIBITED without the human's explicit
   approval in this session.
 
-  [HUMAN] is the sole authority on invocation level.
+  the human is the sole authority on invocation level.
   Authorized: 2026-03-30
 
 ============================================

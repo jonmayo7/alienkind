@@ -33,9 +33,9 @@ function getKnownChannels(): Record<string, string> {
     const envPath = path.join(ALIENKIND_DIR, '.env');
     const lines = fs.readFileSync(envPath, 'utf8').split('\n');
     const channelEnvMap: Record<string, string> = {
-      'DISCORD_CHANNEL_ID': '[CHANNEL_NAME]',
-      'DISCORD_PARTNER_COLLAB_CHANNEL_ID': '[CHANNEL_NAME]',
-      'DISCORD_GROUP_CHANNEL_ID': '[CHANNEL_NAME]',
+      'DISCORD_CHANNEL_ID': 'a channel',
+      'DISCORD_PARTNER_COLLAB_CHANNEL_ID': 'a channel',
+      'DISCORD_GROUP_CHANNEL_ID': 'a channel',
     };
     for (const line of lines) {
       const trimmed = line.trim();
@@ -91,7 +91,7 @@ interface FetchOptions {
  *
  * ROUTING SAFETY: Logs channel name on every send. Rejects unknown channel IDs
  * unless opts.allowUnknownChannel is true. AAR 2026-03-10: silent misrouting
- * sent a message to [CHANNEL_NAME] instead of [CHANNEL_NAME]. This guard prevents that class of bug.
+ * sent a message to a channel instead of a channel. This guard prevents that class of bug.
  */
 function sendMessage(channelId: string, content: string, opts: SendMessageOptions = {}): Promise<any> {
   const token = opts.botToken || process.env.DISCORD_BOT_TOKEN;

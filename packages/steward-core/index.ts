@@ -40,7 +40,7 @@ export interface GapEvent {
 }
 
 export interface StewardConfig {
-  /** Table prefix — isolates data per deployment (e.g. '[CLIENT_PROJECT]', '[CLIENT_PRODUCT_B]') */
+  /** Table prefix — isolates data per deployment (e.g. 'a client project', 'a client product') */
   prefix: string;
   /** Supabase connection — each deployment provides its own */
   supabase: SupabaseConfig;

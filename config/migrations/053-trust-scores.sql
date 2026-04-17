@@ -4,10 +4,10 @@
 -- composite trust score from three layers: Decision Provenance, Judgment
 -- Calibration, and Trust Boundary Enforcement. This table stores each
 -- computation so we can track trust trajectory over time, detect drift,
--- and surface trends in the morning brief.
+-- and surface trends to human review.
 --
 -- Writes come from `recordTrustScore()` in trust-provenance.ts.
--- Reads come from nightly-cycle, morning-brief, and interactive sessions.
+-- Reads come from nightly-cycle and interactive sessions.
 --
 -- RLS: ENABLE + FORCE, no permissive policies. service_role bypasses
 -- natively (same pattern as migration 040).

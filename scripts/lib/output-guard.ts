@@ -10,11 +10,11 @@
  *
  * Usage:
  *   const { scanOutput, OutputViolation } = require('./output-guard.ts');
- *   const result = scanOutput(responseText, { channel: 'discord', target: '[CHANNEL_NAME]' });
+ *   const result = scanOutput(responseText, { channel: 'discord', target: 'a channel' });
  *   if (result.blocked) { // don't send }
  *
  * Override:
- *   scanOutput(text, { override: true }) — bypasses all checks ([HUMAN]-directed)
+ *   scanOutput(text, { override: true }) — bypasses all checks (the human-directed)
  *   Kill switch level 0 + override flag = full bypass
  *
  * Writers: none (stateless scanner)
@@ -70,7 +70,7 @@ const ARCHITECTURE_PATTERNS: { name: string; pattern: RegExp; description: strin
   { name: 'env_file_reference', pattern: /(?:our|my|the|keel'?s)\s+\.env\s+(?:file|contains|has|stores)/i, description: 'Reference to .env file contents' },
   { name: 'supabase_ref', pattern: /(?:supabase\s+(?:project|instance|url|ref)|\.supabase\.co)/i, description: 'Supabase project reference' },
   { name: 'hook_reference', pattern: /(?:memory-firewall|guard-bash|build-cycle|track-read|audit-bash|forward-look|check-wiring|conflict-guard)(?:\.(?:ts|sh))?/i, description: 'Internal hook name reference' },
-  { name: 'daemon_job', pattern: /(?:nightly-cycle|morning-brief|operational-pulse|auto-commit|intent-executor|action-router|keel-operator|circulation-pump|working-group-)\.ts/i, description: 'Daemon job reference' },
+  { name: 'daemon_job', pattern: /(?:nightly-cycle|operational-pulse|auto-commit|intent-executor|action-router|circulation-pump|working-group-)\.ts/i, description: 'Daemon job reference' },
   { name: 'organism_internals', pattern: /(?:circulation[_\- ]pump|cascade[_\- ]decision|containment[_\- ]field|substrate[_\- ]policy|channel[_\- ]sessions|mycelium|daemon_|working[_\- ]group[_\- ](?:steward|self|infra))/i, description: 'Organism infrastructure reference' },
   { name: 'launchctl_reference', pattern: /launchctl\s+(?:list|load|kickstart|bootout)/i, description: 'System management command leaked' },
   { name: 'studio_internals', pattern: /(?:(?:primary|secondary)[-_](?:daily|heavy|identity|vision)|\d+\.\d+\.\d+\.\d+|mlx[-_]community)/i, description: 'Studio infrastructure reference' },
@@ -128,8 +128,8 @@ interface OutputScanResult {
 
 interface ScanOptions {
   channel?: string;   // e.g., 'discord', 'telegram', 'email'
-  target?: string;    // e.g., '[CHANNEL_NAME]', '[CHANNEL_NAME]', '[@YOUR_HANDLE]'
-  override?: boolean; // [HUMAN]-directed bypass
+  target?: string;    // e.g., 'a channel', 'a channel', '[@YOUR_HANDLE]'
+  override?: boolean; // the human-directed bypass
   internalOnly?: boolean; // true = skip architecture check (internal channels)
 }
 

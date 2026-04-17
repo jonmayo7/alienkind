@@ -34,7 +34,7 @@ function buildWeeklyPrompt() {
 2. SESSION STATE CURATION: Daily files + structured-state.json are the canonical state documents.
    - Update phase status for anything that shipped or changed
    - Update operational state with new capabilities or services
-   - Flag any strategic direction changes from [HUMAN]
+   - Flag any strategic direction changes from the human
 
 3. SKILL REVIEW: Assess each skill in the skills/ directory:
    - Which skills were actively used this week?

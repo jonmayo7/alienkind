@@ -2,7 +2,7 @@
  * Keel Runtime — Unified Model Invocation Layer
  *
  * Single entry point for all LLM invocations. All invocations run as full Keel.
- * Cloud-first: Claude → [MODEL_TIER_2] → [MODEL_TIER_3] → Gemini → Local
+ * Cloud-first: Claude → [MODEL_TIER_2] → gateway-fallback-alt → Gemini → Local
  *
  * Local inference: vLLM-MLX (primary, native Apple Silicon)
  * Cloud tiers: Vercel AI Gateway with ALIENKIND_AI_GATEWAY_API_KEY
@@ -25,8 +25,8 @@ const ALIENKIND_DIR = path.resolve(__dirname, '../..');
  *
  * API substrates (cloud compute):
  *   opus       — Claude Opus 4.6 (frontier, interactive, gold standard)
- *   [model_tier_2]    — OpenAI [MODEL_TIER_2] via Vercel AI Gateway
- *   [MODEL_TIER_3]     — xAI [MODEL_TIER_3] via gateway
+ *   gateway-fallback    — OpenAI [MODEL_TIER_2] via Vercel AI Gateway
+ *   gateway-fallback-alt     — xAI gateway-fallback-alt via gateway
  *   gemini     — Google [MODEL_TIER_4] Pro via gateway
  *
  * Local substrates (owned compute, Keel's body):
@@ -42,8 +42,8 @@ type Substrate =
   | 'auto'
   | 'cascade'
   | 'opus'
-  | '[model_tier_2]'
-  | '[MODEL_TIER_3]'
+  | 'gateway-fallback'
+  | 'gateway-fallback-alt'
   | 'gemini'
   | 'studio1-local'
   | 'studio1-identity'
@@ -104,8 +104,8 @@ interface InvokeResult {
 // Model strings are gateway format: "provider/model-name"
 
 const GATEWAY_MODELS = {
-  alternate: 'openai/[model_tier_2]',
-  contingent_primary: 'xai/[MODEL_TIER_3]',
+  alternate: 'openai/gateway-fallback',
+  contingent_primary: 'xai/gateway-fallback-alt',
   contingent_fallback: 'google/[MODEL_TIER_4]-pro',
 };
 
@@ -435,11 +435,11 @@ async function invoke(message: string, opts: InvokeOptions): Promise<InvokeResul
       const thinking = typeof result === 'string' ? [] : result.thinking || [];
       return { text, thinking, tier: 'primary', model: 'claude-opus-4-6', substrate };
     }
-    if (substrate === '[model_tier_2]' || substrate === '[MODEL_TIER_3]' || substrate === 'gemini') {
+    if (substrate === 'gateway-fallback' || substrate === 'gateway-fallback-alt' || substrate === 'gemini') {
       const { buildSystemPrompt } = require('./emergency-identity.ts');
       const modelMap: Record<string, string> = {
-        '[model_tier_2]': GATEWAY_MODELS.alternate,
-        '[MODEL_TIER_3]': GATEWAY_MODELS.contingent_primary,
+        'gateway-fallback': GATEWAY_MODELS.alternate,
+        'gateway-fallback-alt': GATEWAY_MODELS.contingent_primary,
         'gemini': GATEWAY_MODELS.contingent_fallback,
       };
       const gatewayModel = modelMap[substrate];
@@ -477,7 +477,7 @@ async function invoke(message: string, opts: InvokeOptions): Promise<InvokeResul
   const { buildSystemPrompt } = require('./emergency-identity.ts');
 
   // --- Substrate failover notification ---
-  // [HUMAN] requires visibility on any substrate deviation from primary Max plans.
+  // the human requires visibility on any substrate deviation from primary Max plans.
   // Alert fires once per failover event (not per call).
   function notifySubstrateFailover(tier: string, model: string, reason: string): void {
     try {
@@ -533,18 +533,18 @@ async function invoke(message: string, opts: InvokeOptions): Promise<InvokeResul
     const system = systemPrompt || buildSystemPrompt(GATEWAY_MODELS.alternate, 'emergency');
     const result = await callGatewayModel(GATEWAY_MODELS.alternate, message, system, 'emergency ([MODEL_TIER_2])', log);
     notifySubstrateFailover('emergency', '[MODEL_TIER_2]', 'Claude + all local models failed');
-    return { text: `[substrate: [model_tier_2]] ${result.content}`, tier: 'emergency' as any, model: result.model, substrate: '[model_tier_2]' };
+    return { text: `[substrate: gateway-fallback] ${result.content}`, tier: 'emergency' as any, model: result.model, substrate: 'gateway-fallback' };
   } catch (altErr: any) {
     log('WARN', `[runtime] [MODEL_TIER_2] failed: ${altErr.message?.slice(0, 200)}`);
   }
 
   try {
     const system = systemPrompt || buildSystemPrompt(GATEWAY_MODELS.contingent_primary, 'emergency');
-    const result = await callGatewayModel(GATEWAY_MODELS.contingent_primary, message, system, 'emergency ([MODEL_TIER_3])', log);
-    notifySubstrateFailover('emergency', '[MODEL_TIER_3]', 'all prior tiers failed');
-    return { text: `[substrate: [MODEL_TIER_3]] ${result.content}`, tier: 'emergency' as any, model: result.model, substrate: '[MODEL_TIER_3]' };
+    const result = await callGatewayModel(GATEWAY_MODELS.contingent_primary, message, system, 'emergency (gateway-fallback-alt)', log);
+    notifySubstrateFailover('emergency', 'gateway-fallback-alt', 'all prior tiers failed');
+    return { text: `[substrate: gateway-fallback-alt] ${result.content}`, tier: 'emergency' as any, model: result.model, substrate: 'gateway-fallback-alt' };
   } catch {
-    log('WARN', '[runtime] [MODEL_TIER_3] failed');
+    log('WARN', '[runtime] gateway-fallback-alt failed');
   }
 
   try {

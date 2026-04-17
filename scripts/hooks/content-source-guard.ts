@@ -6,7 +6,7 @@
  * PreToolUse hook for Write.
  *
  * When writing to output/drafts/ or output/articles/, requires that foundational
- * source files have been read this session. [HUMAN]'s work is partner-level knowledge,
+ * source files have been read this session. the human's work is partner-level knowledge,
  * not research material — don't write about what you haven't loaded.
  *
  * Required reads before any article draft:
@@ -87,7 +87,7 @@ async function main() {
     console.error('║  CONTENT SOURCE GUARD — BLOCKED                             ║');
     console.error('╠══════════════════════════════════════════════════════════════╣');
     console.error('║  Writing to article drafts requires loading source          ║');
-    console.error('║  knowledge first. [HUMAN]\'s work is partner-level knowledge,   ║');
+    console.error('║  knowledge first. the human\'s work is partner-level knowledge,   ║');
     console.error('║  not research material.                                     ║');
     console.error('╠══════════════════════════════════════════════════════════════╣');
     console.error('║  Missing reads:                                             ║');

@@ -53,7 +53,7 @@ async function main() {
         cwd: ALIENKIND_DIR,
       }
     );
-    // Print the chain-handoff output so [HUMAN] sees dimension capture
+    // Print the chain-handoff output so the human sees dimension capture
     if (output.trim()) {
       process.stderr.write(output);
     }

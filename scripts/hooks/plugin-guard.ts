@@ -1,19 +1,19 @@
 #!/usr/bin/env node
 /**
  * PreToolUse hook (Edit, Write, Bash): blocks changes to Claude Code plugin
- * configuration without [HUMAN]'s explicit approval.
+ * configuration without the human's explicit approval.
  *
- * Root cause: Telegram plugin was enabled during research (2026-03-20),
- * left in settings.json, auto-installed on [LOCAL_HARDWARE] 8 days later (2026-03-28),
- * competed with our in-house telegram-listener for bot token, killed Telegram
- * delivery for ~5 hours including the morning brief.
+ * Root cause motivation: a past incident where a Telegram plugin was
+ * enabled during research, left in settings.json, auto-installed on a
+ * separate host days later, and competed with our in-house telegram-listener
+ * for the bot token — killing outbound Telegram delivery for hours.
  *
  * Blocks:
  *   - Writes to ~/.claude/settings.json that modify enabledPlugins
  *   - Bash commands containing "plugin install" or "plugin enable"
  *   - Writes to ~/.claude/plugins/ or ~/.claude/channels/
  *
- * This is a HARD BLOCK (exit 2). [HUMAN] must explicitly approve plugin changes.
+ * This is a HARD BLOCK (exit 2). the human must explicitly approve plugin changes.
  * In-house integrations (scripts/lib/) are the standard. Plugins are external
  * dependencies that break substrate independence.
  *
@@ -45,7 +45,7 @@ async function main() {
         '╔══════════════════════════════════════════════════════════════╗',
         '║  PLUGIN GUARD — HARD BLOCK                                  ║',
         '╠══════════════════════════════════════════════════════════════╣',
-        '║  Writes to plugin/channel directories require [HUMAN]\'s        ║',
+        '║  Writes to plugin/channel directories require the human\'s        ║',
         '║  explicit approval. In-house integrations (scripts/lib/)    ║',
         '║  are the standard. Plugins break substrate independence.    ║',
         '╚══════════════════════════════════════════════════════════════╝',
@@ -61,7 +61,7 @@ async function main() {
         '╔══════════════════════════════════════════════════════════════╗',
         '║  PLUGIN GUARD — HARD BLOCK                                  ║',
         '╠══════════════════════════════════════════════════════════════╣',
-        '║  Modifying enabledPlugins in settings.json requires [HUMAN]\'s  ║',
+        '║  Modifying enabledPlugins in settings.json requires the human\'s  ║',
         '║  explicit approval. A plugin conflict killed Telegram       ║',
         '║  delivery for 5+ hours on 2026-03-28.                      ║',
         '╚══════════════════════════════════════════════════════════════╝',
@@ -80,7 +80,7 @@ async function main() {
         '╔══════════════════════════════════════════════════════════════╗',
         '║  PLUGIN GUARD — HARD BLOCK                                  ║',
         '╠══════════════════════════════════════════════════════════════╣',
-        '║  Plugin installation/enabling requires [HUMAN]\'s explicit      ║',
+        '║  Plugin installation/enabling requires the human\'s explicit      ║',
         '║  approval. In-house integrations are the standard.          ║',
         '╚══════════════════════════════════════════════════════════════╝',
         '',

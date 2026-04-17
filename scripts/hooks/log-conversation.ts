@@ -4,7 +4,7 @@
  * Log terminal session conversations to Supabase.
  *
  * Wired as a Claude Code hook for two events:
- *   - UserPromptSubmit → logs [HUMAN]'s prompt (role=user, sender=[human_first])
+ *   - UserPromptSubmit → logs the human's prompt (role=user, sender=human)
  *   - Stop             → logs Keel's response (role=assistant, sender=keel)
  *
  * Fire-and-forget: always exits 0 so it never blocks the session.
@@ -204,20 +204,19 @@ function logExperience(envVars, { observation, domain, significance, tags, sourc
 
 // --- Automated Prompt Detection ---
 // Automated sessions (social engine, growth engine, proactive scans, listener spawns)
-// send system-instruction-style prompts that should not be logged as sender=[human_first].
+// send system-instruction-style prompts that should not be logged as sender=human.
 // These patterns match the opening lines of known automated prompt templates.
 const AUTOMATED_PREFIXES = [
   'You are posting as ',              // social growth engine
-  'You are Keel — [HUMAN_NAME]'s AI partner. You\'re scanning',  // proactive scan
-  'You are Keel — [HUMAN_NAME]'s AI partner. This is a Telegram', // telegram listener
-  'You are Keel — [HUMAN_NAME]'s AI partner. This is a Discord',  // discord listener
+  'You are Keel — the human's AI partner. You\'re scanning',  // proactive scan
+  'You are Keel — the human's AI partner. This is a Telegram', // telegram listener
+  'You are Keel — the human's AI partner. This is a Discord',  // discord listener
   'You are Keel, processing a ',      // growth engine findings
   'You are Keel. It is ',             // keel cycle / operator mode
-  'You are Keel — [HUMAN_NAME]'s AI partner. Process this',  // action router
+  'You are Keel — the human's AI partner. Process this',  // action router
   'HEARTBEAT BRIEF',                  // heartbeat
-  'MORNING BRIEF',                    // morning brief
   'CONTENT PIPELINE',                 // content pipeline
-  'You are Keel — [HUMAN_NAME]'s AI partner. Review', // review responder
+  'You are Keel — the human's AI partner. Review', // review responder
   'You are Keel. You are responding in ',          // keel-engine channel prompts
   '<task-notification',                            // subagent completion notifications
 ];
@@ -234,11 +233,9 @@ function classifyAutomationSource(prompt: string): string {
   if (trimmed.includes('This is a Telegram')) return 'telegram-listener';
   if (trimmed.includes('This is a Discord')) return 'discord-listener';
   if (trimmed.startsWith('You are Keel, processing a ')) return 'growth-engine';
-  if (trimmed.startsWith('You are Keel. It is ')) return 'keel-cycle';
   if (trimmed.startsWith('You are Keel. You are responding in ')) return 'keel-engine';
   if (trimmed.includes('Process this')) return 'action-router';
   if (trimmed.startsWith('HEARTBEAT')) return 'heartbeat';
-  if (trimmed.startsWith('MORNING BRIEF')) return 'morning-brief';
   if (trimmed.startsWith('CONTENT PIPELINE')) return 'content-pipeline';
   if (trimmed.includes('Review')) return 'review-responder';
   return 'automated';
@@ -284,9 +281,9 @@ async function main() {
     if (prompt) {
       // Detect automated system prompts vs human messages.
       // Automated spawns (social engine, growth engine, proactive scans, listener DM sessions)
-      // pass system-instruction-style prompts that aren't [HUMAN]'s messages.
+      // pass system-instruction-style prompts that aren't the human's messages.
       const isAutomated = detectAutomatedPrompt(prompt);
-      const sender = isAutomated ? 'system' : '[human_first]';
+      const sender = isAutomated ? 'system' : 'human';
       const automationSource = isAutomated ? classifyAutomationSource(prompt) : null;
 
       // Automated prompts (keel cycles, proactive scans, growth engine) are 160-177KB each.
@@ -328,7 +325,7 @@ async function main() {
         } catch { /* intelligence engine is best-effort */ }
       }
 
-      // Mycelium: write [HUMAN]'s prompt as terminal focus
+      // Mycelium: write the human's prompt as terminal focus
       // MUST use terminalId (from getTerminalId) — NOT raw pid.
       // Raw pid = claude's PID. terminalId = keel.sh's assigned ID.
       // Other hooks use getTerminalId() to READ the focus file.
@@ -378,11 +375,11 @@ async function main() {
         // Populate process.env for supabase.ts (used by logLearning)
         Object.assign(process.env, envVars);
         const patternName = buildPatternName(detection);
-        // Extract [HUMAN]'s actual message for storage (strip system preamble)
+        // Extract the human's actual message for storage (strip system preamble)
         let actualMessage = prompt;
-        const humanMsgMarker = prompt.lastIndexOf("[HUMAN]'s message:");
+        const humanMsgMarker = prompt.lastIndexOf("the human's message:");
         if (humanMsgMarker !== -1) {
-          actualMessage = prompt.slice(humanMsgMarker + "[HUMAN]'s message:".length).trim();
+          actualMessage = prompt.slice(humanMsgMarker + "the human's message:".length).trim();
         }
         // AAR 7.1: Get Keel's last response from conversations table
         let keelResponse: string | null = null;
@@ -419,7 +416,7 @@ async function main() {
         } catch { /* best-effort */ }
 
         // VGE: Real-time correction propagation
-        // When [HUMAN] corrects a fact, emit event + write correction marker
+        // When the human corrects a fact, emit event + write correction marker
         // so other terminals see the correction within minutes, not next nightly cycle
         if (detection.sentiment === 'correction') {
           try {
@@ -503,7 +500,7 @@ async function main() {
         // Gap detection: get last user message, fire detection on both
         const lastUserRows = await supabaseGet(
           'conversations',
-          'select=content&channel=eq.terminal&role=eq.user&sender=eq.[human_first]&order=created_at.desc&limit=1'
+          'select=content&channel=eq.terminal&role=eq.user&sender=eq.human&order=created_at.desc&limit=1'
         );
         const lastUserMsg = lastUserRows?.[0]?.content || '';
         const { detectCapabilityGap, updateSession } = require(path.resolve(__dirname, '..', 'lib', 'intelligence-engine-keel.ts'));

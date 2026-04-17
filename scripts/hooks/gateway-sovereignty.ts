@@ -11,7 +11,7 @@
  * Gateway is ONLY for failover tiers and emergency. Never as primary path
  * for new code.
  *
- * [HUMAN] directive 2026-03-24: "The only time I can see us doing it is with my
+ * the human directive 2026-03-24: "The only time I can see us doing it is with my
  * direct approval, because it's for a product or something that we need to
  * protect our max cloud subscriptions."
  */
@@ -64,8 +64,8 @@ function main() {
   }
 
   // Exempt client product deployments — API-fed by design, not subscription-fed.
-  // [HUMAN] approved 2026-03-28: "[STEWARD_B] needs to be API fed, not our subscription fed"
-  if (filePath.includes('/[CLIENT_PROJECT]/') || filePath.includes('/[CLIENT_PRODUCT_B]/')) {
+  // the human approved 2026-03-28: "another TIA needs to be API fed, not our subscription fed"
+  if (filePath.includes('/a client project/') || filePath.includes('/a client product/')) {
     process.exit(0);
   }
 
@@ -85,7 +85,7 @@ function main() {
         `BLOCKED — SOVEREIGNTY: "${match}" detected in new code for ${relativePath}.\n` +
         `Primary path is ALWAYS invokeKeel (our Max plans). Gateway is ONLY for failover/emergency.\n` +
         `Grandfathered files: runtime.ts, emergency, shared.ts internals.\n` +
-        `If this is intentional (product protection, failover), get [HUMAN]'s direct approval.\n` +
+        `If this is intentional (product protection, failover), get the human's direct approval.\n` +
         `Use: const { invokeKeel } = require('./lib/runtime.ts');\n`
       );
       process.exit(2);

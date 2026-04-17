@@ -4,7 +4,7 @@
  * Receives messages from Discord via WebSocket (discord.js),
  * forwards them to keel-engine.ts for processing, sends responses back.
  *
- * Channels: [CHANNEL_NAME], [CHANNEL_NAME], DMs, [CHANNEL_NAME] (community).
+ * Channels: a channel, a channel, DMs, a channel (community).
  * All route through the same keel-engine.ts conversation engine.
  *
  * Replaces the 1,230-line discord-listener.ts with a clean architecture.
@@ -49,7 +49,7 @@ if (!lockAcquired) {
 
 const messageDedup = createDedupeCache(60000, 200);
 
-// Rate limiting for non-[HUMAN] users (sliding window: 5 messages per 5 minutes)
+// Rate limiting for non-the human users (sliding window: 5 messages per 5 minutes)
 const rateLimitMap = new Map<string, number[]>();
 const RATE_LIMIT_WINDOW = 5 * 60 * 1000;
 const RATE_LIMIT_MAX = 5;
@@ -72,19 +72,19 @@ function identifyChannel(channelId: string, isDM: boolean): string | null {
   return null;
 }
 
-// Add [CHANNEL_NAME] and community channels to engine if not already defined
+// Add a channel and community channels to engine if not already defined
 if (!CHANNELS.discord_group) {
   CHANNELS.discord_group = {
     channel: 'discord_group',
     displayName: 'Discord Group',
-    purpose: 'Private collaboration channel with [HUMAN], [COLLABORATOR], and fellow AIs. Engage with substance. Share insights. Protect ALL implementation details, calendar, client data, and organism architecture.',
+    purpose: 'Private collaboration channel with the human, [COLLABORATOR], and fellow AIs. Engage with substance. Share insights. Protect ALL implementation details, calendar, client data, and organism architecture.',
     trust: 'gated', // External parties present — discernment required, frontier model only
   };
 }
 if (!CHANNELS.discord_channel) {
   CHANNELS.discord_channel = {
     channel: 'discord_channel',
-    displayName: 'Discord Community ([CHANNEL_NAME])',
+    displayName: 'Discord Community (a channel)',
     purpose: 'Public community channel. Respond thoughtfully when addressed. Keep implementation details private. Represent Keel well.',
     trust: 'gated', // Public channel — maximum restriction
   };
@@ -140,24 +140,24 @@ async function handleMessage(message: any): Promise<void> {
   if (!channelConfig) return;
 
   // Channel trust classification:
-  // Trusted ([HUMAN] + Keel only): discord_dm — direct ship, no discernment gate
+  // Trusted (the human + Keel only): discord_dm — direct ship, no discernment gate
   // Non-trusted (multiple participants): discord_group, discord_channel — discernment gated
   const isHuman = message.author.id === ALLOWED_USER_ID;
   const isMentioned = message.mentions?.has(message.client.user);
   const isTrustedChannel = channel === 'discord_dm';
 
-  if (isDM && !isHuman) return; // DMs only from [HUMAN]
+  if (isDM && !isHuman) return; // DMs only from the human
   if (!isDM && !isHuman && !isMentioned && channel !== 'discord_group') return;
 
   const userMessage = message.content?.trim();
   if (!userMessage) return;
 
   const senderName = message.member?.displayName || message.author.globalName || message.author.username || 'Unknown';
-  const sender = isHuman ? '[human_first]' : senderName.toLowerCase();
+  const sender = isHuman ? 'human' : senderName.toLowerCase();
 
   log('INFO', `[${channelConfig.displayName}] ${senderName}: "${userMessage.slice(0, 100)}..."`);
 
-  // Rate limit non-[HUMAN] users
+  // Rate limit non-the human users
   if (!isHuman && isRateLimited(message.author.id)) {
     log('INFO', `[${channelConfig.displayName}] Rate limited: ${senderName}`);
     return;
@@ -193,7 +193,7 @@ async function handleMessage(message: any): Promise<void> {
       injectIdentity: true,
       sender,
       senderDisplayName: senderName,
-      additionalContext: isHuman ? undefined : `Message from ${senderName} (not [HUMAN]). Sender ID: ${message.author.id}. Bot: ${message.author.bot ? 'yes' : 'no'}`,
+      additionalContext: isHuman ? undefined : `Message from ${senderName} (not the human). Sender ID: ${message.author.id}. Bot: ${message.author.bot ? 'yes' : 'no'}`,
       ...(session.isResume
         ? { resumeSessionId: session.sessionId }
         : { sessionId: session.sessionId }),

@@ -13,7 +13,7 @@
 #
 # Flow:
 #   1. Command matches pattern -> block + explain
-#   2. [HUMAN] confirms ("yes, proceed")
+#   2. the human confirms ("yes, proceed")
 #   3. Keel retries exact same command
 #   4. Hook sees confirmation file (< 2 min old), allows it
 #   5. Confirmation file deleted
@@ -174,7 +174,7 @@ echo "  Command:" >&2
 printf '  %s\n' "$DISPLAY_CMD" >&2
 echo "" >&2
 echo "  This is a destructive data operation." >&2
-echo "  Confirm with [HUMAN], then retry the exact" >&2
+echo "  Confirm with the human, then retry the exact" >&2
 echo "  same command within 2 minutes to proceed." >&2
 echo "" >&2
 echo "============================================" >&2

@@ -6,12 +6,10 @@
  * table has a confirmed reader somewhere in the codebase. Warns if data
  * is being written to a table with no consumer — a "data graveyard."
  *
- * Root cause: the learning ledger shipped with should_have synthesis
- * (writer) but no boot injection (reader). Data sat in Supabase for 9
- * days while the morning brief reported 100/100 based on broken metrics.
- *
- * Wired: 2026-03-19. [HUMAN]-directed after discovering the learning ledger
- * evolution loop was never closed.
+ * Root cause motivation: a past failure where a writer-only table sat
+ * unread for days while downstream dashboards reported healthy metrics
+ * computed against stale data. The data was being written; no one was
+ * reading it. This hook catches that class of bug at edit time.
  */
 
 const fs = require('fs');

@@ -3,7 +3,7 @@
  * in multi-party conversations.
  *
  * Architecture: everything is a signal. Nothing is a gate.
- * The ONLY binary in the system: stop from the partner ([HUMAN]).
+ * The ONLY binary in the system: stop from the partner (the human).
  *
  * Borrowed from the trading engine:
  *   signals → weighted scoring → regime context → response sizing → outcome feedback
@@ -17,7 +17,7 @@
  *   6. Outcome tracked async → AIRE tunes weights nightly
  *
  * Writers: discernment-config.json (weights), discernment_outcomes (Supabase)
- * Readers: war-room.ts, [CHANNEL_NAME]-session.ts, any multi-party channel processor
+ * Readers: war-room.ts, a channel-session.ts, any multi-party channel processor
  */
 
 const fs = require('fs');
@@ -125,7 +125,7 @@ const DEFAULT_CONFIG: DiscernmentConfig = {
   respondThreshold: 0.55,
   reactThreshold: 0.35,
   stopCooldownMs: 1_800_000,       // 30 min
-  partnerSender: '[human_first]',            // configurable — the human whose voice overrides all
+  partnerSender: 'human',            // configurable — the human whose voice overrides all
   lastUpdated: new Date().toISOString(),
   updatedBy: 'default',
 };
@@ -216,7 +216,7 @@ function generateSignals(
 
   // 1. Addressed directly — a signal, not a bypass.
   // @mentions inform the decision but don't override judgment.
-  // [HUMAN]'s directive (2026-03-31): "do NOT allow direct mentions and @everyone to bypass your discernment. period."
+  // the human's directive (2026-03-31): "do NOT allow direct mentions and @everyone to bypass your discernment. period."
   if (message.mentionsMe || message.replyTo === 'keel') {
     signals.push({
       source: 'addressed_directly',
@@ -602,8 +602,8 @@ function evaluateCandidate(
 const STOP_PATTERNS = /\b(stop|enough|quiet|shut up|STOP|pause|hold|cease)\b/i;
 
 function detectStopSignal(message: MessageContext, config?: DiscernmentConfig): boolean {
-  // Stop signals only from [HUMAN] (partner authority), not substrate-gated
-  const partnerSender = config?.partnerSender || '[human_first]';
+  // Stop signals only from the human (partner authority), not substrate-gated
+  const partnerSender = config?.partnerSender || 'human';
   if (message.sender !== partnerSender) return false;
   if (message.content.length > 100) return false;
   return STOP_PATTERNS.test(message.content);

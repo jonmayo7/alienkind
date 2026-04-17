@@ -24,7 +24,7 @@
  *   npx tsx scripts/lib/google-calendar.ts delete EVENT_ID
  *
  * Writers: this file
- * Readers: heartbeat.ts, morning-brief.ts, calendar-cache.ts, any interactive session
+ * Readers: heartbeat.ts, calendar-cache.ts, any interactive session
  */
 
 const { googleApi } = require('./google-auth.ts');

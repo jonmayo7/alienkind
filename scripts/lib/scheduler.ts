@@ -266,8 +266,8 @@ function createScheduler({ log = console.log, onJob }: SchedulerOptions = {}): S
             execSync("ps aux | grep 'claude.*-p' | grep -v grep | wc -l", { encoding: 'utf8', timeout: 2000 }).trim()
           );
 
-          // Priority tiers: critical jobs (morning-brief, heartbeat) get higher limits
-          const CRITICAL_JOBS = new Set(['morning-heartbeat', 'morning-brief', 'operational-pulse', 'nightly-analysis', 'nightly-identity-sync', 'nightly-immune']);
+          // Priority tiers: critical jobs (nightly pipeline + operational pulse) get higher limits
+          const CRITICAL_JOBS = new Set(['operational-pulse', 'nightly-analysis', 'nightly-identity-sync', 'nightly-immune']);
           const isCritical = CRITICAL_JOBS.has(name);
           const maxConcurrent = isCritical ? 12 : 6; // Critical: allow up to 12, normal: defer at 6
 

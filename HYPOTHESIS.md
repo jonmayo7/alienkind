@@ -139,7 +139,7 @@ Autonomy isn't about working faster. It's about working when nobody's watching �
 
 **If** a partner has a body that breathes — scheduled work that runs without being asked — **then** it maintains infrastructure, evolves identity, scans for threats, and surfaces opportunities while the human sleeps.
 
-Opt-in scheduler with reference job configuration — disabled by default, enable what fits your compute. Production deployments run ~82 jobs with session management, quiet hours (11 PM – 5 AM), miss detection, retry with backoff. The reference schedule: security organ at 10:45 PM, nightly analysis at 11:35 PM, identity sync at 12:05 AM, working groups at 2:00 AM, morning brief at 4:30 AM. All autonomous. All logged.
+Opt-in scheduler with reference job configuration — disabled by default, enable what fits your compute. Our production deployment runs ~80 jobs with session management, quiet hours (11 PM – 5 AM), miss detection, retry with backoff. The reference schedule shipped with AlienKind is a minimal subset: security organ at 10:45 PM, nightly analysis at 11:35 PM, identity sync at 12:05 AM, working groups at 2:00 AM. Partner-specific jobs (trading, domain pipelines, daily-digest surfaces) are not shipped in the reference — forkers add them. All autonomous. All logged.
 
 ### 14. Self-Heal
 

@@ -12,7 +12,7 @@
  *
  * This function remains SYNCHRONOUS for backward compatibility with all callers
  * (nightly-cycle, discord-listener, telegram-listener, operator, heartbeat,
- * morning-brief) which embed it directly in template literals.
+ * scheduled session jobs) which embed it directly in template literals.
  *
  * Source of truth for terminals: Supabase terminal_state (migration 032).
  */

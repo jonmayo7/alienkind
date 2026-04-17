@@ -20,8 +20,8 @@ const ALIENKIND_DIR = path.resolve(__dirname, '..', '..');
 
 // Files that require daemon restart when modified
 // Files the daemon loads ONCE at startup. Changes to these require daemon restart.
-// Regular job scripts (crypto-engine.ts, morning-brief.ts, etc.) are forked as
-// fresh node processes each run and pick up changes automatically.
+// Regular job scripts (any scripts/<job>.ts forked by the daemon) are started
+// as fresh node processes each run and pick up changes automatically.
 const INFRA_FILES = [
   path.join(ALIENKIND_DIR, 'config', 'daemon-jobs.ts'),
   path.join(ALIENKIND_DIR, 'scripts', 'lib', 'constants.ts'),

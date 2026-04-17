@@ -37,7 +37,7 @@ const WORKING_GROUP_BUDGETS: Record<string, WorkingGroupBudget> = {
   /**
    * Steward Improvement Group
    *
-   * Reads feedback from all deployed stewards ([STEWARD_A], [STEWARD_B], future).
+   * Reads feedback from all deployed stewards (your TIA, another TIA, future).
    * Identifies patterns. Builds fixes on preview branches.
    * One PR per steward per night when actionable feedback exists.
    *
@@ -52,8 +52,8 @@ const WORKING_GROUP_BUDGETS: Record<string, WorkingGroupBudget> = {
     defaultSubstrate: 'cascade',
     canEscalateToOpus: true,
     maxOpusEscalationsPerNight: 3,
-    writeAccess: ['keel', '[repo-b]', '[PROJECT]'],
-    purpose: 'Read steward feedback tables, identify patterns, build fixes on preview branches. Ship improvements to [STEWARD_A], [STEWARD_B], and all TIAs.',
+    writeAccess: ['keel', 'a secondary repo', 'your project'],
+    purpose: 'Read steward feedback tables, identify patterns, build fixes on preview branches. Ship improvements to your TIA, another TIA, and all TIAs.',
   },
 
   /**

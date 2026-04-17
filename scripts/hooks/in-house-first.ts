@@ -10,7 +10,7 @@
  * to read an X tweet before checking post-to-x.ts exports. Had full
  * OAuth read/write access the entire time. (2026-03-19)
  *
- * Wired: 2026-03-19. [HUMAN]: "how do we fix this?"
+ * Wired: 2026-03-19. the human: "how do we fix this?"
  */
 
 const fs = require('fs');

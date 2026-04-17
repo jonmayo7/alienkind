@@ -14,7 +14,7 @@
  *
  * Compaction fires at 96% (our override). Handoff uses 0 model tokens.
  * The 4% buffer between 92% urgent cue and 96% compaction = 40K tokens —
- * more than enough for [HUMAN] to see the cue and type /handoff.
+ * more than enough for the human to see the cue and type /handoff.
  *
  * Fires on: Stop event (every assistant response)
  */
@@ -296,10 +296,10 @@ async function main() {
       `⚠ HANDOFF CUE — URGENT (${triggerSource}): ` +
       'Context getting tight. /handoff recommended.\n' +
       'Compaction fires at 96%. Handoff uses zero model tokens — safe to run now.\n' +
-      '2. Tell [HUMAN]: "/handoff recommended — context at ' + contextPct.toFixed(0) + '%"\n' +
+      '2. Tell the human: "/handoff recommended — context at ' + contextPct.toFixed(0) + '%"\n' +
       (staleness ? `WARNING: ${staleness}\n` : '') +
       'State auto-preserved to Supabase. Recovery possible if compaction fires.\n' +
-      'If [HUMAN] doesn\'t handoff, compaction will fire at 96% (lossy).'
+      'If the human doesn\'t handoff, compaction will fire at 96% (lossy).'
     );
   } else if (tier === 'advisory') {
     console.log(

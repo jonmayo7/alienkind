@@ -169,7 +169,7 @@ Command: ${COMMAND:0:500}"
       if [ -n "$HOOK_CHANGES" ]; then
         echo "BLOCKED by session mode: builder mode cannot push commits that modify hooks or identity." >&2
         echo "Modified protected files: ${HOOK_CHANGES}" >&2
-        echo "Requires analyst mode (interactive terminal with [HUMAN]) to push these changes." >&2
+        echo "Requires analyst mode (interactive terminal with the human) to push these changes." >&2
         exit 2
       fi
     fi
@@ -183,7 +183,7 @@ fi
 #     no action evaluator, no output guard, no sender guard)
 # Always blocks on first attempt. Retry within 2 minutes to confirm.
 # send-email.ts is the canonical path — it enforces sender guard (keel default,
-# --as-[human_first] required for [HUMAN]), kill switch, action evaluator, output guard, and auto-CC.
+# --as-human required for the human), kill switch, action evaluator, output guard, and auto-CC.
 if [[ "$COMMAND" =~ gmail.*messages/send|gmail.*v1/users/me/messages|google-gmail\.ts.*(send|reply) ]]; then
   EMAIL_TERMINAL_ID="${ALIENKIND_TERMINAL_ID:-$$}"
   HASH=$(printf '%s' "${EMAIL_TERMINAL_ID}:${COMMAND}" | shasum | cut -d' ' -f1)
@@ -212,11 +212,11 @@ if [[ "$COMMAND" =~ gmail.*messages/send|gmail.*v1/users/me/messages|google-gmai
     echo "║  EMAIL SAFETY GATE — BLOCKED                               ║" >&2
     echo "╠══════════════════════════════════════════════════════════════╣" >&2
     echo "║  You are bypassing send-email.ts safety stack:             ║" >&2
-    echo "║    • Sender guard (keel default, --as-[human_first] for [HUMAN])         ║" >&2
+    echo "║    • Sender guard (keel default, --as-human for the human)         ║" >&2
     echo "║    • Kill switch gate                                      ║" >&2
     echo "║    • Action evaluator (T4 external comms)                  ║" >&2
     echo "║    • Output guard (credential/architecture leak scan)      ║" >&2
-    echo "║    • Auto-CC [HUMAN] on keel-account sends                     ║" >&2
+    echo "║    • Auto-CC the human on keel-account sends                     ║" >&2
     echo "║    • Gmail signature auto-append                           ║" >&2
     echo "║                                                            ║" >&2
     echo "║  USE: npx tsx scripts/tools/send-email.ts                  ║" >&2
@@ -264,7 +264,7 @@ if ! [[ "$COMMAND" =~ ^git[[:space:]] ]] && ! [[ "$COMMAND" =~ war-room ]]; then
       echo "║  7B evaluation detected potential data exfiltration:       ║" >&2
       echo "║  $CRED_RESULT  " >&2
       echo "║                                                            ║" >&2
-      echo "║  Ask [HUMAN] to confirm, then retry.                           ║" >&2
+      echo "║  Ask the human to confirm, then retry.                           ║" >&2
       echo "╚══════════════════════════════════════════════════════════════╝" >&2
       echo "" >&2
 
@@ -275,7 +275,7 @@ if ! [[ "$COMMAND" =~ ^git[[:space:]] ]] && ! [[ "$COMMAND" =~ war-room ]]; then
         CRED_AGE=$(( $(date +%s) - $(stat -f%m "$CRED_FILE" 2>/dev/null || echo 0) ))
         if [ "$CRED_AGE" -lt 120 ]; then
           rm -f "$CRED_FILE"
-          # [HUMAN] confirmed — allow through
+          # the human confirmed — allow through
         else
           rm -f "$CRED_FILE"
           touch "$CRED_FILE"
@@ -329,7 +329,7 @@ fi
 # (codeFiles[], verifyEvidence, readEvidence, integrateDocs) which accumulated
 # state across the session, never cleared on successful commits, and produced
 # catastrophic false positives that turned every commit into a 5-15 minute
-# ritual. [HUMAN] called it: "it's not enforcement, it's ritual."
+# ritual. the human called it: "it's not enforcement, it's ritual."
 #
 # Replaced with stateless checks that read only from the current git state
 # (staged files, staged diff). Can't accumulate drift. Can't be wrong about
@@ -411,7 +411,7 @@ if [[ "$COMMAND" =~ git[[:space:]]commit ]]; then
         echo "COMMIT BLOCKED — DATA FLOW: These Supabase tables are written but have no confirmed reader:" >&2
         for T in $ORPHANED; do echo "   → ${T}" >&2; done
         echo "Every write needs a reader. Add a reader in scripts/, or document the external consumer" >&2
-        echo "in WIRING_MANIFEST.md (ground.sh, external app, [PRODUCT] dashboard, etc). Then retry." >&2
+        echo "in WIRING_MANIFEST.md (ground.sh, external app, your product dashboard, etc). Then retry." >&2
         echo "" >&2
         exit 2
       fi
@@ -419,7 +419,7 @@ if [[ "$COMMAND" =~ git[[:space:]]commit ]]; then
   fi
 
   # --- Gate: TEST COVERAGE — new daemon jobs must have both test tiers ---
-  # [HUMAN]'s directive (2026-04-13): "Every daemon job should have an integration
+  # the human's directive (2026-04-13): "Every daemon job should have an integration
   # level test." Enforcement: when daemon-jobs.ts is staged, extract job names
   # from STAGED version, compare against COMMITTED version, find NEW jobs,
   # verify each has both a wiring test and an integration test.
@@ -461,7 +461,7 @@ if [[ "$COMMAND" =~ git[[:space:]]commit ]]; then
           echo "  2. Integration test:    scripts/tests/test-{name}-integration.ts" >&2
           echo "" >&2
           echo "Write both tests, verify they pass, then retry the commit." >&2
-          echo "[HUMAN]'s directive: 'Everything we learn is worthless without action.'" >&2
+          echo "the human's directive: 'Everything we learn is worthless without action.'" >&2
           echo "" >&2
           exit 2
         fi
@@ -547,15 +547,15 @@ if [[ "$COMMAND" =~ git[[:space:]]commit ]]; then
 fi
 
 # --- Layer 3.7: Cross-repo migration gate (BLOCKING) ---
-# When committing in [PROJECT] (or other external repos with migrations/),
+# When committing in your project (or other external repos with migrations/),
 # if migration files are staged, verify they've been executed against the DB
 # before allowing commit. Prevents code-before-schema deployment gaps.
 # Root cause fix for 2026-04-14 war room outage: image_url column referenced
 # in code but migration never ran → all API calls broke.
 if [[ "$COMMAND" =~ git[[:space:]]commit ]]; then
-  # Detect if we're in [PROJECT]
+  # Detect if we're in your project
   GIT_TOPLEVEL=$(git rev-parse --show-toplevel 2>/dev/null)
-  if [[ "$GIT_TOPLEVEL" == *"[PROJECT]"* ]]; then
+  if [[ "$GIT_TOPLEVEL" == *"your project"* ]]; then
     STAGED_MIGRATIONS=$(git diff --cached --name-only -- 'migrations/*.sql' 2>/dev/null)
     if [ -n "$STAGED_MIGRATIONS" ]; then
       WR_MIGRATION_LOG="${GUARD_ALIENKIND_DIR}/logs/war-room-migrations.log"
@@ -586,7 +586,7 @@ fi
 # Friday migration (2026-03-21) eradicated all invokeCommunity usage.
 # This gate blocks commits that reintroduce it in production scripts.
 # invokeCommunity spawns bare Claude without identity — any production script using it
-# means [HUMAN]/Keel voice is coming from a cold model, not Keel.
+# means the human/Keel voice is coming from a cold model, not Keel.
 if [[ "$COMMAND" =~ git[[:space:]]commit ]]; then
   STAGED_TS=$(git diff --cached --name-only -- '*.ts' 2>/dev/null | grep -v tests/ | grep -v '.d.ts')
   if [ -n "$STAGED_TS" ]; then
