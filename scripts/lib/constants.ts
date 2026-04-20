@@ -258,6 +258,20 @@ const SESSION = {
   ],
 } as const;
 
+// --- Intent Queue ---
+// Controls the two-tier intent lifecycle (partner-approved auto-execute vs
+// human-required approval). Tuning these changes how often the partner
+// surfaces decisions for the human vs acts autonomously.
+
+const INTENTS = {
+  defaultExpiry: 24 * 60 * 60 * 1000,     // 24h — non-urgent intents expire
+  urgentExpiry: 4 * 60 * 60 * 1000,       // 4h — urgent intents expire faster
+  maxPendingPerSource: 5,                  // prevent runaway intent creation
+  telegramSummaryMaxChars: 2000,           // keep notification scannable
+  approvalKeywords: ['approve', 'approved', 'do it', 'go', 'ship it', 'yes', 'go ahead', 'execute', 'send it', 'run it', 'sounds great', 'sounds good', 'go for it'],
+  rejectionKeywords: ['reject', 'rejected', 'no', 'deny', 'denied', 'cancel', 'stop', 'hold', 'hold off', 'not yet', 'wait'],
+} as const;
+
 // ============================================================================
 // Exports
 // ============================================================================
@@ -285,4 +299,5 @@ module.exports = {
   DAEMON,
   SELF_HEAL,
   SESSION,
+  INTENTS,
 };
