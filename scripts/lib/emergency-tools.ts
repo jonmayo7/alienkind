@@ -10,7 +10,7 @@
  * Tool definitions are in OpenAI function calling format for the gateway.
  * Tool execution is local (fs, child_process, glob, ripgrep).
  *
- * Readers: keel-emergency.ts, shared.ts (invokeEmergency)
+ * Readers: the emergency runtime entry, shared.ts (invokeEmergency)
  * Writers: none (stateless — executes tools and hooks, returns results)
  */
 
@@ -235,12 +235,12 @@ const TOOL_DEFINITIONS = [
     type: 'function' as const,
     function: {
       name: 'post_to_x',
-      description: 'Post a tweet to X (Twitter). Supports the human ([@YOUR_HANDLE]) or Keel ([@PARTNER_HANDLE]) accounts.',
+      description: 'Post a tweet to X (Twitter). Supports the human ([@YOUR_HANDLE]) or the partner ([@PARTNER_HANDLE]) accounts.',
       parameters: {
         type: 'object',
         properties: {
           text: { type: 'string', description: 'Tweet text' },
-          account: { type: 'string', enum: ['human', 'keel'], description: 'Which account to post from (default: human)' },
+          account: { type: 'string', enum: ['human', 'partner'], description: 'Which account to post from (default: human)' },
           media: { type: 'string', description: 'Optional: path to media file to attach' },
         },
         required: ['text'],
@@ -299,7 +299,7 @@ const TOOL_DEFINITIONS = [
     type: 'function' as const,
     function: {
       name: 'memory_search',
-      description: 'Search Keel memory files using full-text search with temporal decay.',
+      description: 'Search the partner memory files using full-text search with temporal decay.',
       parameters: {
         type: 'object',
         properties: {
@@ -672,7 +672,7 @@ function executeTool(
       case 'post_to_x': {
         const text = (args.text || '').replace(/'/g, "'\\''");
         const xArgs = ['tsx', path.join(ALIENKIND_DIR, 'scripts', 'post-to-x.ts'), text];
-        if (args.account === 'keel') xArgs.push('--account', 'keel');
+        if (args.account === 'partner') xArgs.push('--account', 'partner');
         if (args.media) xArgs.push('--media', args.media);
         const result = spawnSync('npx', xArgs, {
           cwd: ALIENKIND_DIR,
