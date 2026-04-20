@@ -22,11 +22,12 @@ const { spawnSync } = require('child_process');
 const ALIENKIND_DIR = path.resolve(__dirname, '../..');
 
 // --- Hook Dispatcher ---
-// Uses keel-hooks.ts library — reads from config/hooks.ts (canonical source).
+// Uses hooks.ts library — reads .claude/settings.local.json (Claude Code native format).
 // Same hooks, same scripts, same exit code semantics as Claude Code.
-// No more reading settings.local.json — that file is GENERATED, not the source.
+// When Claude Code is the runtime, hooks fire natively; this dispatcher covers
+// alternate runtimes (emergency, custom CLIs).
 
-const { dispatchHooks: fireHooks, loadConfig: loadHookConfig } = require('./keel-hooks.ts');
+const { dispatchHooks: fireHooks, loadConfig: loadHookConfig } = require('./hooks.ts');
 
 interface HookPayload {
   session_id: string;
