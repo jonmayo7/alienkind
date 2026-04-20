@@ -258,6 +258,23 @@ const SESSION = {
   ],
 } as const;
 
+// --- Local Models ---
+// Reference endpoints for locally-hosted inference (classifier, embedding).
+// The classifier is used by action-evaluator and hooks for sub-3s semantic
+// judgments. Forkers without a local server can leave this pointed at
+// localhost:8000 — callers degrade gracefully when the endpoint is absent.
+
+const LOCAL_MODELS = {
+  /** Endpoint host for the OpenAI-compatible local classifier (vLLM-MLX, Ollama, etc.) */
+  host: process.env.LOCAL_MODELS_HOST || 'http://127.0.0.1:8000',
+  /** Model name for fast classifier — hooks, gates, semantic checks. */
+  classifier: process.env.LOCAL_CLASSIFIER_MODEL || 'mlx-community/Qwen3.5-9B-MLX-4bit',
+  /** Embedding model name — memory search, vectorization. */
+  embedding: process.env.LOCAL_EMBEDDING_MODEL || 'mlx-community/Qwen3-Embedding-8B-4bit-DWQ',
+  /** Embedding dimension — must match database vector column. */
+  embeddingDims: 4096,
+} as const;
+
 // --- Intent Queue ---
 // Controls the two-tier intent lifecycle (partner-approved auto-execute vs
 // human-required approval). Tuning these changes how often the partner
@@ -300,4 +317,5 @@ module.exports = {
   SELF_HEAL,
   SESSION,
   INTENTS,
+  LOCAL_MODELS,
 };
