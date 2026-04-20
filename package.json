@@ -10,9 +10,11 @@
   "scripts": {
     "setup": "npx tsx scripts/tools/setup-wizard.ts",
     "chat": "npx tsx scripts/chat.ts",
-    "test": "npx tsx tests/test-portable.ts && npx tsx tests/test-prompt-hook-executor.ts && npx tsx tests/test-worktree.ts && npx tsx tests/test-context-doctor.ts",
+    "test": "npx tsx scripts/tools/doc-metrics.ts --check && npx tsx tests/test-portable.ts && npx tsx tests/test-prompt-hook-executor.ts && npx tsx tests/test-worktree.ts && npx tsx tests/test-context-doctor.ts",
     "doctor": "npx tsx scripts/tools/context-doctor.ts",
-    "status": "npx tsx -e \"const { getCapabilityStatus, formatCapabilityStatus } = require('./scripts/lib/portable.ts'); getCapabilityStatus().then(s => console.log(formatCapabilityStatus(s)));\""
+    "status": "npx tsx -e \"const { getCapabilityStatus, formatCapabilityStatus } = require('./scripts/lib/portable.ts'); getCapabilityStatus().then(s => console.log(formatCapabilityStatus(s)));\"",
+    "doc-metrics": "npx tsx scripts/tools/doc-metrics.ts",
+    "doc-metrics:check": "npx tsx scripts/tools/doc-metrics.ts --check"
   },
   "devDependencies": {
     "tsx": "^4.19.0"

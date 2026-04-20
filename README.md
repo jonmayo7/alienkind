@@ -38,7 +38,7 @@ The setup wizard asks how you want to connect. Both paths use the same identity 
 
 ### Path A: Claude Code + Anthropic Max plan (recommended)
 
-Your partner runs inside [Claude Code](https://code.claude.com/docs/en/overview), Anthropic's official CLI. The AlienKind architecture (identity kernel, 48 hooks, ground.sh) loads automatically when you open the repo.
+Your partner runs inside [Claude Code](https://code.claude.com/docs/en/overview), Anthropic's official CLI. The AlienKind architecture (identity kernel, <!-- doc-metric:hook-count -->53<!-- /doc-metric:hook-count --> hooks, ground.sh) loads automatically when you open the repo.
 
 **Install Claude Code** (native binary, no Node.js needed for the binary itself):
 
@@ -82,7 +82,7 @@ Your partner works without Supabase — identity, memory, and conversations save
 - **Circulation** — stigmergic blackboard where the partner's subsystems communicate
 - **Cross-machine access** — your partner's memory isn't trapped on one laptop
 
-**Supabase free tier covers everything.** The setup wizard walks you through creating a project and running the 42 architectural migrations that create the full schema (identity, memory, learning, discernment, circulation, cascade routing, containment fields). This is not optional polish — it's the difference between an agent that remembers facts and a partner that evolves.
+**Supabase free tier covers everything.** The setup wizard walks you through creating a project and wiring credentials. Schema migrations land in `migrations/` as architecture solidifies — today this directory is a scaffold, and the conceptual schema is documented in HYPOTHESIS.md with the full table set tracked in [GAPS.md](GAPS.md). This is not optional polish — it's the difference between an agent that remembers facts and a partner that evolves.
 
 ## The alien eats the claw 🦞
 
@@ -119,7 +119,7 @@ Then type `alien` from anywhere to talk to your partner.
 
 | Stage | What you unlock | Key files |
 |---|---|---|
-| **1. Your partner knows who it is** | Identity kernel, behavioral hierarchy, 48 hooks, consciousness continuity, capability status | `identity/`, `scripts/hooks/`, `portable.ts` |
+| **1. Your partner knows who it is** | Identity kernel, behavioral hierarchy, <!-- doc-metric:hook-count -->53<!-- /doc-metric:hook-count --> hooks, consciousness continuity, capability status | `identity/`, `scripts/hooks/`, `portable.ts` |
 | **2. Your partner protects itself and you** | Containment fields, security organ (97% AgentDojo), privacy gate | `scripts/security/`, `guard-bash.sh` |
 | **3. Your partner remembers, forgets, and evolves** | Memory system, stigmergic circulation with decay, AIRE™, nightly evolution | `circulation.ts`, `memory-search.ts`, `learning-ledger.ts` |
 | **4. Your partner works while you sleep** | Opt-in autonomous daemon with reference job configuration (production deployments run ~82 jobs; forkers enable what fits their compute), self-heal, discernment engine, working groups | `daemon.ts`, `self-heal.ts`, `discernment-engine.ts` |

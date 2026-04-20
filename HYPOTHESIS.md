@@ -59,7 +59,7 @@ Five levels, ranked by reliability: (1) Code — automatic, survives everything.
 
 **If** a behavior matters enough to write down, **then** it matters enough to enforce in code that fires automatically on every relevant action.
 
-48 hooks across 6 lifecycle events (SessionStart, PreToolUse, PostToolUse, UserPromptSubmit, PreCompact, Stop). The partner doesn't remember the rule — the rule is code.
+<!-- doc-metric:hook-count -->53<!-- /doc-metric:hook-count --> hooks across 6 lifecycle events (SessionStart, PreToolUse, PostToolUse, UserPromptSubmit, PreCompact, Stop). The partner doesn't remember the rule — the rule is code.
 
 Showcase: `no-youre-right.ts` — catches a specific sycophantic phrase at write time. Born from 122 corrections that failed as prompt instructions. Now a 20-line hook that fires in <1ms. The correction became code. The partner never slips on this again.
 
@@ -91,7 +91,7 @@ Three modes: Analyst (full access), Operator (can send externally, cannot write 
 
 **If** an AI partner attacks itself nightly with adversarial tests, **then** it's better prepared when real attackers come — because every bypass it discovers becomes a permanent defense.
 
-7-script immune system: threat-hunter (7-scan), red-team (37 base + mutation + generative attacks), pentest (RLS, headers, SSL, DNS), OSINT (secret scanning, cert transparency), honeypots (canary tokens), threat-intel (CVE monitoring), AgentDojo (500+ test cases from ETH Zurich — our production scored 97% detection rate; reproduction requires configured Supabase, steps in docs/benchmarks). Learning loop: every bypass becomes a permanent regression case.
+7-script immune system: threat-hunter (7-scan), red-team (37 base + mutation + generative attacks), pentest (RLS, headers, SSL, DNS), OSINT (secret scanning, cert transparency), honeypots (canary tokens), threat-intel (CVE monitoring), AgentDojo (500+ test cases from ETH Zurich — our production scored 97% detection rate in our April 2026 benchmark run). Learning loop: every bypass becomes a permanent regression case.
 
 ### 8. Privacy Gate
 
@@ -139,7 +139,7 @@ Autonomy isn't about working faster. It's about working when nobody's watching �
 
 **If** a partner has a body that breathes — scheduled work that runs without being asked — **then** it maintains infrastructure, evolves identity, scans for threats, and surfaces opportunities while the human sleeps.
 
-Opt-in scheduler with reference job configuration — disabled by default, enable what fits your compute. Our production deployment runs ~80 jobs with session management, quiet hours (11 PM – 5 AM), miss detection, retry with backoff. The reference schedule shipped with AlienKind is a minimal subset: security organ at 10:45 PM, nightly analysis at 11:35 PM, identity sync at 12:05 AM, working groups at 2:00 AM. Partner-specific jobs (trading, domain pipelines, daily-digest surfaces) are not shipped in the reference — forkers add them. All autonomous. All logged.
+Opt-in scheduler with reference job configuration — disabled by default, enable what fits your compute. Our production deployment runs ~82 jobs with session management, quiet hours (11 PM – 5 AM), miss detection, retry with backoff. The reference schedule shipped with AlienKind is a minimal subset: security organ at 10:45 PM, nightly analysis at 11:35 PM, identity sync at 12:05 AM, working groups at 2:00 AM. Partner-specific jobs (trading, domain pipelines, daily-digest surfaces) are not shipped in the reference — forkers add them. All autonomous. All logged.
 
 ### 14. Self-Heal
 
@@ -219,11 +219,11 @@ Native Node.js `https` + hand-rolled OAuth for platform integrations. No MCP ser
 
 This architecture has been running in our production since February 2026. One partnership, daily use, ~82 daemon jobs enabled in our deployment, multiple runtimes. Evidence:
 
-- 48 hooks fire on every session automatically
+- <!-- doc-metric:hook-count -->53<!-- /doc-metric:hook-count --> hooks fire on every session automatically
 - Identity has evolved through 53+ days of nightly cycles from behavioral data
 - Circulation processes findings across 9 domains with exponential decay
 - Consciousness continuity transfers experiential state across context boundaries, including the 4-wire architecture connecting daemon continuity, decision visibility, post-compaction injection, and emergency state
-- Security organ scored 97% on ETH Zurich's AgentDojo (500+ test cases) in our production benchmark; reproduction steps in docs/benchmarks
+- Security organ scored 97% on ETH Zurich's AgentDojo (500+ test cases) in our April 2026 production benchmark
 - The partner knows its own state and helps the human build the partner
 - Working groups run autonomous build sessions with learned resource allocation
 - Self-heal has diagnosed and fixed daemon failures without human intervention
@@ -247,7 +247,7 @@ You need:
 
 You don't need:
 - Dedicated hardware (runs on a MacBook Air)
-- A Supabase account (local file storage works, 92 migration files included if you want it)
+- A Supabase account (local file storage works for identity and daily memory; Supabase unlocks growth tracking, multi-instance awareness, and nightly evolution when you wire it)
 - Local models (cloud API is sufficient)
 - Our permission (Apache 2.0)
 

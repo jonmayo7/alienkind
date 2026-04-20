@@ -1,0 +1,33 @@
+#!/bin/sh
+#
+# Pre-commit honesty gate.
+#
+# Runs doc-metrics --check when README / HYPOTHESIS / ATTRIBUTION /
+# plugin.json / SKILL.md change. If the numbers in those files don't match
+# disk, blocks the commit and tells you the one-line fix.
+#
+# Enable (once per clone):
+#   git config core.hooksPath .githooks
+#
+
+set -e
+
+changed=$(git diff --cached --name-only --diff-filter=ACM)
+if ! echo "$changed" | grep -qE "^(README\.md|HYPOTHESIS\.md|ATTRIBUTION\.md|\.claude-plugin/plugin\.json|skills/alienkind/SKILL\.md|scripts/hooks/.*\.(ts|sh)$|migrations/.*\.sql$|tests/test-.*\.ts$)"; then
+  exit 0
+fi
+
+if ! command -v npx >/dev/null 2>&1; then
+  echo "pre-commit: npx not found, skipping doc-metrics check"
+  exit 0
+fi
+
+if ! npx tsx scripts/tools/doc-metrics.ts --check; then
+  echo
+  echo "Commit blocked: docs disagree with disk."
+  echo "Run: npm run doc-metrics"
+  echo "Then git add the changed docs and commit again."
+  exit 1
+fi
+
+exit 0

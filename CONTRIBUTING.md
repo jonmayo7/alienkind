@@ -17,6 +17,7 @@
 - **Zero dependencies where possible.** Every dependency is supply chain risk for an AI agent.
 - **Hooks must degrade gracefully and loudly.** Use `tryStorage()` or `tryClassifier()` from `portable.ts`. A hook that crashes blocks the agent. A hook that degrades lets it work — but it must log what degraded and why, so the human knows what to invest in.
 - **Tests for new code.** Both static tests (does the logic produce correct output?) and integration tests (does it wire correctly into the system and produce real results?). Minimal runner — see `tests/` for the pattern.
+- **Doc honesty is code-enforced.** Numerical claims in README / HYPOTHESIS / ATTRIBUTION / plugin.json / SKILL.md are rendered from disk by `scripts/tools/doc-metrics.ts`. Enable the pre-commit hook once after cloning: `git config core.hooksPath .githooks`. If you add or remove a hook, migration, or test, the docs update themselves when you run `npm run doc-metrics`. `npm test` fails if any tracked number drifts.
 
 ## What we want
 
