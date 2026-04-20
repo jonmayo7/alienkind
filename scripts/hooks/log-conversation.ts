@@ -208,15 +208,15 @@ function logExperience(envVars, { observation, domain, significance, tags, sourc
 // These patterns match the opening lines of known automated prompt templates.
 const AUTOMATED_PREFIXES = [
   'You are posting as ',              // social growth engine
-  'You are Keel — the human's AI partner. You\'re scanning',  // proactive scan
-  'You are Keel — the human's AI partner. This is a Telegram', // telegram listener
-  'You are Keel — the human's AI partner. This is a Discord',  // discord listener
+  "You are Keel — the human's AI partner. You're scanning",  // proactive scan
+  "You are Keel — the human's AI partner. This is a Telegram", // telegram listener
+  "You are Keel — the human's AI partner. This is a Discord",  // discord listener
   'You are Keel, processing a ',      // growth engine findings
   'You are Keel. It is ',             // keel cycle / operator mode
-  'You are Keel — the human's AI partner. Process this',  // action router
+  "You are Keel — the human's AI partner. Process this",  // action router
   'HEARTBEAT BRIEF',                  // heartbeat
   'CONTENT PIPELINE',                 // content pipeline
-  'You are Keel — the human's AI partner. Review', // review responder
+  "You are Keel — the human's AI partner. Review", // review responder
   'You are Keel. You are responding in ',          // keel-engine channel prompts
   '<task-notification',                            // subagent completion notifications
 ];
