@@ -104,7 +104,7 @@ function parseHooks(settingsPath: string): HookEntry[] {
         const scripts: string[] = [];
         for (const h of hookList) {
           if (h.command) {
-            scripts.push(h.command.replace(ALIENKIND_DIR + '/', '').replace('__REPO_ROOT__/', ''));
+            scripts.push(h.command.replace(ALIENKIND_DIR + '/', ''));
           }
         }
         if (scripts.length > 0) {
@@ -209,12 +209,14 @@ function runDiagnostic(): DiagnosticReport {
   const dailyFile = measureFile(dailyPath, `daily file (${path.basename(dailyPath)})`, 'daily');
   if (dailyFile) bootFiles.push(dailyFile);
 
-  // 5. Auto-memory MEMORY.md (loaded by Claude auto-memory system)
-  const autoMemory = measureFile(
-    '__REPO_ROOT__/.claude-auto/projects/__REPO_ROOT__/memory/MEMORY.md',
-    'auto-memory MEMORY.md',
-    'state',
-  );
+  // 5. Auto-memory MEMORY.md (loaded by Claude auto-memory system).
+  // Claude Code stores per-project auto-memory under ~/.claude/projects/<slug>/memory/
+  // where <slug> is the project path with slashes replaced by hyphens. If the
+  // partner isn't configured for auto-memory, the file won't exist — measureFile
+  // returns null and it's skipped.
+  const autoMemorySlug = ALIENKIND_DIR.replace(/\//g, '-');
+  const autoMemoryPath = path.join(require('os').homedir(), '.claude', 'projects', autoMemorySlug, 'memory', 'MEMORY.md');
+  const autoMemory = measureFile(autoMemoryPath, 'auto-memory MEMORY.md', 'state');
   if (autoMemory) bootFiles.push(autoMemory);
 
   // 6. Hooks

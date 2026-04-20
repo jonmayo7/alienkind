@@ -374,7 +374,7 @@ Message: ${text.slice(0, 500)}`;
               if (response.startsWith('CORRECTION') || response.startsWith('REINFORCEMENT')) {
                 // Log as a file for the training pipeline to pick up
                 const fs = require('fs');
-                const logPath = '__REPO_ROOT__/logs/semantic-corrections.jsonl';
+                const logPath = require('path').resolve(__dirname, '..', '..', 'logs', 'semantic-corrections.jsonl');
                 fs.appendFileSync(logPath, JSON.stringify({
                   timestamp: new Date().toISOString(),
                   classification: response.startsWith('CORRECTION') ? 'correction' : 'reinforcement',

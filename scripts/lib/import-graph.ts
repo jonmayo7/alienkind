@@ -13,7 +13,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const ALIENKIND_DIR = '__REPO_ROOT__';
+const ALIENKIND_DIR = path.resolve(__dirname, '..', '..');
 const CACHE_FILE = '/tmp/alienkind-import-graph.json';
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 

@@ -33,7 +33,7 @@ const { execSync } = require('child_process');
 const { TIMEZONE } = require('../lib/constants.ts');
 const { getNowCT } = require('../lib/keel-env.ts');
 
-const ALIENKIND_DIR = '__REPO_ROOT__';
+const ALIENKIND_DIR = path.resolve(__dirname, '..', '..');
 const CHAIN_DIR = path.join(ALIENKIND_DIR, 'logs', 'chain');
 
 if (!fs.existsSync(CHAIN_DIR)) {

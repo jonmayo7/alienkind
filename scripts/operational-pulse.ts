@@ -552,8 +552,8 @@ log(`Operational pulse starting: hour=${HOUR}, minute=${MINUTE}`);
     try {
       const envContent = fs.readFileSync(path.join(ALIENKIND_DIR, '.env'), 'utf8');
       const tokenChecks = [
-        { name: 'CLAUDE_OAUTH_TOKEN_PRIMARY', label: 'primary', configDir: '__REPO_ROOT__/.claude' },
-        { name: 'CLAUDE_OAUTH_TOKEN_SECONDARY', label: 'secondary', configDir: '__REPO_ROOT__/.claude-auto' },
+        { name: 'CLAUDE_OAUTH_TOKEN_PRIMARY', label: 'primary', configDir: path.join(ALIENKIND_DIR, '.claude') },
+        { name: 'CLAUDE_OAUTH_TOKEN_SECONDARY', label: 'secondary', configDir: path.join(ALIENKIND_DIR, '.claude-auto') },
       ];
       for (const { name, label, configDir } of tokenChecks) {
         const match = envContent.match(new RegExp(`${name}=(.+)`));
