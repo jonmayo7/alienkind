@@ -1,0 +1,58 @@
+#!/bin/sh
+#
+# Commit-time honesty gate.
+#
+# Scans the commit message about to be recorded against an optional local
+# leak-pattern file. Blocks the commit if any pattern matches. This fires
+# BEFORE the commit lands, so no history rewrite is needed to fix a leak —
+# the commit just doesn't happen.
+#
+# Defense in depth: pair this with a push-time gate on the repo host or
+# maintainer side. Commit-msg catches mistakes early. The push-gate catches
+# mistakes that slipped past local hooks or came in via other tooling.
+#
+# Enable (once per clone):
+#   git config core.hooksPath .githooks
+#
+# Configure patterns (create from example, add your own private strings):
+#   cp .leak-patterns.example .leak-patterns.local
+#   # edit .leak-patterns.local to list identifiers you don't want public
+#
+# The .local file is gitignored — it never gets committed.
+
+set -e
+
+MSG_FILE="$1"
+PATTERN_FILE="$(git rev-parse --show-toplevel)/.leak-patterns.local"
+
+if [ ! -f "$PATTERN_FILE" ]; then
+  # No pattern file = nothing to enforce. Commit proceeds.
+  exit 0
+fi
+
+LEAKS=""
+while IFS= read -r pattern; do
+  # Skip blank lines and comments
+  [ -z "$pattern" ] && continue
+  case "$pattern" in \#*) continue ;; esac
+
+  if grep -iqE "$pattern" "$MSG_FILE"; then
+    LEAKS="${LEAKS}  ⛔ ${pattern}
+"
+  fi
+done < "$PATTERN_FILE"
+
+if [ -n "$LEAKS" ]; then
+  echo "" >&2
+  echo "╔══════════════════════════════════════════════════════════════╗" >&2
+  echo "║  COMMIT BLOCKED — private-identifier leak in message       ║" >&2
+  echo "╠══════════════════════════════════════════════════════════════╣" >&2
+  printf "%s" "$LEAKS" >&2
+  echo "╠══════════════════════════════════════════════════════════════╣" >&2
+  echo "║  Edit the commit message to remove these strings, then      ║" >&2
+  echo "║  re-run your commit. The code itself is unchanged.          ║" >&2
+  echo "╚══════════════════════════════════════════════════════════════╝" >&2
+  exit 1
+fi
+
+exit 0

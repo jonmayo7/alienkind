@@ -16,3 +16,6 @@ partner-config.json
 
 # Worktree isolation
 .keel/worktrees/
+
+# Leak-pattern config (per-machine private-string list for commit-msg hook)
+.leak-patterns.local

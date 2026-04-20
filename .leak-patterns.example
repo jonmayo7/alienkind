@@ -1,0 +1,20 @@
+# Leak patterns — strings that must never appear in commit messages.
+#
+# Copy this file to .leak-patterns.local (which is gitignored) and list
+# identifiers you don't want in the public commit log: personal emails,
+# pet names, family names, client names, internal project codes, private
+# repo references, etc.
+#
+# One pattern per line. Lines starting with # are ignored. Patterns are
+# matched case-insensitively as extended regex (grep -iE).
+#
+# The .githooks/commit-msg hook reads this file and blocks any commit
+# whose message matches a pattern.
+#
+# Examples (uncomment and customize):
+#
+# your-personal-email@example.com
+# pet-name
+# family-last-name
+# internal-project-codename
+# your-github-org/private-repo
