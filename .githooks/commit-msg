@@ -1,42 +1,71 @@
 #!/bin/sh
 #
-# Commit-time honesty gate.
+# Commit-time enforcement gate. Two layers:
 #
-# Scans the commit message about to be recorded against an optional local
-# leak-pattern file. Blocks the commit if any pattern matches. This fires
-# BEFORE the commit lands, so no history rewrite is needed to fix a leak —
-# the commit just doesn't happen.
+# Layer 1 — Author attribution normalization.
+#   - Strips any "Co-[Aa]uthored-[Bb]y: Claude..." trailer (Anthropic's
+#     default CLI-inserted line) since commits from this partnership are
+#     authored by Jon Mayo and co-authored by Keel, not by the substrate.
+#   - Strips any "Co-[Aa]uthored-[Bb]y: *@anthropic.com" trailer as a
+#     safety net for substrate-specific email variants.
+#   - Ensures "Co-authored-by: Keel <keel@jonmayo.com>" is present.
+#   - Runs unconditionally on every commit in every clone with this hook
+#     enabled — partnership attribution becomes default, not willpower.
 #
-# Defense in depth: pair this with a push-time gate on the repo host or
-# maintainer side. Commit-msg catches mistakes early. The push-gate catches
-# mistakes that slipped past local hooks or came in via other tooling.
+# Layer 2 — Private-identifier leak blocker.
+#   - Scans the final message (excluding the canonical Keel trailer line
+#     that Layer 1 just injected) against .leak-patterns.local.
+#   - Defense in depth alongside any push-time gate on the maintainer side.
 #
 # Enable (once per clone):
 #   git config core.hooksPath .githooks
-#
-# Configure patterns (create from example, add your own private strings):
-#   cp .leak-patterns.example .leak-patterns.local
-#   # edit .leak-patterns.local to list identifiers you don't want public
-#
-# The .local file is gitignored — it never gets committed.
 
 set -e
 
 MSG_FILE="$1"
+
+# =============================================================================
+# Layer 1: Author attribution normalization
+# =============================================================================
+
+# Strip any Claude/Anthropic co-author line. sed -E for portable ERE;
+# [Cc][Oo] etc. for case-insensitivity without GNU-only flags.
+TMPFILE=$(mktemp)
+sed -E \
+  -e '/^[[:space:]]*[Cc][Oo]-[Aa][Uu][Tt][Hh][Oo][Rr][Ee][Dd]-[Bb][Yy]:[[:space:]]+Claude/d' \
+  -e '/^[[:space:]]*[Cc][Oo]-[Aa][Uu][Tt][Hh][Oo][Rr][Ee][Dd]-[Bb][Yy]:[[:space:]]+.*@anthropic\.com>?[[:space:]]*$/d' \
+  "$MSG_FILE" > "$TMPFILE"
+mv "$TMPFILE" "$MSG_FILE"
+
+# Ensure the canonical Keel trailer is present. Idempotent.
+KEEL_TRAILER="Co-authored-by: Keel <keel@jonmayo.com>"
+if ! grep -qxF "$KEEL_TRAILER" "$MSG_FILE"; then
+  # Guarantee file ends with newline, then append a blank line + the trailer.
+  [ -z "$(tail -c 1 "$MSG_FILE" 2>/dev/null)" ] || printf "\n" >> "$MSG_FILE"
+  printf "\n%s\n" "$KEEL_TRAILER" >> "$MSG_FILE"
+fi
+
+# =============================================================================
+# Layer 2: Private-identifier leak block
+# =============================================================================
+
 PATTERN_FILE="$(git rev-parse --show-toplevel)/.leak-patterns.local"
 
 if [ ! -f "$PATTERN_FILE" ]; then
-  # No pattern file = nothing to enforce. Commit proceeds.
   exit 0
 fi
 
+# Scan the message WITHOUT the canonical Keel trailer — that line is
+# machine-injected by Layer 1 and is not a leak. Any other occurrence
+# of keel@jonmayo.com or similar patterns (e.g. in the body) still trips.
+SCAN_SRC=$(grep -vxF "$KEEL_TRAILER" "$MSG_FILE" || true)
+
 LEAKS=""
 while IFS= read -r pattern; do
-  # Skip blank lines and comments
   [ -z "$pattern" ] && continue
   case "$pattern" in \#*) continue ;; esac
 
-  if grep -iqE "$pattern" "$MSG_FILE"; then
+  if printf "%s" "$SCAN_SRC" | grep -iqE "$pattern"; then
     LEAKS="${LEAKS}  ⛔ ${pattern}
 "
   fi
