@@ -20,6 +20,10 @@ const {
 const { reapAll } = require('../reaper.ts');
 const { indexAll } = require('../memory-indexer.ts');
 const { expireStaleRequests } = require('../comms-coord.ts');
+const { resolveConfig } = require('../portable.ts');
+const PARTNER_NAME = resolveConfig('name', 'Partner');
+const BACKUP_SLUG = `${PARTNER_NAME.toLowerCase().replace(/[^a-z0-9-]/g, '-')}-backups`;
+
 // Subscription reconciliation is partner-specific (financial tables, vendor
 // aliases, business P&L schema). Not shipped in the generic reference.
 // Forkers who want it add their own reconciler and wire it here.
@@ -134,7 +138,7 @@ async function discoverTables(): Promise<string[]> {
 // Run backup directly in Node.js — avoids /bin/bash FDA restriction in launchd
 async function runBackup() {
   const GDRIVE_BASE = path.join(process.env.HOME, 'Library/CloudStorage/GoogleDrive-[EMAIL]/My Drive');
-  const BACKUP_DIR = path.join(GDRIVE_BASE, 'keel-backups');
+  const BACKUP_DIR = path.join(GDRIVE_BASE, BACKUP_SLUG);
   const BACKUP_PATH = path.join(BACKUP_DIR, `${DATE}_${TIME.replace(':', '')}`);
   const MAX_BACKUPS = NIGHTLY.maxBackups;
 
@@ -322,10 +326,11 @@ async function runBackup() {
   }, null, 2));
 
   // 4. Copy restore docs
-  const restorePrompt = path.join(ALIENKIND_DIR, 'config/keel-restore-prompt.txt');
+  const restorePrompt = path.join(ALIENKIND_DIR, 'config/partner-restore-prompt.txt');
   const restoreGuide = path.join(ALIENKIND_DIR, 'RESTORE.md');
-  if (fs.existsSync(restorePrompt)) fs.copyFileSync(restorePrompt, path.join(GDRIVE_BASE, 'keel-backups/RESTORE-KEEL.txt'));
-  if (fs.existsSync(restoreGuide)) fs.copyFileSync(restoreGuide, path.join(GDRIVE_BASE, 'keel-backups/RESTORE-GUIDE.md'));
+  const restoreOutName = `RESTORE-${PARTNER_NAME.toUpperCase().replace(/[^A-Z0-9-]/g, '-')}.txt`;
+  if (fs.existsSync(restorePrompt)) fs.copyFileSync(restorePrompt, path.join(GDRIVE_BASE, BACKUP_SLUG, restoreOutName));
+  if (fs.existsSync(restoreGuide)) fs.copyFileSync(restoreGuide, path.join(GDRIVE_BASE, BACKUP_SLUG, 'RESTORE-GUIDE.md'));
 
   // 5. Cleanup old backups
   try {
@@ -485,7 +490,7 @@ async function runImmune() {
     } else {
       execSync(`git -C "${ALIENKIND_DIR}" diff --cached --quiet || git -C "${ALIENKIND_DIR}" commit -m "nightly: ${DATE} immune + infrastructure"`, {
         timeout: 30000,
-        env: { ...process.env, GIT_AUTHOR_NAME: 'Keel', GIT_AUTHOR_EMAIL: '[EMAIL]', GIT_COMMITTER_NAME: 'Keel', GIT_COMMITTER_EMAIL: '[EMAIL]' },
+        env: { ...process.env, GIT_AUTHOR_NAME: PARTNER_NAME, GIT_AUTHOR_EMAIL: '[EMAIL]', GIT_COMMITTER_NAME: PARTNER_NAME, GIT_COMMITTER_EMAIL: '[EMAIL]' },
       });
       commitResult = 'committed';
       log('Auto-commit: complete');
@@ -809,7 +814,7 @@ async function runImmune() {
     log(`WARN: Facts staleness check failed: ${e.message}`);
   }
 
-  // Action Overwatch Meta-Audit — Keel reviews overwatch flags from the day
+  // Action Overwatch Meta-Audit — the partner reviews overwatch flags from the day
   log('Infrastructure: Action Overwatch Meta-Audit');
   let overwatchResult = '';
   try {

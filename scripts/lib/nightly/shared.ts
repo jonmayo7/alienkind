@@ -21,6 +21,9 @@ const { buildAwarenessContext } = require('../awareness-context.ts');
 const { searchMemory } = require('../memory-search.ts');
 const { sendTelegram: _sendTelegramAsync, processQueue: _processQueue } = require('../telegram.ts');
 const { formatAlert } = require('../alert-format.ts');
+const { resolveConfig } = require('../portable.ts');
+const PARTNER_NAME = resolveConfig('name', 'Partner');
+const PARTNER_KEY = PARTNER_NAME.toLowerCase();
 
 // ─── Config ───
 
@@ -260,8 +263,8 @@ function getSupabaseContext() {
   if (coordRequests && coordRequests.length > 0) {
     const coordCounts: Record<string, number> = {};
     coordRequests.forEach((r: any) => { coordCounts[r.status] = (coordCounts[r.status] || 0) + 1; });
-    const proactive = coordRequests.filter((r: any) => r.sender === 'keel').length;
-    ctx.push(`Today's coordination requests (${coordRequests.length} total: ${Object.entries(coordCounts).map(([s, c]) => `${c} ${s}`).join(', ')}${proactive > 0 ? `, ${proactive} Keel-initiated` : ''}):`);
+    const proactive = coordRequests.filter((r: any) => r.sender === PARTNER_KEY).length;
+    ctx.push(`Today's coordination requests (${coordRequests.length} total: ${Object.entries(coordCounts).map(([s, c]) => `${c} ${s}`).join(', ')}${proactive > 0 ? `, ${proactive} ${PARTNER_NAME}-initiated` : ''}):`);
     coordRequests.forEach((r: any) => {
       const notes = r.coordination_notes ? ` | the human: "${(r.coordination_notes || '').slice(0, 80)}"` : '';
       ctx.push(`  - [${r.status}] ${r.sender} via ${r.source_channel}: "${(r.evaluation || '').slice(0, 120)}"${notes}`);
@@ -471,7 +474,7 @@ async function attemptGrowthCycle({ promptText, maxTurns, overallTimeout, noOutp
   // Identity-context gate removed — consciousness engine handles identity injection
   // for ALL invocations via injectIdentity: true (default). No manual gate needed.
 
-  const keelLog = (level: string, msg: string) => log(msg);
+  const jobLog = (level: string, msg: string) => log(msg);
 
   try {
     // Enforce overallTimeout as a hard deadline via Promise.race.
@@ -488,7 +491,7 @@ async function attemptGrowthCycle({ promptText, maxTurns, overallTimeout, noOutp
 
     const messagePromise = processMessage(promptText, {
       channelConfig: CHANNELS.nightly,
-      log: keelLog,
+      log: jobLog,
       sender: 'system',
       senderDisplayName: `Nightly (${jobName})`,
       model,
@@ -564,12 +567,12 @@ async function attemptGrowthCycle({ promptText, maxTurns, overallTimeout, noOutp
       return { success: false, stdout, outboxContent: null };
     }
   } catch (err: any) {
-    log(`ERROR: ${jobName} invokeKeel failed: ${err.message}`);
+    log(`ERROR: ${jobName} processMessage failed: ${err.message}`);
     log(`${jobName}: Attempting emergency runtime fallback...`);
 
     try {
       const emergencyResult = await invokeEmergency(promptText, {
-        log: keelLog,
+        log: jobLog,
       });
 
       if (emergencyResult && emergencyResult.length > 200) {
@@ -580,7 +583,7 @@ async function attemptGrowthCycle({ promptText, maxTurns, overallTimeout, noOutp
         logConversation({
           channel: 'terminal',
           role: 'assistant',
-          sender: 'keel',
+          sender: PARTNER_KEY,
           content: summary,
           metadata: { session_type: jobName, runtime: 'emergency' },
         });

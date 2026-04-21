@@ -5,6 +5,8 @@
  * builds structured Telegram report, persists to nightly_digests table.
  */
 const { LOG_DIR, DIGEST_FILE, DATE, TIME, fs, path, log, now } = require('./shared.ts');
+const { resolveConfig } = require('../portable.ts');
+const PARTNER_NAME = resolveConfig('name', 'Partner');
 
 async function runDigest() {
   log('=== Nightly Digest Starting ===');
@@ -83,7 +85,7 @@ async function runDigest() {
     weekly: 'Weekly Review',
   };
 
-  const lines: string[] = [`**Keel Nightly Digest — ${DATE}**`, ''];
+  const lines: string[] = [`**${PARTNER_NAME} Nightly Digest — ${DATE}**`, ''];
   const requiredPhases = ['immune', 'analysis', 'identity-sync'];
   const isFridayNight = new Date().getDay() === 6;
   if (isFridayNight) requiredPhases.push('weekly');

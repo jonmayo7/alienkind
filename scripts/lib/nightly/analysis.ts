@@ -14,6 +14,8 @@ const {
   NIGHTLY, MODELS, ALLOWED_TOOLS_ANALYSIS,
   FALLIBILISM_RETIREMENT_DAYS, FALLIBILISM,
 } = require('./shared.ts');
+const { resolveConfig } = require('../portable.ts');
+const PARTNER_NAME = resolveConfig('name', 'Partner');
 
 // ─── Pattern Decay (Fallibilism) ────────────────────────────────────────────
 // Code-enforced retirement of stale patterns. Every confirmation is provisional.
@@ -198,7 +200,7 @@ async function investigatePatterns(): Promise<string> {
     const clusters: PatternCluster[] = [];
 
     // Cluster 1: Affirmative framing before disagreement
-    // All "correction-*" patterns where Keel softened corrections with "Good point", "Actually", etc.
+    // All "correction-*" patterns where the partner softened corrections with "Good point", "Actually", etc.
     const affirmativePatterns = recurring.filter(m =>
       m.category === 'behavioral' && (
         m.pattern.includes('correction-good') ||
@@ -220,7 +222,7 @@ async function investigatePatterns(): Promise<string> {
 
       clusters.push({
         name: 'affirmative-framing-before-disagreement',
-        description: `Keel softens corrections/disagreements with affirmative openers ("Good point, but—", "Actually—", "I see what you mean, however—"). ${totalOcc} instances across ${affirmativePatterns.length} pattern variants.`,
+        description: `${PARTNER_NAME} softens corrections/disagreements with affirmative openers ("Good point, but—", "Actually—", "I see what you mean, however—"). ${totalOcc} instances across ${affirmativePatterns.length} pattern variants.`,
         patterns: affirmativePatterns.map(m => `${m.pattern} (${m.occurrence_count}x)`),
         totalOccurrences: totalOcc,
         maxSeverity: maxSev,
@@ -352,7 +354,7 @@ Execute these phases in order:
    - How many external messages were evaluated? How many engaged vs. not?
    - How many approved vs. rejected vs. edited? What's the pattern?
    - If the human edited responses: what changed? The delta between your draft and his version is voice gap learning.
-   - How many were Keel-initiated (proactive)? What prompted them?
+   - How many were ${PARTNER_NAME}-initiated (proactive)? What prompted them?
    - Any recurring rejection patterns?
    Write findings to today's daily memory under '## Coordination Analysis'
 
@@ -544,7 +546,7 @@ async function runAnalysis() {
     const { getConfidenceReport, formatReportForDaily } = require('../action-confidence.ts');
     const report = await getConfidenceReport({ days: 30 });
     if (report.overall.total > 0) {
-      actionConfidenceContext = '\n\n' + formatReportForDaily(report) + '\nUse this data to assess autonomous action calibration. High expiry rates suggest throughput bottleneck or noise. Low success rates suggest judgment gaps. Compare keel-approved vs human-required tiers.\n';
+      actionConfidenceContext = '\n\n' + formatReportForDaily(report) + '\nUse this data to assess autonomous action calibration. High expiry rates suggest throughput bottleneck or noise. Low success rates suggest judgment gaps. Compare partner-approved vs human-required tiers.\n';
       log(`Action confidence: ${report.overall.total} intents, ${Math.round(report.overall.successRate * 100)}% success, trend: ${report.trendDirection}`);
     }
   } catch (e: any) {
