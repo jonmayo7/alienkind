@@ -81,46 +81,115 @@ function expandQuery(text: string): string[] {
 }
 
 /**
- * Local fallback search when Supabase is unavailable.
+ * Local fallback search when Supabase is unavailable. Uses TF-IDF over
+ * markdown/text files under memory/ — no dependency on Supabase, local
+ * embedding server, or any external service. Forkers with neither get
+ * ranked retrieval out of the box. Less capable than hybrid vector+FTS
+ * but better than raw grep (which returns unranked match lists).
+ *
+ * Index is built on every call — no cache. For corpora under a few
+ * thousand files this stays fast; if a forker's memory grows past that,
+ * they'll want to wire Supabase anyway. Extension point: cache the
+ * per-document token index to disk keyed by file mtime.
  */
-function searchMemoryLocal(query: string, { limit = 10 }: { limit?: number } = {}): SearchResult[] {
+function searchMemoryLocal(query: string, { limit = 10, fileTypes }: { limit?: number; fileTypes?: string[] } = {}): SearchResult[] {
   try {
     if (!query || !query.trim()) return [];
     if (!fs.existsSync(MEMORY_DIR)) return [];
 
-    const keywords = expandQuery(query);
-    if (keywords.length === 0) return [];
+    const queryTerms = expandQuery(query);
+    if (queryTerms.length === 0) return [];
+    const uniqueQueryTerms = [...new Set(queryTerms)];
 
-    const pattern = keywords[0];
-    const grepResult = spawnSync('grep', ['-ril', pattern, MEMORY_DIR], {
-      timeout: 5000, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe']
-    });
-    const raw = (grepResult.stdout || '').trim();
+    // Walk memory/ for .md/.txt files
+    const files: string[] = [];
+    const walk = (dir: string) => {
+      try {
+        for (const entry of fs.readdirSync(dir)) {
+          const full = path.join(dir, entry);
+          let stat;
+          try { stat = fs.statSync(full); } catch { continue; }
+          if (stat.isDirectory()) walk(full);
+          else if (/\.(md|txt)$/.test(full)) files.push(full);
+        }
+      } catch { /* skip unreadable dirs */ }
+    };
+    walk(MEMORY_DIR);
+    if (files.length === 0) return [];
 
-    if (!raw) return [];
-    const files = raw.split('\n').filter(Boolean).slice(0, limit);
+    // Per-doc term counts + global doc-frequency for query terms
+    const docsCounts = new Map<string, Map<string, number>>();
+    const df = new Map<string, number>();
 
-    return files.map((filePath: string) => {
-      const relPath = path.relative(ALIENKIND_DIR, filePath);
+    for (const file of files) {
+      let content = '';
+      try { content = fs.readFileSync(file, 'utf8'); } catch { continue; }
+      const tokens = expandQuery(content);
+      const counts = new Map<string, number>();
+      for (const tok of tokens) counts.set(tok, (counts.get(tok) || 0) + 1);
+      docsCounts.set(file, counts);
+      for (const term of uniqueQueryTerms) {
+        if (counts.has(term)) df.set(term, (df.get(term) || 0) + 1);
+      }
+    }
+
+    // Score each doc: sum(tf * idf) across query terms
+    const N = files.length;
+    const scored: { file: string; score: number }[] = [];
+    for (const [file, counts] of docsCounts) {
+      let score = 0;
+      for (const term of uniqueQueryTerms) {
+        const tf = counts.get(term) || 0;
+        if (tf === 0) continue;
+        const docFreq = df.get(term) || 1;
+        const idf = Math.log((N + 1) / (docFreq + 1)) + 1;  // smoothed IDF
+        score += tf * idf;
+      }
+      if (score > 0) scored.push({ file, score });
+    }
+    scored.sort((a, b) => b.score - a.score);
+
+    const results = scored.slice(0, limit * 2).map(({ file }) => {
+      const relPath = path.relative(ALIENKIND_DIR, file);
       const dateMatch = relPath.match(/(\d{4}-\d{2}-\d{2})/);
       let fileType = 'memory';
       if (relPath.includes('daily/')) fileType = 'daily';
       else if (relPath.includes('synthesis/')) fileType = 'synthesis';
       else if (relPath.includes('BUILD_LOG')) fileType = 'build_log';
 
-      let content = '';
+      // Snippet around first query-term match
+      let snippet = '';
       try {
-        content = fs.readFileSync(filePath, 'utf8').slice(0, 500);
+        const content = fs.readFileSync(file, 'utf8');
+        const lower = content.toLowerCase();
+        let bestPos = -1;
+        for (const term of uniqueQueryTerms) {
+          const pos = lower.indexOf(term);
+          if (pos >= 0 && (bestPos < 0 || pos < bestPos)) bestPos = pos;
+        }
+        if (bestPos < 0) {
+          snippet = content.slice(0, 500);
+        } else {
+          const start = Math.max(0, bestPos - 150);
+          const end = Math.min(content.length, bestPos + 350);
+          snippet = (start > 0 ? '...' : '') + content.slice(start, end) + (end < content.length ? '...' : '');
+        }
       } catch { /* best effort */ }
 
       return {
         source_file: relPath,
         heading: null,
-        content,
+        content: snippet,
         file_type: fileType,
         file_date: dateMatch ? dateMatch[1] : null,
       };
     });
+
+    // Post-filter by file type if requested, then trim to limit
+    const filtered = (fileTypes && fileTypes.length > 0)
+      ? results.filter(r => fileTypes.includes(r.file_type))
+      : results;
+    return filtered.slice(0, limit);
   } catch (err) {
     return [];
   }
