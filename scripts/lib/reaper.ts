@@ -44,7 +44,7 @@ interface ReapTargetResult {
 interface ReapAllOptions {
   dryRun?: boolean;
   log?: (...args: any[]) => void;
-  keelDir?: string;
+  repoDir?: string;
 }
 
 interface ReapAllSummary {
@@ -158,16 +158,16 @@ function reapAll(options: ReapAllOptions = {}): ReapAllSummary {
   const {
     dryRun = false,
     log = console.log,
-    keelDir = path.resolve(__dirname, '../..'),
+    repoDir = path.resolve(__dirname, '../..'),
   } = options;
 
   const summary: ReapAllSummary = { targets: [], totalDeleted: 0, totalErrors: 0 };
 
   for (const target of _REAPER.targets as ReapTarget[]) {
-    // Resolve dir relative to keelDir if not absolute
+    // Resolve dir relative to repoDir if not absolute
     const resolvedDir = path.isAbsolute(target.dir)
       ? target.dir
-      : path.join(keelDir, target.dir);
+      : path.join(repoDir, target.dir);
 
     const result = reapOldFiles(resolvedDir, target.maxAgeDays, {
       dryRun,

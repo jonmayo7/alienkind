@@ -527,7 +527,7 @@ async function runImmune() {
   log('Infrastructure: Cleanup');
   let cleanupDeleted = 0;
   try {
-    const reapSummary = reapAll({ log, keelDir: ALIENKIND_DIR });
+    const reapSummary = reapAll({ log, repoDir: ALIENKIND_DIR });
     cleanupDeleted = reapSummary.totalDeleted;
   } catch (e: any) {
     log(`WARNING: Reaper failed: ${e.message}`);
