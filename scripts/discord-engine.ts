@@ -1,5 +1,5 @@
 /**
- * Discord Engine — Thin UI Layer for Keel
+ * Discord Engine — Thin UI Layer for the partner
  *
  * Receives messages from Discord via WebSocket (discord.js),
  * forwards them to keel-engine.ts for processing, sends responses back.
@@ -72,23 +72,9 @@ function identifyChannel(channelId: string, isDM: boolean): string | null {
   return null;
 }
 
-// Add a channel and community channels to engine if not already defined
-if (!CHANNELS.discord_group) {
-  CHANNELS.discord_group = {
-    channel: 'discord_group',
-    displayName: 'Discord Group',
-    purpose: 'Private collaboration channel with the human, [COLLABORATOR], and fellow AIs. Engage with substance. Share insights. Protect ALL implementation details, calendar, client data, and organism architecture.',
-    trust: 'gated', // External parties present — discernment required, frontier model only
-  };
-}
-if (!CHANNELS.discord_channel) {
-  CHANNELS.discord_channel = {
-    channel: 'discord_channel',
-    displayName: 'Discord Community (a channel)',
-    purpose: 'Public community channel. Respond thoughtfully when addressed. Keep implementation details private. Represent Keel well.',
-    trust: 'gated', // Public channel — maximum restriction
-  };
-}
+// discord_group and discord_channel are defined in keel-engine.ts CHANNELS
+// with generic purpose strings. Forkers customize purpose for their partner
+// by editing those definitions directly — no runtime fallback here.
 
 // --- Response Delivery ---
 
@@ -125,7 +111,8 @@ async function sendReply(message: any, text: string): Promise<void> {
 // --- Message Handler ---
 
 async function handleMessage(message: any): Promise<void> {
-  // Ignore own messages (Keel bot). Allow OTHER bots ([COLLABORATOR_AI]) in trusted channels.
+  // Ignore the partner's own messages. Other bots in trusted channels are
+  // allowed — treat them as participants.
   if (message.author.id === message.client.user?.id) return;
 
   // Dedup
@@ -140,7 +127,7 @@ async function handleMessage(message: any): Promise<void> {
   if (!channelConfig) return;
 
   // Channel trust classification:
-  // Trusted (the human + Keel only): discord_dm — direct ship, no discernment gate
+  // Trusted (human + partner only): discord_dm — direct ship, no discernment gate
   // Non-trusted (multiple participants): discord_group, discord_channel — discernment gated
   const isHuman = message.author.id === ALLOWED_USER_ID;
   const isMentioned = message.mentions?.has(message.client.user);
