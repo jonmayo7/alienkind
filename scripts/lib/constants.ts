@@ -289,6 +289,23 @@ const INTENTS = {
   rejectionKeywords: ['reject', 'rejected', 'no', 'deny', 'denied', 'cancel', 'stop', 'hold', 'hold off', 'not yet', 'wait'],
 } as const;
 
+// --- TTS ---
+// Text-to-speech synthesis config. The partner's voice lives in a
+// Python script forkers supply at TTS.synthScript — the module handles
+// text prep, chunking, and ffmpeg OGG/Opus conversion, but the actual
+// voice model is partner-specific (weights, language, speaker clone).
+// Forkers without TTS leave these unset; tts.ts registers unavailable
+// and callers get null back from synthesizeVoice.
+
+const TTS = {
+  defaultVoice: process.env.ALIENKIND_TTS_VOICE || 'default',
+  defaultSpeed: Number(process.env.ALIENKIND_TTS_SPEED) || 1.0,
+  maxCharsForVoice: Number(process.env.ALIENKIND_TTS_MAX_CHARS) || 1000,
+  synthesisTimeout: Number(process.env.ALIENKIND_TTS_TIMEOUT_MS) || 120000,
+  pythonBin: process.env.ALIENKIND_PYTHON_BIN || 'scripts/venv/bin/python',
+  synthScript: process.env.ALIENKIND_TTS_SYNTH || 'scripts/tts-synth.py',
+} as const;
+
 // ============================================================================
 // Exports
 // ============================================================================
@@ -318,4 +335,5 @@ module.exports = {
   SESSION,
   INTENTS,
   LOCAL_MODELS,
+  TTS,
 };
