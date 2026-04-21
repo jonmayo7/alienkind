@@ -288,7 +288,7 @@ async function scanLogs() {
 async function scanKillSwitch() {
   log('INFO', 'Scan 5: Kill switch status...');
   try {
-    const { getKillLevel, getKillLog } = require('../lib/kill-switch.ts');
+    const { getKillLevel, getKillLog } = require('../lib/defense-elements.ts');
     const level = getKillLevel();
     const killLog = getKillLog();
 

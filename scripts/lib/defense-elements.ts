@@ -28,6 +28,10 @@ const { resolveRepoRoot } = portable;
 const ROOT = resolveRepoRoot();
 const DEFENSE_DIR = path.join(ROOT, 'logs', 'defense');
 const KILL_SWITCH_FILE = path.join(DEFENSE_DIR, 'kill-level.txt');
+const KILL_LOG_FILE = path.join(DEFENSE_DIR, 'kill-log.txt');
+
+/** Human-readable names for each kill level, indexed 0..3. */
+const LEVEL_NAMES = ['normal', 'comms_pause', 'external_freeze', 'full_halt'];
 const INTEGRITY_FILE = path.join(DEFENSE_DIR, 'integrity-hashes.json');
 
 try {
@@ -67,18 +71,54 @@ function getKillLevel(): number {
 /**
  * Set the kill switch level. Writes atomically via rename. Never throws.
  * Typically called by a CLI command (e.g., "LOCKDOWN" over Telegram DM) or
- * directly by an operator.
+ * directly by an operator. Appends a change entry to the kill log for
+ * forensic history.
+ *
+ * Signature supports both historical 2-arg style (level, setBy) and the
+ * 3-arg (level, reason, source) form callers now use. `source` maps to
+ * the prior `setBy` field when given.
  */
-function setKillLevel(level: number, setBy?: string): boolean {
+function setKillLevel(level: number, reason?: string, source?: string): boolean {
   if (!Number.isFinite(level) || level < 0 || level > 3) return false;
+  const previous = getKillLevel();
+  const setBy = source || reason;
   try {
     const tmp = KILL_SWITCH_FILE + '.tmp';
     const body = setBy ? `${level}\n# set by: ${setBy} at ${new Date().toISOString()}` : `${level}`;
     fs.writeFileSync(tmp, body, 'utf8');
     fs.renameSync(tmp, KILL_SWITCH_FILE);
-    return true;
   } catch {
     return false;
+  }
+  // Append log entry — best-effort, never blocks the level change
+  try {
+    const reasonText = reason && source ? reason : (reason || setBy || '');
+    const sourceText = source || setBy || 'unknown';
+    const entry = `${new Date().toISOString()} | ${previous} → ${level} | ${sourceText} | ${reasonText}\n`;
+    fs.appendFileSync(KILL_LOG_FILE, entry, 'utf8');
+  } catch { /* best-effort */ }
+  return true;
+}
+
+/**
+ * Clear the kill switch (return to level 0). Convenience wrapper that logs
+ * the clear with an explicit reason + source so the history shows why.
+ */
+function clearKillSwitch(reason: string, source: string): boolean {
+  return setKillLevel(0, reason, source);
+}
+
+/**
+ * Return the kill-level change history as an array of log lines, newest
+ * last. Each line: "ISO timestamp | previous → new | source | reason".
+ * Returns [] when the log file is missing or unreadable.
+ */
+function getKillLog(): string[] {
+  try {
+    if (!fs.existsSync(KILL_LOG_FILE)) return [];
+    return fs.readFileSync(KILL_LOG_FILE, 'utf8').trim().split('\n').filter(Boolean);
+  } catch {
+    return [];
   }
 }
 
@@ -257,7 +297,10 @@ module.exports = {
   // Kill switch
   getKillLevel,
   setKillLevel,
+  clearKillSwitch,
+  getKillLog,
   parseKillCommand,
+  LEVEL_NAMES,
   // Provenance
   createProvenance,
   getDetectionOpts,
