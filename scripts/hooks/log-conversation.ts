@@ -15,7 +15,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Infrastructure deps — degrade gracefully on a fresh fork
-let getActiveTerminals: any, updateFocus: any, logLearning: any, detectCorrection: any, buildPatternName: any, supabaseGet: any;
+let getActiveTerminals: any, updateFocus: any, logLearning: any, detectCorrection: any, buildPatternName: any, supabaseGet: any, resolveConfig: any;
 try {
   getActiveTerminals = require(path.resolve(__dirname, '..', 'lib', 'terminal-sessions.ts')).getActiveTerminals;
   updateFocus = require(path.resolve(__dirname, '..', 'lib', 'mycelium.ts')).updateFocus;
@@ -24,6 +24,7 @@ try {
   detectCorrection = ll.detectCorrection;
   buildPatternName = ll.buildPatternName;
   supabaseGet = require(path.resolve(__dirname, '..', 'lib', 'supabase.ts')).supabaseGet;
+  resolveConfig = require(path.resolve(__dirname, '..', 'lib', 'portable.ts')).resolveConfig;
 } catch {
   getActiveTerminals = () => [];
   updateFocus = () => {};
@@ -31,7 +32,15 @@ try {
   detectCorrection = () => null;
   buildPatternName = () => '';
   supabaseGet = async () => [];
+  resolveConfig = (_k: string, def: any) => def;
 }
+
+// Partner-scoped steward table name — matches createSteward's prefix
+// convention so the engine (packages/steward-core) and this hook's
+// dual-log write to the same table regardless of partner identity.
+const PARTNER_NAME: string = resolveConfig('name', 'Partner');
+const PARTNER_PREFIX: string = PARTNER_NAME.toLowerCase().replace(/[^a-z0-9]/g, '_') || 'partner';
+const STEWARD_CONV_TABLE = `${PARTNER_PREFIX}_steward_conversations`;
 
 // --- Load Environment (same pattern as discord-listener.ts) ---
 const ALIENKIND_DIR = path.resolve(__dirname, '..', '..');
@@ -315,7 +324,7 @@ async function main() {
       if (!isAutomated) {
         try {
           const msgIdx = getNextMessageIndex(terminalId);
-          supabasePost(envVars, 'keel_steward_conversations', {
+          supabasePost(envVars, STEWARD_CONV_TABLE, {
             session_id: terminalId,
             message_index: msgIdx,
             role: 'user',
@@ -488,7 +497,7 @@ async function main() {
       // --- Keel Intelligence Engine: dual-log + gap detection ---
       try {
         const msgIdx = getNextMessageIndex(terminalId);
-        supabasePost(envVars, 'keel_steward_conversations', {
+        supabasePost(envVars, STEWARD_CONV_TABLE, {
           session_id: terminalId,
           message_index: msgIdx,
           role: 'assistant',

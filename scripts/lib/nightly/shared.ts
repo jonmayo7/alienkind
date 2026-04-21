@@ -24,6 +24,7 @@ const { formatAlert } = require('../alert-format.ts');
 const { resolveConfig } = require('../portable.ts');
 const PARTNER_NAME = resolveConfig('name', 'Partner');
 const PARTNER_KEY = PARTNER_NAME.toLowerCase();
+const PARTNER_PREFIX = PARTNER_NAME.toLowerCase().replace(/[^a-z0-9]/g, '_') || 'partner';
 
 // ─── Config ───
 
@@ -74,7 +75,7 @@ const STREAMING_TABLE_CONFIG: Record<string, string> = {
   'deep_process_outputs': '',
   'signal_attribution': '',
   'discernment_outcomes': '',
-  'keel_steward_conversations': '',
+  [`${PARTNER_PREFIX}_steward_conversations`]: '',
   'learning_ledger': '',
   'circulation': '',
 };
