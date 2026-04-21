@@ -52,6 +52,27 @@ const STOP_WORDS = new Set([
   'there', 'now', 'then', 'today', 'yesterday', 'recently', 'already',
 ]);
 
+// Fire-and-forget surface-event recording. Never blocks, never throws.
+// If memory-recall or its downstream Supabase writer is unavailable, the
+// events silently no-op via portable.ts tryStorage.
+function _recordSurfaced(results: any[], query: string, kind: string): void {
+  if (!results || results.length === 0) return;
+  try {
+    const { recordRecallEvent } = require('./memory-recall.ts');
+    for (const r of results) {
+      const ref = r?.path || r?.file_path || r?.ref || 'unknown';
+      recordRecallEvent({
+        event_type: 'surfaced',
+        memory_ref: String(ref),
+        memory_kind: kind,
+        metadata: { query: String(query || '').slice(0, 200) },
+      });
+    }
+  } catch {
+    // memory-recall module not present or Supabase unavailable — skip
+  }
+}
+
 function expandQuery(text: string): string[] {
   const words = text.trim().split(/\s+/)
     .map(w => w.replace(/[^a-zA-Z0-9]/g, '').toLowerCase())
@@ -208,9 +229,13 @@ async function searchMemory(query: string, { fileTypes, limit = 10, since, sourc
   });
 
   try {
-    return await withTimeout(rawPromise, 10000);
+    const results = await withTimeout(rawPromise, 10000);
+    _recordSurfaced(results, query, 'supabase_search');
+    return results;
   } catch (err) {
-    return searchMemoryLocal(query, { limit });
+    const results = searchMemoryLocal(query, { limit });
+    _recordSurfaced(results, query, 'local_search_fallback');
+    return results;
   }
 }
 

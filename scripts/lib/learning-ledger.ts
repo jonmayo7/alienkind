@@ -460,7 +460,7 @@ async function recordCorrection({
   sourceChannel,
   keelResponse,
 }: RecordCorrectionParams): Promise<number | null> {
-  return logLearning({
+  const id = await logLearning({
     patternName: pattern,
     correctionText,
     category: 'behavioral',
@@ -469,6 +469,19 @@ async function recordCorrection({
     sourceChannel: sourceChannel || 'unknown',
     keelResponse: keelResponse || undefined,
   });
+  // Fire a recall event so the correction counts toward the memory-quality
+  // signal. Fire-and-forget — never blocks the ledger write.
+  try {
+    const { recordRecallEvent } = require('./memory-recall.ts');
+    recordRecallEvent({
+      event_type: 'corrected',
+      memory_ref: pattern,
+      memory_kind: 'learning_ledger_pattern',
+      signal_delta: -(severity || 5) / 10,
+      metadata: { source_channel: sourceChannel || 'unknown' },
+    });
+  } catch { /* memory-recall unavailable — non-fatal */ }
+  return id;
 }
 
 /**
