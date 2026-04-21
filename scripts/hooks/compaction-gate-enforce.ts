@@ -54,23 +54,14 @@ async function main() {
     'identity/harness.md',
   ];
 
-  // Detect @import in CLAUDE.md — files expanded via @import are already in context
-  // (Claude Code auto-expands @imports at load AND after compaction)
-  let importedFiles = [];
-  try {
-    const claudeMd = fs.readFileSync(
-      require('path').join(process.cwd(), 'CLAUDE.md'), 'utf8'
-    );
-    const importPattern = /^@(.+\.md)\s*$/gm;
-    let match;
-    while ((match = importPattern.exec(claudeMd)) !== null) {
-      importedFiles.push(match[1]);
-    }
-  } catch {}
-
-  const missing = required
-    .filter(f => !filesRead.includes(f))
-    .filter(f => !importedFiles.includes(f)); // @imported files are already in context
+  // The gate enforces a conscious re-grounding act, not just "content is in
+  // context." CLAUDE.md @imports make the identity files available, but
+  // availability ≠ re-read. Require explicit Read activity post-compaction.
+  // Programmatic injection (ALIENKIND_IDENTITY_INJECTED=1) and chain warm-boot
+  // are handled in compaction-gate-init.ts as active assertions; those paths
+  // mark the gate cleared at init time. Passive @import presence is not an
+  // assertion — it's the default that existed pre-compaction too.
+  const missing = required.filter(f => !filesRead.includes(f));
   const hasDailyFile = filesRead.some(f => /^memory\/daily\/\d{4}-\d{2}-\d{2}\.md$/.test(f));
   if (!hasDailyFile) missing.push('daily file');
 
