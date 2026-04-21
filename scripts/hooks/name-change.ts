@@ -97,7 +97,8 @@ async function main(): Promise<void> {
   // No H1, unchanged, or placeholder — nothing to propagate.
   if (!newName) process.exit(0);
   if (newName === oldName) process.exit(0);
-  if (newName === 'Character' || newName === '{{PARTNER_NAME}}') process.exit(0);
+  const UNSUBSTITUTED_PLACEHOLDER = /^\{\{[A-Z_]+\}\}$/;
+  if (newName === 'Character' || UNSUBSTITUTED_PLACEHOLDER.test(newName)) process.exit(0);
   if (newName.includes('[') || /^How to/i.test(newName)) process.exit(0);
 
   // Name actually changed. Run the three required steps.
