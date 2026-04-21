@@ -141,7 +141,7 @@ function requiresHumanApproval(params: {
   }
 
   // Files outside this repo — absolute paths not rooted at ALIENKIND_DIR,
-  // or paths into sibling repos under SIBLING_ROOT (mosi, striveos-io, etc.)
+  // or paths into sibling repos under SIBLING_ROOT.
   for (const f of filesAffected) {
     if (f.startsWith('/') && !f.startsWith(ALIENKIND_DIR + '/') && f !== ALIENKIND_DIR) {
       return true;

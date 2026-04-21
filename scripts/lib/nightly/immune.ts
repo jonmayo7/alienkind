@@ -3,7 +3,7 @@
  *
  * Extracted from scripts/nightly-cycle.ts.
  * Runs preflight checks, Claude immune scan, backup, memory index,
- * auto-commit, cleanup, defense elements, subscription reconciliation.
+ * auto-commit, cleanup, defense elements.
  */
 const {
   ALIENKIND_DIR, LOG_DIR, DATE, TIME, SKIP_BACKUP,
@@ -20,7 +20,9 @@ const {
 const { reapAll } = require('../reaper.ts');
 const { indexAll } = require('../memory-indexer.ts');
 const { expireStaleRequests } = require('../comms-coord.ts');
-const { reconcileSubscriptions } = require('../subscription-reconciler.ts');
+// Subscription reconciliation is partner-specific (financial tables, vendor
+// aliases, business P&L schema). Not shipped in the generic reference.
+// Forkers who want it add their own reconciler and wire it here.
 
 // ─── AIRE Preflight Check ────────────────────────────────────────────────────
 // Runs at the START of the immune job. Checks infrastructure health before
@@ -787,24 +789,10 @@ async function runImmune() {
     log(`WARNING: ${integrityResult}`);
   }
 
-  // Subscription Reconciliation
-  log('Infrastructure: Subscription Reconciliation');
-  let subReconcileResult = '';
-  try {
-    const reconLog = (msg: string) => log(`[reconciler] ${msg}`);
-    const recon = await reconcileSubscriptions({ log: reconLog });
-    if (recon.discrepancies.length > 0) {
-      const warns = recon.discrepancies.filter((d: any) => d.severity === 'warn');
-      const lines = recon.discrepancies.map((d: any) => `  ${d.severity === 'warn' ? '⚠' : 'ℹ'} ${d.vendor}: ${d.detail}`);
-      subReconcileResult = `Subscriptions: ${recon.discrepancies.length} discrepancies (${warns.length} warnings)\n${lines.join('\n')}`;
-    } else {
-      subReconcileResult = `Subscriptions: ${recon.matched}/${recon.checked_subscriptions} matched, no discrepancies`;
-    }
-    log(subReconcileResult);
-  } catch (e: any) {
-    subReconcileResult = `Subscriptions: reconciliation failed (${e.message})`;
-    log(`WARNING: ${subReconcileResult}`);
-  }
+  // Subscription reconciliation intentionally removed from the reference
+  // nightly-immune job — partner-specific financial tooling belongs in a
+  // forker's own module, not in the generic architecture.
+  const subReconcileResult = '';
 
   // Fallibilism: check for stale facts and mark them
   let factsStaleCount = 0;
