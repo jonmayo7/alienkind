@@ -88,7 +88,8 @@
       {
         "hooks": [
           {"type": "command", "command": "node scripts/hooks/compaction-gate.ts"},
-          {"type": "command", "command": "node scripts/hooks/remember-guard.ts"}
+          {"type": "command", "command": "node scripts/hooks/remember-guard.ts"},
+          {"type": "command", "command": "node scripts/hooks/log-conversation.ts"}
         ]
       }
     ],
@@ -110,7 +111,8 @@
           {"type": "command", "command": "node scripts/hooks/memory-checkpoint.ts"},
           {"type": "command", "command": "node scripts/hooks/post-compaction-audit.ts"},
           {"type": "command", "command": "node scripts/hooks/deregister-terminal.ts"},
-          {"type": "command", "command": "node scripts/hooks/session-snapshot.ts"}
+          {"type": "command", "command": "node scripts/hooks/session-snapshot.ts"},
+          {"type": "command", "command": "node scripts/hooks/log-conversation.ts"}
         ]
       }
     ]
