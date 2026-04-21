@@ -18,7 +18,8 @@
         "matcher": "Bash",
         "hooks": [
           {"type": "command", "command": "bash scripts/hooks/guard-bash.sh"},
-          {"type": "command", "command": "bash scripts/hooks/data-guard.sh"}
+          {"type": "command", "command": "bash scripts/hooks/data-guard.sh"},
+          {"type": "command", "command": "node scripts/hooks/compaction-gate-enforce.ts"}
         ]
       },
       {
@@ -28,7 +29,8 @@
           {"type": "command", "command": "node scripts/hooks/time-guard.ts"},
           {"type": "command", "command": "node scripts/hooks/verification-guard.ts"},
           {"type": "command", "command": "node scripts/hooks/conflict-guard.ts"},
-          {"type": "command", "command": "node scripts/hooks/no-youre-right.ts"}
+          {"type": "command", "command": "node scripts/hooks/no-youre-right.ts"},
+          {"type": "command", "command": "node scripts/hooks/compaction-gate-enforce.ts"}
         ]
       },
       {
@@ -38,13 +40,21 @@
           {"type": "command", "command": "node scripts/hooks/time-guard.ts"},
           {"type": "command", "command": "node scripts/hooks/verification-guard.ts"},
           {"type": "command", "command": "node scripts/hooks/content-source-guard.ts"},
-          {"type": "command", "command": "node scripts/hooks/no-youre-right.ts"}
+          {"type": "command", "command": "node scripts/hooks/no-youre-right.ts"},
+          {"type": "command", "command": "node scripts/hooks/compaction-gate-enforce.ts"}
         ]
       },
       {
         "matcher": "Agent",
         "hooks": [
-          {"type": "command", "command": "node scripts/hooks/agent-grounding.ts"}
+          {"type": "command", "command": "node scripts/hooks/agent-grounding.ts"},
+          {"type": "command", "command": "node scripts/hooks/compaction-gate-enforce.ts"}
+        ]
+      },
+      {
+        "matcher": "WebSearch|WebFetch|NotebookEdit",
+        "hooks": [
+          {"type": "command", "command": "node scripts/hooks/compaction-gate-enforce.ts"}
         ]
       },
       {
