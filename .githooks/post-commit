@@ -1,0 +1,53 @@
+#!/bin/sh
+#
+# Stewardship commit notifier.
+#
+# When an autonomous context commits without a human watching the
+# terminal, fire a notification so the human can review asynchronously.
+# In interactive sessions (human already seeing the commit in the
+# terminal), this hook no-ops.
+#
+# Gate:
+#   ALIENKIND_STEWARDSHIP=1  — required marker. Daemon jobs, scheduled
+#     runners, and detached subagents set this when they touch the repo.
+#     Interactive sessions leave it unset → zero noise.
+#
+# Credentials (reference impl uses Telegram; forkers swap in their
+# partner's comm channel):
+#   TELEGRAM_BOT_TOKEN
+#   TELEGRAM_CHAT_ID
+# Must be present in the process env when the gate fires. This hook
+# never reads machine-specific paths — the invoker is responsible for
+# loading its own env.
+#
+# Fire-and-forget. Never blocks the commit. Network failures are silent.
+#
+# Enable (once per clone):
+#   git config core.hooksPath .githooks
+
+[ "${ALIENKIND_STEWARDSHIP:-}" != "1" ] && exit 0
+[ -z "${TELEGRAM_BOT_TOKEN:-}" ] && exit 0
+[ -z "${TELEGRAM_CHAT_ID:-}" ] && exit 0
+
+HASH=$(git log -1 --format="%h")
+SUBJECT=$(git log -1 --format="%s")
+BODY=$(git log -1 --format="%b" | head -20)
+
+MSG="alienkind commit ${HASH}
+
+${SUBJECT}"
+if [ -n "$BODY" ]; then
+  MSG="${MSG}
+
+${BODY}"
+fi
+
+(
+  curl -s -o /dev/null -m 5 \
+    -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+    --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
+    --data-urlencode "text=${MSG}" \
+    2>/dev/null || true
+) &
+
+exit 0
