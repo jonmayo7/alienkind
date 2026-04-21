@@ -111,4 +111,90 @@ if [ "$SUBJECT_LEN" -gt "$MAX_SUBJECT" ]; then
   exit 1
 fi
 
-exit 0
+# =============================================================================
+# Layer 4 — Preview-and-approve
+# =============================================================================
+#
+# Closes the miss identified 2026-04-21 terminal-26008 audit: the partnership
+# protocol "Exact commit message for your review → ship after your go" lived
+# in conversation texture and evaporated across terminals. This is the tier-1
+# enforcement. Every commit to alienkind previews the FINAL message (after
+# layers 1-3 have stripped/injected/checked) and requires explicit approval.
+#
+# Interactive path (TTY present):
+#   Prompt on /dev/tty, read y/N from /dev/tty, block until response.
+#
+# Autonomous path (no TTY, explicit pre-approval):
+#   ALIENKIND_COMMIT_APPROVED must equal the first 12 chars of a
+#   SHA-256 hash of the final message content. The hook prints the
+#   required hash on block so an operator can set it and retry.
+#
+# Emergency skip (logged, discouraged):
+#   ALIENKIND_SKIP_PREVIEW=1
+
+if [ "${ALIENKIND_SKIP_PREVIEW:-}" = "1" ]; then
+  SKIP_LOG="$(git rev-parse --show-toplevel)/.preview-skip.log"
+  printf "[%s] commit SKIP_PREVIEW invoked\n" "$(date -u +%FT%TZ)" >> "$SKIP_LOG" 2>/dev/null || true
+  exit 0
+fi
+
+# Compute hash of final message (post-layer-1-2-3 transformations)
+MSG_HASH=$(shasum -a 256 "$MSG_FILE" 2>/dev/null | awk '{print $1}' | cut -c1-12)
+
+# Autonomous pre-approval path
+if [ -n "${ALIENKIND_COMMIT_APPROVED:-}" ]; then
+  if [ "${ALIENKIND_COMMIT_APPROVED}" = "$MSG_HASH" ]; then
+    exit 0
+  fi
+  # Pre-approval set but hash mismatch — message was modified after approval
+  echo "" >&2
+  echo "COMMIT BLOCKED — ALIENKIND_COMMIT_APPROVED does not match this message." >&2
+  echo "  expected: $MSG_HASH" >&2
+  echo "  provided: $ALIENKIND_COMMIT_APPROVED" >&2
+  echo "Message was modified after approval. Re-approve with the new hash." >&2
+  exit 1
+fi
+
+# Check for usable TTY — actually open it, don't trust filesystem perms.
+# On macOS [-r /dev/tty] returns true even when opening would fail with
+# ENXIO (no controlling terminal).
+if ! ( : < /dev/tty ) 2>/dev/null || ! ( : > /dev/tty ) 2>/dev/null; then
+  echo "" >&2
+  echo "COMMIT BLOCKED — preview-and-approve requires an interactive terminal." >&2
+  echo "" >&2
+  echo "Two ways forward:" >&2
+  echo "  1. Run this commit from an interactive terminal (TTY)." >&2
+  echo "  2. Pre-approve by setting (autonomous contexts):" >&2
+  echo "       ALIENKIND_COMMIT_APPROVED=$MSG_HASH" >&2
+  echo "" >&2
+  echo "Emergency skip (logged): ALIENKIND_SKIP_PREVIEW=1 git commit ..." >&2
+  exit 1
+fi
+
+# Interactive preview on /dev/tty (bypasses any stdio redirection)
+{
+  printf '\n'
+  printf '╔════════════════════════════════════════════════════════════════╗\n'
+  printf '║  COMMIT MESSAGE PREVIEW — approval required                    ║\n'
+  printf '╚════════════════════════════════════════════════════════════════╝\n'
+  printf '\n'
+  cat "$MSG_FILE"
+  printf '\n'
+  printf '────────────────────────────────────────────────────────────────\n'
+  printf 'hash: %s\n' "$MSG_HASH"
+  printf 'Approve this commit? [y/N]: '
+} > /dev/tty 2>&1
+
+REPLY=""
+read REPLY < /dev/tty || REPLY=""
+
+case "$REPLY" in
+  y|Y|yes|YES)
+    printf '  \342\234\223 Approved. Committing.\n\n' > /dev/tty
+    exit 0
+    ;;
+  *)
+    printf '  \342\234\227 Rejected. Commit aborted.\n\n' > /dev/tty
+    exit 1
+    ;;
+esac

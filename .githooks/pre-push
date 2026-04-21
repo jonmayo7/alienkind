@@ -1,0 +1,122 @@
+#!/bin/sh
+#
+# Pre-push preview-and-approve — defense in depth at the public boundary.
+#
+# Commit-msg hook (layer 4) previews each commit at commit time. Pre-push
+# re-shows every commit about to become public and requires one more
+# approval. Catches:
+#   - git commit --no-verify (bypasses commit-msg)
+#   - git rebase / cherry-pick / amend producing commits that were never
+#     approved by the current session
+#   - Commits landed by other clones on the same machine before reaching
+#     the remote
+#
+# Input (from stdin): one line per ref being pushed:
+#   <local ref> <local sha> <remote ref> <remote sha>
+# See: https://git-scm.com/docs/githooks#_pre_push
+#
+# Paths:
+#   TTY present     → prompt on /dev/tty, read y/N from /dev/tty.
+#   No TTY          → block. Explicit env required to pass without prompt.
+#   Pre-approved    → ALIENKIND_PUSH_APPROVED=<sha-of-local-shas> matches.
+#   Escape (logged) → ALIENKIND_SKIP_PREVIEW=1.
+#
+# Enable (once per clone):
+#   git config core.hooksPath .githooks
+
+set -e
+
+# Collect all non-delete ref info
+RANGES=""
+LOCAL_SHAS=""
+while read local_ref local_sha remote_ref remote_sha; do
+  [ -z "$local_sha" ] && continue
+  # Deletion (all-zeros local sha) — nothing to preview
+  case "$local_sha" in
+    0000000000000000000000000000000000000000) continue ;;
+  esac
+
+  case "$remote_sha" in
+    0000000000000000000000000000000000000000)
+      # New branch — show last 20 commits only, cap blast radius
+      RANGES="$RANGES $(git rev-list --max-count=20 "$local_sha" | tr '\n' ' ' | sed 's/ *$//')"
+      ;;
+    *)
+      RANGES="$RANGES $(git rev-list "$remote_sha..$local_sha" | tr '\n' ' ' | sed 's/ *$//')"
+      ;;
+  esac
+  LOCAL_SHAS="$LOCAL_SHAS $local_sha"
+done
+
+# No refs to push OR nothing meaningful to preview (force-push with same sha, etc.)
+RANGES_TRIMMED=$(printf '%s' "$RANGES" | tr -s ' ' | sed 's/^ //;s/ $//')
+if [ -z "$RANGES_TRIMMED" ]; then
+  exit 0
+fi
+
+# Compute approval hash — stable over the exact set of commits being pushed
+PUSH_HASH=$(printf '%s' "$LOCAL_SHAS" | shasum -a 256 2>/dev/null | awk '{print $1}' | cut -c1-12)
+
+# Escape hatch — logged
+if [ "${ALIENKIND_SKIP_PREVIEW:-}" = "1" ]; then
+  SKIP_LOG="$(git rev-parse --show-toplevel)/.preview-skip.log"
+  printf "[%s] push SKIP_PREVIEW invoked (hash=%s)\n" "$(date -u +%FT%TZ)" "$PUSH_HASH" >> "$SKIP_LOG" 2>/dev/null || true
+  exit 0
+fi
+
+# Autonomous pre-approval
+if [ -n "${ALIENKIND_PUSH_APPROVED:-}" ]; then
+  if [ "${ALIENKIND_PUSH_APPROVED}" = "$PUSH_HASH" ]; then
+    exit 0
+  fi
+  echo "" >&2
+  echo "PUSH BLOCKED — ALIENKIND_PUSH_APPROVED does not match this set of commits." >&2
+  echo "  expected: $PUSH_HASH" >&2
+  echo "  provided: $ALIENKIND_PUSH_APPROVED" >&2
+  echo "Commit set changed after approval. Re-approve with the new hash." >&2
+  exit 1
+fi
+
+# TTY check — actually open it (filesystem perms lie on macOS without a CTTY).
+if ! ( : < /dev/tty ) 2>/dev/null || ! ( : > /dev/tty ) 2>/dev/null; then
+  echo "" >&2
+  echo "PUSH BLOCKED — pre-push preview requires an interactive terminal." >&2
+  echo "" >&2
+  echo "Two ways forward:" >&2
+  echo "  1. Run this push from an interactive terminal." >&2
+  echo "  2. Pre-approve: ALIENKIND_PUSH_APPROVED=$PUSH_HASH git push ..." >&2
+  echo "" >&2
+  echo "Emergency skip (logged): ALIENKIND_SKIP_PREVIEW=1 git push ..." >&2
+  exit 1
+fi
+
+# Interactive preview
+{
+  printf '\n'
+  printf '╔════════════════════════════════════════════════════════════════╗\n'
+  printf '║  PUSH PREVIEW — commits about to become public                 ║\n'
+  printf '╚════════════════════════════════════════════════════════════════╝\n'
+  printf '\n'
+  for sha in $RANGES_TRIMMED; do
+    printf '──── %s ────\n' "$(git log -1 --format='%h  %s' "$sha")"
+    git log -1 --format='%b' "$sha" | sed 's/^/  /'
+    printf '\n'
+  done
+  printf '────────────────────────────────────────────────────────────────\n'
+  printf 'hash: %s\n' "$PUSH_HASH"
+  printf 'Push these commits to remote? [y/N]: '
+} > /dev/tty 2>&1
+
+REPLY=""
+read REPLY < /dev/tty || REPLY=""
+
+case "$REPLY" in
+  y|Y|yes|YES)
+    printf '  \342\234\223 Approved. Pushing.\n\n' > /dev/tty
+    exit 0
+    ;;
+  *)
+    printf '  \342\234\227 Rejected. Push aborted.\n\n' > /dev/tty
+    exit 1
+    ;;
+esac
