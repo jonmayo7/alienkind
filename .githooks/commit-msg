@@ -84,4 +84,31 @@ if [ -n "$LEAKS" ]; then
   exit 1
 fi
 
+# =============================================================================
+# Layer 3: Concision gate — commits are a log, not an essay
+# =============================================================================
+
+MAX_LINES="${COMMIT_MSG_MAX_LINES:-15}"
+MAX_SUBJECT="${COMMIT_MSG_MAX_SUBJECT:-72}"
+BODY_LINES=$(grep -cvE '^[[:space:]]*$|^#' "$MSG_FILE" || echo 0)
+SUBJECT=$(head -n 1 "$MSG_FILE")
+SUBJECT_LEN=${#SUBJECT}
+
+if [ "$BODY_LINES" -gt "$MAX_LINES" ]; then
+  echo "" >&2
+  echo "COMMIT BLOCKED — message too long ($BODY_LINES lines, max $MAX_LINES)." >&2
+  echo "Commits are a log, not an essay. Move verification, three-move checks," >&2
+  echo "and verbose context to a PR description or a CHANGELOG." >&2
+  echo "Shape: subject (≤$MAX_SUBJECT chars) + blank + 2-3 short sentences + trailer." >&2
+  echo "Override (emergency only): COMMIT_MSG_MAX_LINES=999 git commit ..." >&2
+  exit 1
+fi
+
+if [ "$SUBJECT_LEN" -gt "$MAX_SUBJECT" ]; then
+  echo "" >&2
+  echo "COMMIT BLOCKED — subject too long ($SUBJECT_LEN chars, max $MAX_SUBJECT)." >&2
+  echo "Tighten the subject line. Move detail to the body." >&2
+  exit 1
+fi
+
 exit 0
