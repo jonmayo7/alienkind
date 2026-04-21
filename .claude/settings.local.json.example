@@ -30,6 +30,7 @@
           {"type": "command", "command": "node scripts/hooks/verification-guard.ts"},
           {"type": "command", "command": "node scripts/hooks/conflict-guard.ts"},
           {"type": "command", "command": "node scripts/hooks/no-youre-right.ts"},
+          {"type": "command", "command": "node scripts/hooks/voice-rules.ts"},
           {"type": "command", "command": "node scripts/hooks/compaction-gate-enforce.ts"}
         ]
       },
@@ -41,6 +42,7 @@
           {"type": "command", "command": "node scripts/hooks/verification-guard.ts"},
           {"type": "command", "command": "node scripts/hooks/content-source-guard.ts"},
           {"type": "command", "command": "node scripts/hooks/no-youre-right.ts"},
+          {"type": "command", "command": "node scripts/hooks/voice-rules.ts"},
           {"type": "command", "command": "node scripts/hooks/compaction-gate-enforce.ts"}
         ]
       },

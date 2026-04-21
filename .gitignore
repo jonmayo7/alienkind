@@ -19,3 +19,6 @@ partner-config.json
 
 # Leak-pattern config (per-machine private-string list for commit-msg hook)
 .leak-patterns.local
+
+# Voice-rules config (per-machine Edit/Write pattern blocklist)
+.voice-rules.local

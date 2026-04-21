@@ -1,0 +1,19 @@
+# Voice rules — blocks Edit/Write content that matches these regex patterns.
+#
+# Copy this file to .voice-rules.local (gitignored) and uncomment / add the
+# patterns your partner's voice rules prohibit. The hook scripts/hooks/
+# voice-rules.ts reads .voice-rules.local on every Edit and Write and
+# blocks the tool call (exit 2) if any pattern matches.
+#
+# This is the tier-1 enforcement equivalent of an identity-kernel voice
+# rule. Auto-memory rules drift under context pressure; this doesn't.
+#
+# One regex per line. Lines starting with # are comments. Patterns are
+# JavaScript regex (not grep). No enforcement if this file doesn't exist.
+#
+# Examples (uncomment or customize):
+#
+# [—–]                         # em dash / en dash
+# \bhonestly\b                           # implies the alternative
+# \bto be transparent\b                  # same class
+# \bI'll be frank\b                      # framing before truth
