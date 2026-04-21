@@ -65,15 +65,15 @@ async function batchShouldHaveSynthesis(): Promise<number> {
   try {
     const { supabaseGet, supabasePatch } = require('../supabase.ts');
     const { processMessage, CHANNELS } = require('../keel-engine.ts');
-    // Get corrections without should_have — with or without keel_response
-    // Prioritize entries WITH keel_response (richer context), then entries without
+    // Get corrections without should_have — with or without partner_response
+    // Prioritize entries WITH partner_response (richer context), then entries without
     const withResponse = await supabaseGet(
       'learning_ledger',
-      'select=id,pattern_name,correction_text,keel_response&sentiment=eq.correction&should_have=is.null&keel_response=not.is.null&order=severity.desc,occurrence_count.desc&limit=15'
+      'select=id,pattern_name,correction_text,partner_response&sentiment=eq.correction&should_have=is.null&partner_response=not.is.null&order=severity.desc,occurrence_count.desc&limit=15'
     );
     const withoutResponse = await supabaseGet(
       'learning_ledger',
-      'select=id,pattern_name,correction_text,keel_response&sentiment=eq.correction&should_have=is.null&keel_response=is.null&order=severity.desc,occurrence_count.desc&limit=10'
+      'select=id,pattern_name,correction_text,partner_response&sentiment=eq.correction&should_have=is.null&partner_response=is.null&order=severity.desc,occurrence_count.desc&limit=10'
     );
     const unsynthesized = [...withResponse, ...withoutResponse].slice(0, 20);
     if (!unsynthesized || unsynthesized.length === 0) {
@@ -84,10 +84,10 @@ async function batchShouldHaveSynthesis(): Promise<number> {
     // Build single prompt for batch synthesis
     const entries = unsynthesized.map((row, i) => {
       let entry = `${i + 1}. [ID ${row.id}] Pattern: ${row.pattern_name}\n   Correction: "${(row.correction_text || '').slice(0, 200)}"`;
-      if (row.keel_response) {
-        entry += `\n   Keel said: "${row.keel_response.slice(0, 200)}"`;
+      if (row.partner_response) {
+        entry += `\n   ${PARTNER_NAME} said: "${row.partner_response.slice(0, 200)}"`;
       } else {
-        entry += `\n   Keel said: [not captured — infer from correction context]`;
+        entry += `\n   ${PARTNER_NAME} said: [not captured — infer from correction context]`;
       }
       return entry;
     }).join('\n\n');
@@ -180,7 +180,7 @@ async function investigatePatterns(): Promise<string> {
     // Get should_have directives from learning ledger
     const ledgerPatterns = await supabaseGet(
       'learning_ledger',
-      'select=pattern_name,should_have,occurrence_count,correction_text,keel_response&sentiment=eq.correction&order=occurrence_count.desc&limit=50'
+      'select=pattern_name,should_have,occurrence_count,correction_text,partner_response&sentiment=eq.correction&order=occurrence_count.desc&limit=50'
     );
     const directiveMap: Record<string, string> = {};
     const correctionMap: Record<string, string> = {};
