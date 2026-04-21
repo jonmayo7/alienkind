@@ -1,16 +1,80 @@
 #!/bin/sh
 #
-# Pre-commit honesty gate.
+# Pre-commit gate. Two layers:
 #
-# Runs doc-metrics --check when README / HYPOTHESIS / ATTRIBUTION /
-# plugin.json / SKILL.md change. If the numbers in those files don't match
-# disk, blocks the commit and tells you the one-line fix.
+# 1. Stewardship enforcement — commits from autonomous contexts (no
+#    interactive TTY anywhere in process tree) must opt-in via
+#    ALIENKIND_STEWARDSHIP=1 + partner-channel credentials. Fail-closed
+#    so an automated runner can't land a commit without the human-in-
+#    the-loop notification (post-commit hook) wired up.
+#
+# 2. Doc-honesty — README / HYPOTHESIS / ATTRIBUTION / plugin.json /
+#    SKILL.md numeric claims must match disk reality.
 #
 # Enable (once per clone):
 #   git config core.hooksPath .githooks
 #
 
 set -e
+
+# =============================================================================
+# Layer 1: Stewardship enforcement
+# =============================================================================
+#
+# Walk ancestor process tree looking for a TTY. Interactive sessions
+# (human at a terminal) always have a tty-attached ancestor. Daemons,
+# cron, launchd, and detached subagents don't — their parent chain
+# terminates at the supervisor (launchd, cron) with no TTY.
+
+has_tty_ancestor() {
+  pid=$$
+  depth=0
+  while [ -n "$pid" ] && [ "$pid" != "0" ] && [ "$pid" != "1" ] && [ "$depth" -lt 20 ]; do
+    tty_val=$(ps -o tty= -p "$pid" 2>/dev/null | tr -d ' \t')
+    case "$tty_val" in
+      ''|'?'|'??'|'-') ;;
+      *) return 0 ;;
+    esac
+    pid=$(ps -o ppid= -p "$pid" 2>/dev/null | tr -d ' \t')
+    depth=$((depth + 1))
+  done
+  return 1
+}
+
+if [ "${ALIENKIND_INTERACTIVE:-}" != "1" ] && ! has_tty_ancestor; then
+  if [ "${ALIENKIND_STEWARDSHIP:-}" != "1" ]; then
+    echo "" >&2
+    echo "COMMIT BLOCKED — autonomous context missing stewardship marker." >&2
+    echo "" >&2
+    echo "No interactive TTY found in process tree. This commit is being" >&2
+    echo "made without a human-in-the-loop watching the terminal." >&2
+    echo "" >&2
+    echo "Autonomous runners committing to this repo must export:" >&2
+    echo "  ALIENKIND_STEWARDSHIP=1" >&2
+    echo "  TELEGRAM_BOT_TOKEN   (partner bot credential)" >&2
+    echo "  TELEGRAM_CHAT_ID     (partner chat identifier)" >&2
+    echo "" >&2
+    echo "so every autonomous commit fires an async DM for human review." >&2
+    echo "" >&2
+    echo "Override for known-interactive non-TTY contexts (e.g. CI that" >&2
+    echo "intentionally runs without notification):" >&2
+    echo "  ALIENKIND_INTERACTIVE=1 git commit ..." >&2
+    exit 1
+  fi
+  if [ -z "${TELEGRAM_BOT_TOKEN:-}" ] || [ -z "${TELEGRAM_CHAT_ID:-}" ]; then
+    echo "" >&2
+    echo "COMMIT BLOCKED — stewardship marker set but creds missing." >&2
+    echo "ALIENKIND_STEWARDSHIP=1 is set, but the partner-channel creds" >&2
+    echo "(TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID) aren't in env. Without" >&2
+    echo "them the post-commit DM can't fire — an autonomous commit would" >&2
+    echo "land silently, defeating the visibility contract." >&2
+    exit 1
+  fi
+fi
+
+# =============================================================================
+# Layer 2: Doc-honesty
+# =============================================================================
 
 changed=$(git diff --cached --name-only --diff-filter=ACM)
 if ! echo "$changed" | grep -qE "^(README\.md|HYPOTHESIS\.md|ATTRIBUTION\.md|\.claude-plugin/plugin\.json|skills/alienkind/SKILL\.md|scripts/hooks/.*\.(ts|sh)$|migrations/.*\.sql$|tests/test-.*\.ts$)"; then
