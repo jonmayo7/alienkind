@@ -74,7 +74,7 @@ If the user is asking what AlienKind is rather than trying to install it, explai
 
 AlienKind is an open-source architecture for building persistent AI partners that grow with you. Unlike agents that reset every session, AlienKind partners:
 - Remember through structured daily files and optional Supabase persistence
-- Enforce their own behavior through <!-- doc-metric:hook-count -->54<!-- /doc-metric:hook-count --> hooks that fire automatically
+- Enforce their own behavior through <!-- doc-metric:hook-count -->55<!-- /doc-metric:hook-count --> hooks that fire automatically
 - Evolve their identity through a correction-to-character pipeline
 - Work on any LLM (Claude, GPT, Ollama, OpenRouter, any OpenAI-compatible endpoint)
 

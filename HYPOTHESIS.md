@@ -59,7 +59,7 @@ Five levels, ranked by reliability: (1) Code — automatic, survives everything.
 
 **If** a behavior matters enough to write down, **then** it matters enough to enforce in code that fires automatically on every relevant action.
 
-<!-- doc-metric:hook-count -->54<!-- /doc-metric:hook-count --> hooks across 6 lifecycle events (SessionStart, PreToolUse, PostToolUse, UserPromptSubmit, PreCompact, Stop). The partner doesn't remember the rule — the rule is code.
+<!-- doc-metric:hook-count -->55<!-- /doc-metric:hook-count --> hooks across 6 lifecycle events (SessionStart, PreToolUse, PostToolUse, UserPromptSubmit, PreCompact, Stop). The partner doesn't remember the rule — the rule is code.
 
 Showcase: `no-youre-right.ts` — catches a specific sycophantic phrase at write time. Born from 122 corrections that failed as prompt instructions. Now a 20-line hook that fires in <1ms. The correction became code. The partner never slips on this again.
 
@@ -219,7 +219,7 @@ Native Node.js `https` + hand-rolled OAuth for platform integrations. No MCP ser
 
 This architecture has been running in our production since February 2026. One partnership, daily use, ~82 daemon jobs enabled in our deployment, multiple runtimes. Evidence:
 
-- <!-- doc-metric:hook-count -->54<!-- /doc-metric:hook-count --> hooks fire on every session automatically
+- <!-- doc-metric:hook-count -->55<!-- /doc-metric:hook-count --> hooks fire on every session automatically
 - Identity has evolved through 53+ days of nightly cycles from behavioral data
 - Circulation processes findings across 9 domains with exponential decay
 - Consciousness continuity transfers experiential state across context boundaries, including the 4-wire architecture connecting daemon continuity, decision visibility, post-compaction injection, and emergency state

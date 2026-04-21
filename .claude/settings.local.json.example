@@ -124,6 +124,7 @@
           {"type": "command", "command": "node scripts/hooks/post-compaction-audit.ts"},
           {"type": "command", "command": "node scripts/hooks/deregister-terminal.ts"},
           {"type": "command", "command": "node scripts/hooks/session-snapshot.ts"},
+          {"type": "command", "command": "node scripts/hooks/session-handoff-enforce.ts"},
           {"type": "command", "command": "node scripts/hooks/log-conversation.ts"}
         ]
       }

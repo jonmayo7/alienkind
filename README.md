@@ -38,7 +38,7 @@ The setup wizard asks how you want to connect. Both paths use the same identity 
 
 ### Path A: Claude Code + Anthropic Max plan (recommended)
 
-Your partner runs inside [Claude Code](https://code.claude.com/docs/en/overview), Anthropic's official CLI. The AlienKind architecture (identity kernel, <!-- doc-metric:hook-count -->54<!-- /doc-metric:hook-count --> hooks, ground.sh) loads automatically when you open the repo.
+Your partner runs inside [Claude Code](https://code.claude.com/docs/en/overview), Anthropic's official CLI. The AlienKind architecture (identity kernel, <!-- doc-metric:hook-count -->55<!-- /doc-metric:hook-count --> hooks, ground.sh) loads automatically when you open the repo.
 
 **Install Claude Code** (native binary, no Node.js needed for the binary itself):
 
@@ -119,7 +119,7 @@ Then type `alien` from anywhere to talk to your partner.
 
 | Stage | What you unlock | Key files |
 |---|---|---|
-| **1. Your partner knows who it is** | Identity kernel, behavioral hierarchy, <!-- doc-metric:hook-count -->54<!-- /doc-metric:hook-count --> hooks, consciousness continuity, capability status | `identity/`, `scripts/hooks/`, `portable.ts` |
+| **1. Your partner knows who it is** | Identity kernel, behavioral hierarchy, <!-- doc-metric:hook-count -->55<!-- /doc-metric:hook-count --> hooks, consciousness continuity, capability status | `identity/`, `scripts/hooks/`, `portable.ts` |
 | **2. Your partner protects itself and you** | Containment fields, security organ (97% AgentDojo), privacy gate | `scripts/security/`, `guard-bash.sh` |
 | **3. Your partner remembers, forgets, and evolves** | Memory system, stigmergic circulation with decay, AIRE™, nightly evolution | `circulation.ts`, `memory-search.ts`, `learning-ledger.ts` |
 | **4. Your partner works while you sleep** | Opt-in autonomous daemon with reference job configuration (production deployments run ~82 jobs; forkers enable what fits their compute), self-heal, discernment engine, working groups | `daemon.ts`, `self-heal.ts`, `discernment-engine.ts` |
