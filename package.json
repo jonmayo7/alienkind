@@ -10,6 +10,9 @@
   "scripts": {
     "setup": "npx tsx scripts/setup.ts",
     "chat": "npx tsx scripts/chat.ts",
+    "channels": "npx tsx scripts/tools/add-channel.ts",
+    "update": "npx tsx scripts/tools/update.ts",
+    "migrate": "npx tsx scripts/tools/run-migrations.ts",
     "status": "npx tsx -e \"const { getCapabilityStatus, formatCapabilityStatus } = require('./scripts/lib/portable.ts'); getCapabilityStatus().then(s => console.log(formatCapabilityStatus(s)));\""
   },
   "devDependencies": {

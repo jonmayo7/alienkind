@@ -354,9 +354,34 @@ async function main() {
             { cwd: ROOT, stdio: 'inherit', timeout: 120000 }
           );
         } catch {
-          console.log('\n  \x1b[33m⚠\x1b[0m Migration runner had issues — you can retry: \x1b[36mnpx tsx scripts/tools/run-migrations.ts\x1b[0m\n');
+          console.log('\n  \x1b[33m⚠\x1b[0m Migration runner had issues — you can retry: \x1b[36mnpm run migrate\x1b[0m\n');
         }
       }
+    }
+
+    // ============ Step 6b: Channels ============
+    divider();
+    console.log('  \x1b[1mChannels — talk to your partner from anywhere\x1b[0m\n');
+    console.log('  Channels let you reach your partner from Telegram, Discord, etc — not just');
+    console.log('  the terminal. Each is substrate-agnostic (works with Claude / OpenAI / local).\n');
+
+    const wantChannels = await ask(rl, 'Add a channel now? (y/n)', 'n');
+    if (wantChannels.toLowerCase() === 'y') {
+      let addAnother = true;
+      while (addAnother) {
+        try {
+          execSync(
+            `npx tsx "${path.join(ROOT, 'scripts/tools/add-channel.ts')}"`,
+            { cwd: ROOT, stdio: 'inherit' }
+          );
+        } catch {
+          console.log('\n  \x1b[33m⚠\x1b[0m Channel install had issues — you can retry: \x1b[36mnpm run channels\x1b[0m\n');
+        }
+        const more = await ask(rl, 'Add another channel? (y/n)', 'n');
+        addAnother = more.toLowerCase() === 'y';
+      }
+    } else {
+      console.log('  \x1b[2mYou can add channels any time with \x1b[36mnpm run channels\x1b[0m\n');
     }
 
     // ============ Step 7: Capability scorecard ============
