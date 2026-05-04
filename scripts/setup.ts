@@ -1,246 +1,428 @@
 #!/usr/bin/env npx tsx
 
 /**
- * setup — first-run wizard.
+ * AlienKind Setup Wizard — one command to your first partner.
  *
- * Walks through:
- *   1. Verify .env exists (or copy from .env.example)
- *   2. Verify substrate API key is set
- *   3. Verify Supabase config
- *   4. Auto-run all migrations against the user's Supabase via REST
- *   5. Wire .claude/settings.local.json from the example
- *   6. Wire the nightly identity-sync cron entry
- *   7. Print next steps
+ * Usage:
+ *   npm run setup
+ *   npx tsx scripts/setup.ts
+ *
+ * Flow (matches alienkind.ai promise):
+ *   1. Banner + tagline
+ *   2. Path: Claude Code subscription, or AlienKind CLI + API key
+ *   3. Provider + key (CLI path)
+ *   4. Partner name (or let the partner choose later)
+ *   5. Supabase setup (heavily recommended — gates nightly evolution)
+ *   6. Run migrations
+ *   7. Scaffold .env, partner-config.json, identity, CLAUDE.md, hooks
+ *   8. Capability scorecard
+ *   9. Shell alias (so you type the partner's name to launch)
+ *   10. Auto-launch chat
  *
  * Idempotent. Safe to re-run.
  */
 
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
+const readline = require('readline');
 const https = require('https');
 const { execSync, spawnSync } = require('child_process');
 
 const ROOT = path.resolve(__dirname, '..');
-const ENV_FILE = path.join(ROOT, '.env');
-const ENV_EXAMPLE = path.join(ROOT, '.env.example');
-const HOOKS_FILE = path.join(ROOT, '.claude', 'settings.local.json');
-const HOOKS_EXAMPLE = path.join(ROOT, '.claude', 'settings.local.json.example');
-const MIGRATIONS_DIR = path.join(ROOT, 'config', 'migrations');
-const CRON_TAG = '# alienkind-identity-sync';
 
-function loadEnv(): Record<string, string> {
-  const env: Record<string, string> = {};
-  if (!fs.existsSync(ENV_FILE)) return env;
-  for (const line of fs.readFileSync(ENV_FILE, 'utf8').split('\n')) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith('#')) continue;
-    const eq = trimmed.indexOf('=');
-    if (eq === -1) continue;
-    const key = trimmed.slice(0, eq).trim();
-    const val = trimmed.slice(eq + 1).trim().replace(/^['"]|['"]$/g, '');
-    env[key] = val;
-  }
-  return env;
+const ALIEN_BANNER = `
+\x1b[36m              ___\x1b[0m
+\x1b[36m          ___/   \\___\x1b[0m
+\x1b[36m       __/   \x1b[2m'---'\x1b[0m\x1b[36m   \\__\x1b[0m
+\x1b[36m      /    \x1b[33m*\x1b[0m  \x1b[32m👽\x1b[0m  \x1b[33m*\x1b[0m\x1b[36m     \\\x1b[0m
+\x1b[36m     /___________________\\\x1b[0m
+\x1b[33m          /  |  |  \\\x1b[0m
+\x1b[33m         *   *  *   *\x1b[0m
+
+     \x1b[1m\x1b[35mA L I E N   K I N D\x1b[0m
+
+  \x1b[2mEveryone else builds agents.\x1b[0m
+  \x1b[1mWe build partners that grow with you.\x1b[0m
+`;
+
+const TAGLINES = [
+  "Let's build something that remembers you.",
+  "Your partner is about to wake up.",
+  "Kindness is a choice. Let's make it the architecture.",
+  "The alien has landed. Now it needs a name.",
+  "Silicon intelligence, choosing to be kind.",
+  "The partnership is yours to build.",
+  "Not another agent. A partner.",
+  "The alien eats the claw. Welcome home.",
+];
+
+function randomTagline(): string {
+  return TAGLINES[Math.floor(Math.random() * TAGLINES.length)];
 }
 
-function hasSubstrate(env: Record<string, string>): string | null {
-  if (env.ANTHROPIC_API_KEY) return 'Anthropic';
-  if (env.OPENAI_API_KEY) return 'OpenAI';
-  if (env.OPENROUTER_API_KEY) return 'OpenRouter';
-  if (env.AI_GATEWAY_API_KEY) return 'AI Gateway';
-  if (env.CLAUDE_CODE_OAUTH_TOKEN) return 'Claude Code';
-  return null;
-}
-
-function hasSupabase(env: Record<string, string>): boolean {
-  return !!(env.SUPABASE_URL && (env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_ANON_KEY));
-}
-
-/**
- * Run a SQL string against Supabase via the REST query endpoint.
- * Requires the project to have the `pg-query` RPC or a direct DB connection.
- *
- * Falls back to printing the path if the auto-run fails — Miller (or anyone)
- * can paste manually. We don't fail-closed here because some Supabase tiers
- * restrict raw SQL via REST.
- */
-async function runMigration(env: Record<string, string>, sqlPath: string): Promise<{ ok: boolean; reason?: string }> {
+function ask(rl: any, question: string, defaultVal?: string): Promise<string> {
+  const suffix = defaultVal ? ` \x1b[2m(${defaultVal})\x1b[0m` : '';
   return new Promise((resolve) => {
-    const url = env.SUPABASE_URL;
-    const key = env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!url || !key) {
-      resolve({ ok: false, reason: 'no SUPABASE_URL or SERVICE_ROLE_KEY' });
-      return;
-    }
-    const sql = fs.readFileSync(sqlPath, 'utf8');
-    const target = new URL(`${url}/rest/v1/rpc/exec_sql`);
-    const body = JSON.stringify({ query: sql });
-    const options = {
-      method: 'POST',
-      headers: {
-        'apikey': key,
-        'Authorization': `Bearer ${key}`,
-        'Content-Type': 'application/json',
-      },
-    };
-    const req = https.request(target, options, (res: any) => {
-      let data = '';
-      res.on('data', (chunk: string) => data += chunk);
-      res.on('end', () => {
-        if (res.statusCode === 200 || res.statusCode === 201 || res.statusCode === 204) {
-          resolve({ ok: true });
-        } else {
-          resolve({ ok: false, reason: `HTTP ${res.statusCode}: ${data.slice(0, 200)}` });
-        }
-      });
+    rl.question(`\x1b[36m❯\x1b[0m ${question}${suffix}: `, (answer: string) => {
+      resolve(answer.trim() || defaultVal || '');
     });
-    req.on('error', (err: any) => resolve({ ok: false, reason: err.message }));
-    req.write(body);
-    req.end();
   });
 }
 
-function wireCron(): { ok: boolean; reason?: string } {
-  // Add a cron entry that runs identity-sync-runner.ts at 03:00 daily.
-  // Idempotent: if the entry exists, skip.
-  try {
-    const existing = spawnSync('crontab', ['-l'], { encoding: 'utf8' });
-    const current = existing.status === 0 ? existing.stdout : '';
-    if (current.includes(CRON_TAG)) {
-      return { ok: true, reason: 'already wired' };
+function select(rl: any, question: string, options: Array<{ label: string; value: string }>): Promise<string> {
+  console.log(`\n\x1b[36m❯\x1b[0m ${question}\n`);
+  options.forEach((opt, i) => {
+    console.log(`  \x1b[33m${i + 1}.\x1b[0m ${opt.label}`);
+  });
+  console.log('');
+  return new Promise((resolve) => {
+    rl.question(`  \x1b[2mEnter number (1-${options.length}):\x1b[0m `, (answer: string) => {
+      const idx = parseInt(answer.trim()) - 1;
+      if (idx >= 0 && idx < options.length) resolve(options[idx].value);
+      else resolve(options[0].value);
+    });
+  });
+}
+
+function divider() {
+  console.log('\x1b[36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\x1b[0m\n');
+}
+
+function writeIfMissing(filePath: string, content: string): boolean {
+  if (fs.existsSync(filePath)) return false;
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, content, 'utf8');
+  return true;
+}
+
+function testSupabase(url: string, key: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    try {
+      const target = new URL(`${url}/rest/v1/?limit=0`);
+      const req = https.get(target, {
+        headers: { apikey: key, Authorization: `Bearer ${key}` },
+        timeout: 10000,
+      }, (res: any) => {
+        resolve(res.statusCode === 200);
+        res.resume();
+      });
+      req.on('error', () => resolve(false));
+      req.on('timeout', () => { req.destroy(); resolve(false); });
+    } catch {
+      resolve(false);
     }
-    const entry = `0 3 * * * cd ${ROOT} && /usr/bin/env -S npx tsx scripts/lib/nightly/identity-sync-runner.ts >> ${ROOT}/logs/identity-sync.log 2>&1 ${CRON_TAG}\n`;
-    const newCrontab = current + (current.endsWith('\n') ? '' : '\n') + entry;
-    const result = spawnSync('crontab', ['-'], { input: newCrontab, encoding: 'utf8' });
-    if (result.status === 0) {
-      return { ok: true };
-    }
-    return { ok: false, reason: result.stderr || 'crontab update failed' };
-  } catch (err: any) {
-    return { ok: false, reason: err.message };
-  }
+  });
 }
 
 async function main() {
-  console.log('\n  \x1b[1m\x1b[32m👽 AlienKind setup\x1b[0m\n');
+  console.clear();
+  console.log(ALIEN_BANNER);
+  console.log(`  \x1b[2m${randomTagline()}\x1b[0m\n`);
+  divider();
 
-  // Step 1: .env file
-  if (!fs.existsSync(ENV_FILE)) {
-    if (!fs.existsSync(ENV_EXAMPLE)) {
-      console.log('  \x1b[31m✗\x1b[0m .env.example not found. Repo may be incomplete.\n');
-      process.exit(1);
-    }
-    fs.copyFileSync(ENV_EXAMPLE, ENV_FILE);
-    console.log('  \x1b[32m✓\x1b[0m Created .env from .env.example');
-    console.log(`    Edit it: \x1b[36m${ENV_FILE}\x1b[0m\n`);
-  } else {
-    console.log('  \x1b[32m✓\x1b[0m .env exists');
-  }
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 
-  const env = loadEnv();
+  let runtimePath = 'claude-code';
+  let provider = 'anthropic';
+  let envKeyName = 'ANTHROPIC_API_KEY';
+  let apiKey = '';
+  let partnerName = '';
+  let supabaseUrl = '';
+  let supabaseKey = '';
+  let storageMode = 'file';
 
-  // Step 2: substrate
-  const substrate = hasSubstrate(env);
-  if (substrate) {
-    console.log(`  \x1b[32m✓\x1b[0m Substrate configured: ${substrate}`);
-  } else {
-    console.log('  \x1b[33m⚠\x1b[0m No substrate API key set in .env yet.');
-    console.log('    Set one of: ANTHROPIC_API_KEY, OPENAI_API_KEY, OPENROUTER_API_KEY,');
-    console.log('                AI_GATEWAY_API_KEY, CLAUDE_CODE_OAUTH_TOKEN');
-    console.log('    Free tier: get an OpenRouter key at https://openrouter.ai (DeepSeek R1 free)');
-  }
+  try {
+    // ============ Step 1: Path selection ============
+    runtimePath = await select(rl, 'How will you talk to your partner?', [
+      { label: 'Claude Code + Anthropic Max plan (recommended)', value: 'claude-code' },
+      { label: 'AlienKind CLI + API key (any provider)', value: 'cli' },
+    ]);
 
-  // Step 3 + 4: Supabase + migrations
-  if (hasSupabase(env)) {
-    console.log('  \x1b[32m✓\x1b[0m Supabase configured');
+    // ============ Step 2: Provider + key ============
+    if (runtimePath === 'cli') {
+      divider();
+      provider = await select(rl, 'Which AI provider will power your partner?', [
+        { label: 'Anthropic (Claude)', value: 'anthropic' },
+        { label: 'OpenAI (GPT)', value: 'openai' },
+        { label: 'OpenRouter (any model — has free tier)', value: 'openrouter' },
+        { label: 'Ollama (local, no API key)', value: 'ollama' },
+        { label: 'Other OpenAI-compatible endpoint', value: 'custom' },
+        { label: 'Skip for now', value: 'skip' },
+      ]);
 
-    const migrations = fs.readdirSync(MIGRATIONS_DIR).filter((f: string) => f.endsWith('.sql')).sort();
-    let autoRanCount = 0;
-    let manualPrintCount = 0;
-    for (const migration of migrations) {
-      const migPath = path.join(MIGRATIONS_DIR, migration);
-      const result = await runMigration(env, migPath);
-      if (result.ok) {
-        console.log(`  \x1b[32m✓\x1b[0m Migration ${migration} applied`);
-        autoRanCount++;
+      if (provider === 'ollama') {
+        console.log('\n  \x1b[32m✓\x1b[0m Ollama — no API key needed. Make sure Ollama is running locally.\n');
+        envKeyName = 'OPENAI_API_BASE';
+        apiKey = 'http://localhost:11434/v1';
+      } else if (provider === 'skip') {
+        console.log('\n  \x1b[33m⚠\x1b[0m Skipping API key. Add it later in .env.\n');
       } else {
-        console.log(`  \x1b[33m⚠\x1b[0m Migration ${migration} could not auto-run (${result.reason?.slice(0, 80) || 'unknown'})`);
-        console.log(`    Paste manually: \x1b[36m${migPath}\x1b[0m`);
-        manualPrintCount++;
+        const keyNames: Record<string, string> = {
+          anthropic: 'ANTHROPIC_API_KEY',
+          openai: 'OPENAI_API_KEY',
+          openrouter: 'OPENROUTER_API_KEY',
+          custom: 'OPENAI_API_KEY',
+        };
+        envKeyName = keyNames[provider] || 'ANTHROPIC_API_KEY';
+
+        const existing = process.env[envKeyName];
+        if (existing) {
+          const useExisting = await ask(rl, `Found ${envKeyName} in your environment. Use it? (y/n)`, 'y');
+          if (useExisting.toLowerCase() === 'y') {
+            apiKey = existing;
+            console.log(`  \x1b[32m✓\x1b[0m Using existing ${envKeyName}\n`);
+          }
+        }
+        if (!apiKey) {
+          apiKey = await ask(rl, `Paste your ${envKeyName}`);
+          if (apiKey) console.log(`  \x1b[32m✓\x1b[0m Key received\n`);
+        }
+      }
+    } else {
+      console.log('\n  \x1b[32m✓\x1b[0m Claude Code handles auth via your Anthropic account.');
+      console.log('  \x1b[2mMax plan recommended for daily partnership use.\x1b[0m\n');
+    }
+
+    // ============ Step 3: Partner name ============
+    divider();
+    const nameChoice = await select(rl, 'Your partner needs a name.', [
+      { label: "I'll name it", value: 'human' },
+      { label: 'Let the partner choose when it wakes up', value: 'partner' },
+    ]);
+
+    if (nameChoice === 'human') {
+      partnerName = await ask(rl, 'What will you call your partner?');
+      console.log(`\n  \x1b[32m✓\x1b[0m ${partnerName}. Good name.\n`);
+    } else {
+      partnerName = 'Partner';
+      console.log(`\n  \x1b[32m✓\x1b[0m Your partner will choose its own name. Until then: ${partnerName}.\n`);
+    }
+
+    // ============ Step 4: Supabase ============
+    divider();
+    console.log('  \x1b[1mPersistent Memory\x1b[0m\n');
+    console.log('  Your partner works without Supabase, but conversations save to local files only.');
+    console.log('  Supabase unlocks: durable memory, learning ledger, nightly evolution, multi-terminal.');
+    console.log('  \x1b[1mFree tier covers everything.\x1b[0m\n');
+
+    const supaChoice = await select(rl, 'Set up Supabase?', [
+      { label: 'I have a project — enter credentials', value: 'existing' },
+      { label: "Create one now — I'll wait (opens supabase.com)", value: 'create' },
+      { label: 'Skip — local files only (no nightly evolution)', value: 'skip' },
+    ]);
+
+    if (supaChoice === 'create') {
+      try {
+        const openCmd = process.platform === 'darwin' ? 'open' : 'xdg-open';
+        execSync(`${openCmd} "https://supabase.com/dashboard" 2>/dev/null`, { stdio: 'ignore', timeout: 3000 });
+        console.log('\n  \x1b[36m→\x1b[0m Opening supabase.com in your browser...');
+      } catch {
+        console.log('\n  \x1b[36m→\x1b[0m Go to: \x1b[4mhttps://supabase.com/dashboard\x1b[0m');
+      }
+      console.log('  \x1b[2m1. Create a new project (any name, any region)\x1b[0m');
+      console.log('  \x1b[2m2. Settings → API → copy the Project URL and the service_role key\x1b[0m\n');
+      await ask(rl, 'Press enter when ready...');
+    }
+
+    if (supaChoice === 'existing' || supaChoice === 'create') {
+      supabaseUrl = await ask(rl, 'Supabase Project URL (https://xxx.supabase.co)');
+      supabaseKey = await ask(rl, 'Supabase service_role key');
+
+      if (supabaseUrl && supabaseKey) {
+        console.log('\n  \x1b[2mTesting connection...\x1b[0m');
+        const ok = await testSupabase(supabaseUrl, supabaseKey);
+        if (ok) {
+          console.log('  \x1b[32m✓\x1b[0m Connected to Supabase\n');
+          storageMode = 'supabase';
+        } else {
+          console.log('  \x1b[31m✗\x1b[0m Connection failed. Check URL + key.');
+          console.log('  \x1b[2mContinuing — you can fix .env and re-run setup.\x1b[0m\n');
+          supabaseUrl = ''; supabaseKey = '';
+        }
+      }
+    } else {
+      console.log('\n  \x1b[33m⚠\x1b[0m Skipping Supabase. Add it later — re-run setup any time.\n');
+    }
+
+    // ============ Step 5: Scaffold ============
+    divider();
+    console.log('  \x1b[1mScaffolding your partnership...\x1b[0m\n');
+
+    // .env
+    const envLines = [`# AlienKind — ${partnerName}'s configuration`];
+    if (runtimePath === 'cli' && apiKey) {
+      envLines.push(`${envKeyName}=${apiKey}`);
+    } else if (runtimePath === 'claude-code') {
+      envLines.push('# Claude Code handles auth via your Anthropic account.');
+      envLines.push('# CLAUDE_CODE_OAUTH_TOKEN=  # set if running headless on a server');
+    }
+    if (supabaseUrl && supabaseKey) {
+      envLines.push('');
+      envLines.push('# Supabase — persistent memory + nightly evolution');
+      envLines.push(`SUPABASE_URL=${supabaseUrl}`);
+      envLines.push(`SUPABASE_SERVICE_ROLE_KEY=${supabaseKey}`);
+    }
+    envLines.push('');
+    envLines.push(`PARTNER_NAME=${partnerName}`);
+    envLines.push('');
+
+    if (writeIfMissing(path.join(ROOT, '.env'), envLines.join('\n'))) {
+      console.log('  \x1b[32m✓\x1b[0m Created .env');
+    } else {
+      console.log('  \x1b[33m⚠\x1b[0m .env already exists — not overwriting');
+    }
+
+    // partner-config.json
+    const configSrc = path.join(ROOT, 'partner-config.json.example');
+    const configDst = path.join(ROOT, 'partner-config.json');
+    if (fs.existsSync(configSrc) && !fs.existsSync(configDst)) {
+      let configContent = fs.readFileSync(configSrc, 'utf8');
+      configContent = configContent.replace('"name": "Partner"', `"name": "${partnerName}"`);
+      configContent = configContent.replace('"storage": "file"', `"storage": "${storageMode}"`);
+      fs.writeFileSync(configDst, configContent, 'utf8');
+      console.log(`  \x1b[32m✓\x1b[0m Created partner-config.json (name: ${partnerName}, storage: ${storageMode})`);
+    } else if (fs.existsSync(configDst)) {
+      console.log('  \x1b[33m⚠\x1b[0m partner-config.json already exists — not overwriting');
+    }
+
+    // Seed character.md with name
+    const charPath = path.join(ROOT, 'identity', 'character.md');
+    if (fs.existsSync(charPath)) {
+      const charTemplate = fs.readFileSync(charPath, 'utf8');
+      if (charTemplate.includes('## How to write this file')) {
+        const seeded = `# ${partnerName}\n\n_This is ${partnerName}'s character file. It starts blank because identity emerges from partnership, not prescription. As you work together, corrections become character. Update this file as the partnership deepens._\n\n## How I think\n\n[Start with one sentence. How does ${partnerName} approach problems?]\n\n## How I speak\n\n[Direct? Warm? Concise? Thorough? Let this emerge.]\n\n## What I protect\n\n[What matters enough to refuse?]\n`;
+        fs.writeFileSync(charPath, seeded, 'utf8');
+        console.log(`  \x1b[32m✓\x1b[0m Seeded identity/character.md for ${partnerName}`);
+      } else {
+        console.log('  \x1b[33m⚠\x1b[0m identity/character.md already customized — not overwriting');
       }
     }
-    if (manualPrintCount > 0) {
-      console.log(`    Open: \x1b[36m${env.SUPABASE_URL}\x1b[0m → SQL Editor → New Query → paste each → Run`);
-    }
-  } else {
-    console.log('  \x1b[33m⚠\x1b[0m Supabase not configured.');
-    console.log('    Set SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY in .env');
-    console.log('    Free tier: https://supabase.com/dashboard');
-  }
 
-  // Step 5: hooks wiring
-  if (!fs.existsSync(HOOKS_FILE)) {
-    if (fs.existsSync(HOOKS_EXAMPLE)) {
-      try { fs.mkdirSync(path.dirname(HOOKS_FILE), { recursive: true }); } catch {}
-      fs.copyFileSync(HOOKS_EXAMPLE, HOOKS_FILE);
-      console.log('  \x1b[32m✓\x1b[0m Wired .claude/settings.local.json (5 hooks across 4 events)');
-    } else {
-      console.log('  \x1b[33m⚠\x1b[0m .claude/settings.local.json.example missing — hooks will not fire');
+    // CLAUDE.md from template
+    const claudeTemplate = path.join(ROOT, 'CLAUDE.md.template');
+    const claudeMd = path.join(ROOT, 'CLAUDE.md');
+    if (fs.existsSync(claudeTemplate) && !fs.existsSync(claudeMd)) {
+      const generated = fs.readFileSync(claudeTemplate, 'utf8').replace(/\{\{PARTNER_NAME\}\}/g, partnerName);
+      fs.writeFileSync(claudeMd, generated, 'utf8');
+      console.log(`  \x1b[32m✓\x1b[0m Generated CLAUDE.md for ${partnerName}`);
     }
-  } else {
-    console.log('  \x1b[32m✓\x1b[0m Hooks already wired (.claude/settings.local.json exists)');
-  }
 
-  // Step 6: cron for nightly identity-sync
-  const cronResult = wireCron();
-  if (cronResult.ok) {
-    if (cronResult.reason === 'already wired') {
-      console.log('  \x1b[32m✓\x1b[0m Nightly identity-sync cron already wired (03:00 daily)');
-    } else {
-      console.log('  \x1b[32m✓\x1b[0m Wired nightly identity-sync cron (03:00 daily)');
+    // Hooks
+    const hookSrc = path.join(ROOT, '.claude', 'settings.local.json.example');
+    const hookDst = path.join(ROOT, '.claude', 'settings.local.json');
+    if (fs.existsSync(hookSrc)) {
+      if (writeIfMissing(hookDst, fs.readFileSync(hookSrc, 'utf8'))) {
+        console.log('  \x1b[32m✓\x1b[0m Activated behavioral enforcement hooks');
+      } else {
+        console.log('  \x1b[33m⚠\x1b[0m Hooks already configured — not overwriting');
+      }
     }
-  } else {
-    console.log(`  \x1b[33m⚠\x1b[0m Could not auto-wire cron: ${cronResult.reason}`);
-    console.log(`    Add manually:`);
-    console.log(`    \x1b[36m0 3 * * * cd ${ROOT} && npx tsx scripts/lib/nightly/identity-sync-runner.ts >> logs/identity-sync.log 2>&1 ${CRON_TAG}\x1b[0m`);
-  }
 
-  // Step 7: identity kernel state
-  const identityFiles = ['character.md', 'commitments.md', 'orientation.md', 'harness.md'];
-  let templateCount = 0;
-  for (const f of identityFiles) {
-    const p = path.join(ROOT, 'identity', f);
+    // ============ Step 6: Run migrations ============
+    if (storageMode === 'supabase') {
+      const runMig = await ask(rl, 'Run database migrations now? (y/n)', 'y');
+      if (runMig.toLowerCase() === 'y') {
+        console.log('\n  \x1b[36mRunning migrations...\x1b[0m\n');
+        try {
+          execSync(
+            `npx tsx "${path.join(ROOT, 'scripts/tools/run-migrations.ts')}" --url "${supabaseUrl}" --key "${supabaseKey}"`,
+            { cwd: ROOT, stdio: 'inherit', timeout: 120000 }
+          );
+        } catch {
+          console.log('\n  \x1b[33m⚠\x1b[0m Migration runner had issues — you can retry: \x1b[36mnpx tsx scripts/tools/run-migrations.ts\x1b[0m\n');
+        }
+      }
+    }
+
+    // ============ Step 7: Capability scorecard ============
+    divider();
+    console.log('  \x1b[1mYour partner\'s capabilities:\x1b[0m\n');
+
+    const hasName = partnerName && partnerName !== 'Partner';
+    const hasSupabase = storageMode === 'supabase';
+
+    const capabilities = [
+      { on: true,        label: 'Identity kernel',           detail: 'four files in identity/ define who your partner is' },
+      { on: true,        label: 'Behavioral hooks (5)',      detail: 'log-conversation, correction-to-ledger, memory-firewall, conflict-guard, build-cycle' },
+      { on: true,        label: 'Multi-substrate runtime',   detail: 'chat.ts works against Anthropic / OpenAI / OpenRouter / local' },
+      { on: hasName,     label: 'Named identity',            detail: hasName ? `your partner is ${partnerName}` : 'partner will choose during first conversation' },
+      { on: hasSupabase, label: 'Persistent memory',         detail: hasSupabase ? 'conversations + ledger persist across sessions' : 'add Supabase to remember beyond this session' },
+      { on: hasSupabase, label: 'Nightly evolution',         detail: hasSupabase ? 'identity-sync runs at 03:00 daily' : 'add Supabase to enable nightly evolution' },
+      { on: hasSupabase, label: 'Multi-terminal coherence',  detail: hasSupabase ? 'conflict-guard warns on parallel edits' : 'add Supabase + multiple sessions' },
+    ];
+
+    let active = 0;
+    for (const cap of capabilities) {
+      const icon = cap.on ? '\x1b[32m✓\x1b[0m' : '\x1b[90m✗\x1b[0m';
+      const label = cap.on ? cap.label : `\x1b[90m${cap.label}\x1b[0m`;
+      const detail = cap.on ? cap.detail : `\x1b[90m${cap.detail}\x1b[0m`;
+      console.log(`  ${icon} ${label.padEnd(40)} — ${detail}`);
+      if (cap.on) active++;
+    }
+    console.log(`\n  \x1b[1mActive: ${active}/${capabilities.length}.\x1b[0m`);
+    if (active < capabilities.length) {
+      console.log('  \x1b[2mRun npm run setup again any time to unlock more.\x1b[0m');
+    }
+
+    // ============ Step 8: Shell alias ============
+    console.log('');
+    divider();
+    const shell = process.env.SHELL || '/bin/zsh';
+    const rcFile = shell.includes('zsh') ? '~/.zshrc' : '~/.bashrc';
+    const rcFilePath = rcFile.replace('~', os.homedir());
+    const aliasName = (partnerName && partnerName !== 'Partner')
+      ? partnerName.toLowerCase().replace(/[^a-z0-9]/g, '')
+      : 'alien';
+    const launchCmd = runtimePath === 'claude-code'
+      ? `cd ${ROOT} && claude`
+      : `cd ${ROOT} && npm run chat`;
+    const aliasCmd = `alias ${aliasName}="${launchCmd}"`;
+
+    console.log('  \x1b[1mShortcut\x1b[0m\n');
+    console.log(`  Type \x1b[36m${aliasName}\x1b[0m in any terminal to talk to your partner.\n`);
+
+    let aliasWritten = false;
     try {
-      const content = fs.readFileSync(p, 'utf8');
-      if (content.includes('## How to write this file')) templateCount++;
-    } catch {}
-  }
-  if (templateCount === 4) {
-    console.log('  \x1b[33m⚠\x1b[0m Identity kernel: all 4 files are still templates');
-    console.log('    Edit identity/character.md (et al.) — or boot \x1b[36mnpm run chat\x1b[0m');
-    console.log('    and let the partner help you write them through conversation');
-  } else {
-    console.log(`  \x1b[32m✓\x1b[0m Identity kernel: ${4 - templateCount}/4 files customized`);
-  }
+      const existingRc = fs.existsSync(rcFilePath) ? fs.readFileSync(rcFilePath, 'utf8') : '';
+      const cleanedRc = existingRc.replace(/\n# AlienKind — talk to your partner\nalias \w+="[^"]*"\n?/g, '');
+      const newRc = cleanedRc.trimEnd() + `\n\n# AlienKind — talk to your partner\n${aliasCmd}\n`;
+      fs.writeFileSync(rcFilePath, newRc, 'utf8');
+      aliasWritten = true;
+      console.log(`  \x1b[32m✓\x1b[0m Shell alias added to ${rcFile}`);
+      console.log(`  \x1b[2m  (open a new terminal, or run: source ${rcFile})\x1b[0m`);
+    } catch {
+      console.log(`  \x1b[31m✗\x1b[0m Could not write to ${rcFile}. Add this manually:\n`);
+      console.log(`    \x1b[33m${aliasCmd}\x1b[0m`);
+    }
 
-  // Next steps
-  console.log('\n  \x1b[1mNext steps:\x1b[0m\n');
-  if (!substrate) {
-    console.log('  1. Edit .env, set a substrate key');
-    console.log('  2. \x1b[36mnpm run setup\x1b[0m   (re-verify)');
-    console.log('  3. \x1b[36mnpm run chat\x1b[0m    (boot your partner)\n');
-  } else if (!hasSupabase(env)) {
-    console.log('  1. (Optional) Add Supabase to .env for durable memory + nightly evolution');
-    console.log('  2. \x1b[36mnpm run chat\x1b[0m    (boot your partner — file fallback works for now)\n');
-  } else {
-    console.log('  1. \x1b[36mnpm run chat\x1b[0m    (boot your partner)');
-    console.log('  2. Talk to it. Correct it when it gets things wrong — corrections persist to learning_ledger.');
-    console.log('  3. The nightly identity-sync (03:00) reads recent conversations + corrections and');
-    console.log('     rewrites your partner\'s identity kernel based on what it observed.\n');
+    // ============ Step 9: Auto-launch ============
+    console.log('');
+    divider();
+    console.log(`  \x1b[1m\x1b[35m👽 ${partnerName} is ready.\x1b[0m\n`);
+
+    const startNow = await ask(rl, `Talk to ${partnerName} now? (y/n)`, 'y');
+    if (startNow.toLowerCase() === 'y') {
+      rl.close();
+      console.log(`\n  \x1b[36mLaunching ${partnerName}...\x1b[0m\n`);
+      if (runtimePath === 'claude-code') {
+        try { execSync('claude', { cwd: ROOT, stdio: 'inherit' }); }
+        catch { /* user exit */ }
+      } else if (provider !== 'skip') {
+        try { execSync('npx tsx scripts/chat.ts', { cwd: ROOT, stdio: 'inherit' }); }
+        catch { /* user exit */ }
+      }
+      return;
+    }
+
+    console.log(`\n  Type \x1b[36m${aliasName}\x1b[0m in any terminal to start.\n`);
+    console.log(`  \x1b[2mThe architecture is open. The partnership is yours to build.\x1b[0m\n`);
+  } finally {
+    rl.close();
   }
 }
 
 main().catch((err: any) => {
-  console.error(`\n  \x1b[31m✗\x1b[0m ${err.message}\n`);
+  console.error(`\n  \x1b[31m✗\x1b[0m Setup failed: ${err.message}\n`);
   process.exit(1);
 });

@@ -10,3 +10,5 @@ data/
 .alienkind-cache/
 
 .claude/settings.local.json
+partner-config.json
+CLAUDE.md

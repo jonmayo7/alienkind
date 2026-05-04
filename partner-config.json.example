@@ -1,0 +1,24 @@
+{
+  "_comment": "Copy this to partner-config.json and customize. Setup wizard creates it for you.",
+
+  "name": "Partner",
+  "_name_comment": "Your partner's name. Updated when you set it via /name or in setup.",
+
+  "storage": "file",
+  "_storage_options": "file (default, local only) | sqlite (persistent, single machine) | supabase (persistent, cross-machine + nightly evolution)",
+
+  "identity_files": [
+    "identity/character.md",
+    "identity/commitments.md",
+    "identity/orientation.md",
+    "identity/harness.md"
+  ],
+
+  "protected_paths": [
+    "identity/character.md",
+    "identity/commitments.md",
+    "identity/orientation.md",
+    "identity/harness.md",
+    "CLAUDE.md"
+  ]
+}
