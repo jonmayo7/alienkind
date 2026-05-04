@@ -130,6 +130,7 @@ async function main() {
   let partnerName = '';
   let supabaseUrl = '';
   let supabaseKey = '';
+  let supabaseDbPassword = '';
   let storageMode = 'file';
 
   try {
@@ -221,7 +222,8 @@ async function main() {
         console.log('\n  \x1b[36m→\x1b[0m Go to: \x1b[4mhttps://supabase.com/dashboard\x1b[0m');
       }
       console.log('  \x1b[2m1. Create a new project (any name, any region)\x1b[0m');
-      console.log('  \x1b[2m2. Settings → API → copy the Project URL and the service_role key\x1b[0m\n');
+      console.log('  \x1b[2m2. WRITE DOWN the database password you set during creation — you need it below\x1b[0m');
+      console.log('  \x1b[2m3. Settings → API → copy the Project URL and the service_role key\x1b[0m\n');
       await ask(rl, 'Press enter when ready...');
     }
 
@@ -230,11 +232,21 @@ async function main() {
       supabaseKey = await ask(rl, 'Supabase service_role key');
 
       if (supabaseUrl && supabaseKey) {
-        console.log('\n  \x1b[2mTesting connection...\x1b[0m');
+        console.log('\n  \x1b[2mTesting REST connection...\x1b[0m');
         const ok = await testSupabase(supabaseUrl, supabaseKey);
         if (ok) {
-          console.log('  \x1b[32m✓\x1b[0m Connected to Supabase\n');
+          console.log('  \x1b[32m✓\x1b[0m REST API reachable\n');
           storageMode = 'supabase';
+
+          // Capture DB password — required for migrations to actually run.
+          // (Service role key gives REST access; psql needs the DB password.)
+          console.log('  \x1b[1mOne more credential:\x1b[0m');
+          console.log('  Migrations apply via psql. We need your database password.');
+          console.log('  \x1b[2mFind it: Supabase → Settings → Database → "Database password" (reset if forgotten)\x1b[0m\n');
+          supabaseDbPassword = await ask(rl, 'Database password');
+          if (!supabaseDbPassword) {
+            console.log('  \x1b[33m⚠\x1b[0m No password — migrations will fall back to manual SQL Editor paste.\n');
+          }
         } else {
           console.log('  \x1b[31m✗\x1b[0m Connection failed. Check URL + key.');
           console.log('  \x1b[2mContinuing — you can fix .env and re-run setup.\x1b[0m\n');
@@ -262,6 +274,18 @@ async function main() {
       envLines.push('# Supabase — persistent memory + nightly evolution');
       envLines.push(`SUPABASE_URL=${supabaseUrl}`);
       envLines.push(`SUPABASE_SERVICE_ROLE_KEY=${supabaseKey}`);
+
+      if (supabaseDbPassword) {
+        // Construct DATABASE_URL for psql migrations.
+        // Format: postgresql://postgres:<password>@db.<project_ref>.supabase.co:5432/postgres
+        const projectRef = supabaseUrl.match(/https?:\/\/([^.]+)\.supabase\.co/)?.[1];
+        if (projectRef) {
+          // URL-encode the password to handle special characters.
+          const encodedPassword = encodeURIComponent(supabaseDbPassword);
+          const dbUrl = `postgresql://postgres:${encodedPassword}@db.${projectRef}.supabase.co:5432/postgres`;
+          envLines.push(`DATABASE_URL=${dbUrl}`);
+        }
+      }
     }
     envLines.push('');
     envLines.push(`PARTNER_NAME=${partnerName}`);
