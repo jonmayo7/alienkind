@@ -1,0 +1,54 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx tsx scripts/hooks/log-conversation.ts"
+          },
+          {
+            "type": "command",
+            "command": "npx tsx scripts/hooks/correction-to-ledger.ts"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx tsx scripts/hooks/log-conversation.ts"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx tsx scripts/hooks/memory-firewall.ts"
+          },
+          {
+            "type": "command",
+            "command": "npx tsx scripts/hooks/conflict-guard.ts"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx tsx scripts/hooks/build-cycle.ts"
+          }
+        ]
+      }
+    ]
+  }
+}

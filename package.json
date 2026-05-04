@@ -1,0 +1,18 @@
+{
+  "name": "alienkind",
+  "version": "0.1.0",
+  "description": "The partnership architecture that runs across every AI substrate.",
+  "license": "Apache-2.0",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "setup": "npx tsx scripts/setup.ts",
+    "chat": "npx tsx scripts/chat.ts",
+    "status": "npx tsx -e \"const { getCapabilityStatus, formatCapabilityStatus } = require('./scripts/lib/portable.ts'); getCapabilityStatus().then(s => console.log(formatCapabilityStatus(s)));\""
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0"
+  }
+}

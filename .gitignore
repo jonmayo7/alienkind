@@ -1,0 +1,12 @@
+node_modules/
+.env
+.env.local
+.DS_Store
+*.log
+logs/
+data/
+*.sqlite
+*.db
+.alienkind-cache/
+
+.claude/settings.local.json
