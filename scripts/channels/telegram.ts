@@ -73,63 +73,9 @@ try {
 }
 
 const { askPartner } = require(path.join(ROOT, 'scripts', 'lib', 'substrate.ts'));
+const { transcribe, isTranscriptionAvailable } = require(path.join(ROOT, 'scripts', 'lib', 'voice.ts'));
 
 const bot = new Bot(BOT_TOKEN);
-
-async function transcribeVoice(fileUrl: string): Promise<string | null> {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) return null;
-
-  // Download the .ogg
-  const https = require('https');
-  const audioBuffer: Buffer = await new Promise((resolve, reject) => {
-    https.get(fileUrl, (res: any) => {
-      const chunks: Buffer[] = [];
-      res.on('data', (c: Buffer) => chunks.push(c));
-      res.on('end', () => resolve(Buffer.concat(chunks)));
-      res.on('error', reject);
-    });
-  });
-
-  // Multipart upload to Whisper. Hand-rolled to avoid form-data dep.
-  const boundary = `----alienkind${Date.now()}`;
-  const head = Buffer.from(
-    `--${boundary}\r\n` +
-    `Content-Disposition: form-data; name="file"; filename="voice.ogg"\r\n` +
-    `Content-Type: audio/ogg\r\n\r\n`
-  );
-  const tail = Buffer.from(
-    `\r\n--${boundary}\r\n` +
-    `Content-Disposition: form-data; name="model"\r\n\r\nwhisper-1\r\n` +
-    `--${boundary}--\r\n`
-  );
-  const body = Buffer.concat([head, audioBuffer, tail]);
-
-  return new Promise((resolve) => {
-    const req = https.request('https://api.openai.com/v1/audio/transcriptions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': `multipart/form-data; boundary=${boundary}`,
-        'Content-Length': body.length,
-      },
-    }, (res: any) => {
-      let data = '';
-      res.on('data', (c: string) => data += c);
-      res.on('end', () => {
-        try {
-          const j = JSON.parse(data);
-          resolve(j.text || null);
-        } catch {
-          resolve(null);
-        }
-      });
-    });
-    req.on('error', () => resolve(null));
-    req.write(body);
-    req.end();
-  });
-}
 
 async function chunkAndSend(ctx: any, text: string): Promise<void> {
   let remaining = text;
@@ -161,8 +107,8 @@ bot.on('message:voice', async (ctx: any) => {
   const chatId = String(ctx.from?.id || '');
   if (!ALLOWED_CHAT_IDS.includes(chatId)) return;
 
-  if (!process.env.OPENAI_API_KEY) {
-    await ctx.reply("Voice notes need OPENAI_API_KEY in .env for transcription. Add it and restart, or send text.");
+  if (!isTranscriptionAvailable()) {
+    await ctx.reply("Voice notes need a transcription backend in .env (e.g., OPENAI_API_KEY for Whisper). Send text instead, or configure transcription.");
     return;
   }
 
@@ -170,9 +116,9 @@ bot.on('message:voice', async (ctx: any) => {
   try {
     const file = await ctx.getFile();
     const fileUrl = `https://api.telegram.org/file/bot${BOT_TOKEN}/${file.file_path}`;
-    const transcript = await transcribeVoice(fileUrl);
+    const transcript = await transcribe({ url: fileUrl, mimeType: 'audio/ogg' });
     if (!transcript) {
-      await ctx.reply("(transcription failed — check OPENAI_API_KEY)");
+      await ctx.reply("(transcription failed — check your transcription backend config)");
       return;
     }
     await ctx.reply(`🎤 Heard: "${transcript}"`);

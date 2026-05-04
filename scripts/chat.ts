@@ -276,6 +276,7 @@ function handleSlashCommand(
   \x1b[36m/save\x1b[0m          Save this conversation to a file
   \x1b[36m/clear\x1b[0m         Clear conversation history (fresh start)
   \x1b[36m/hooks\x1b[0m         Show active hooks and what they enforce
+  \x1b[36m/channels\x1b[0m      Show active channels (Telegram / Discord / Slack / webhook)
   \x1b[36m/config\x1b[0m        Show current configuration
   \x1b[36m/exit\x1b[0m          Quit
 `);
@@ -396,6 +397,33 @@ function handleSlashCommand(
       console.log(`  \x1b[36mHooks:\x1b[0m     ${fs.existsSync(hooksPath) ? 'configured' : 'not configured'}`);
       console.log('');
       return true;
+
+    case '/channels': {
+      console.log('\n  \x1b[1mActive Channels\x1b[0m\n');
+      try {
+        const result = execSync('pm2 jlist', { encoding: 'utf8', timeout: 3000 });
+        const procs = JSON.parse(result);
+        const channels = procs.filter((p: any) => p.name?.startsWith('alienkind-'));
+        if (channels.length === 0) {
+          console.log('  \x1b[2mNo channels running.\x1b[0m');
+          console.log('  Add one: \x1b[36mnpm run channels\x1b[0m\n');
+        } else {
+          for (const ch of channels) {
+            const status = ch.pm2_env?.status || 'unknown';
+            const color = status === 'online' ? '\x1b[32m' : '\x1b[33m';
+            const name = ch.name.replace('alienkind-', '');
+            const uptime = ch.pm2_env?.pm_uptime ? Math.round((Date.now() - ch.pm2_env.pm_uptime) / 60000) : 0;
+            console.log(`  ${color}${status.padEnd(8)}\x1b[0m ${name.padEnd(12)} \x1b[2m(uptime ${uptime}m)\x1b[0m`);
+          }
+          console.log(`\n  Manage: \x1b[36mpm2 logs <name>\x1b[0m / \x1b[36mpm2 restart <name>\x1b[0m`);
+          console.log(`  Add another: \x1b[36mnpm run channels\x1b[0m\n`);
+        }
+      } catch {
+        console.log('  \x1b[2mpm2 not installed or no channels configured.\x1b[0m');
+        console.log('  Add one: \x1b[36mnpm run channels\x1b[0m\n');
+      }
+      return true;
+    }
 
     case '/exit':
     case '/quit':

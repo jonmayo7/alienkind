@@ -93,6 +93,71 @@ const CHANNELS: Record<string, ChannelDef> = {
       'Right-click your username in Discord → "Copy User ID" (with Developer Mode enabled in settings)',
     ],
   },
+  slack: {
+    name: 'slack',
+    label: 'Slack',
+    npmPackage: '@slack/bolt',
+    envVars: [
+      {
+        key: 'SLACK_BOT_TOKEN',
+        prompt: 'Slack Bot User OAuth Token (xoxb-...)',
+        required: true,
+        secret: true,
+      },
+      {
+        key: 'SLACK_APP_TOKEN',
+        prompt: 'Slack App-Level Token (xapp-..., for Socket Mode)',
+        required: true,
+        secret: true,
+      },
+      {
+        key: 'SLACK_ALLOWED_USER_IDS',
+        prompt: 'Allowed Slack user IDs (U-prefixed, comma-separated)',
+        required: true,
+      },
+      {
+        key: 'SLACK_ALLOWED_CHANNEL_IDS',
+        prompt: 'Allowed Slack channel IDs (C-prefixed, optional)',
+        required: false,
+      },
+    ],
+    setupNotes: [
+      'Go to https://api.slack.com/apps → Create New App → "From scratch"',
+      'Socket Mode → Enable + create App-Level Token (xapp-) with connections:write',
+      'OAuth & Permissions → Bot Token Scopes: chat:write, im:history, im:write, channels:history (if you want public channels)',
+      'Install to Workspace → copy the Bot User OAuth Token (xoxb-)',
+      'Event Subscriptions → enable + Subscribe to bot events: message.im (and message.channels if needed)',
+      "Click your Slack profile → 'Profile' → '...' → 'Copy member ID' to get your user ID",
+    ],
+  },
+  webhook: {
+    name: 'webhook',
+    label: 'Webhook (HTTP endpoint for any external system)',
+    npmPackage: '', // no external dep — uses node:http
+    envVars: [
+      {
+        key: 'WEBHOOK_AUTH_TOKEN',
+        prompt: 'Auth token (any random string — callers pass it as Bearer token)',
+        required: true,
+        secret: true,
+      },
+      {
+        key: 'WEBHOOK_PORT',
+        prompt: 'Port to listen on (default 8787)',
+        required: false,
+      },
+      {
+        key: 'WEBHOOK_HOST',
+        prompt: 'Bind host (default 0.0.0.0; use 127.0.0.1 for localhost-only)',
+        required: false,
+      },
+    ],
+    setupNotes: [
+      'Generate a random auth token: openssl rand -hex 32',
+      'Endpoint: POST /partner with Authorization: Bearer <token>, body: {"message": "..."}',
+      'Use cases: Zapier, custom mobile app, IFTTT, your own web frontend, anything that speaks HTTP',
+    ],
+  },
 };
 
 function ask(rl: any, question: string): Promise<string> {
@@ -201,10 +266,12 @@ async function main() {
       process.exit(1);
     }
 
-    // 1. Install npm dependency
-    if (!installNpmDep(def.npmPackage)) {
-      fail(`Failed to install ${def.npmPackage}`);
-      process.exit(1);
+    // 1. Install npm dependency (skip if no dep — e.g., webhook uses node:http)
+    if (def.npmPackage) {
+      if (!installNpmDep(def.npmPackage)) {
+        fail(`Failed to install ${def.npmPackage}`);
+        process.exit(1);
+      }
     }
 
     // 2. Configure (prompt for credentials)
