@@ -29,7 +29,7 @@ The setup script:
 1. Copies `.env.example` to `.env` if missing.
 2. Verifies your substrate key is set.
 3. Verifies your Supabase config (or acknowledges file fallback).
-4. Wires `.claude/settings.local.json` from the example (3 hooks: log-conversation, correction-to-character, memory-firewall).
+4. Wires `.claude/settings.local.json` from the example (5 hooks: log-conversation, correction-to-ledger, memory-firewall, conflict-guard, build-cycle).
 5. Tells you what to do next based on what's still missing.
 
 Re-run `npm run setup` any time to re-check state. It's idempotent.
@@ -82,7 +82,7 @@ What happens on first boot:
 4. You talk. Each turn:
    - Your prompt fires `log-conversation` (writes to Supabase or file)
    - The partner's response fires the same hook on Stop
-   - If you correct the partner with weight ("no", "stop", "that's wrong"), `correction-to-character` queues that for the identity kernel
+   - If you correct the partner with weight ("no", "stop", "that's wrong"), `correction-to-ledger` writes that to the `learning_ledger` table — the nightly identity-sync reads from there to evolve the kernel
 5. The PreToolUse memory-firewall fires if the partner tries to write to identity files — it blocks API keys, prompt injection, and exfiltration patterns from landing in your kernel.
 
 Slash commands available: `/help`, `/model`, `/status`, `/name`, `/identity`, `/save`, `/clear`, `/hooks`, `/config`, `/exit`.

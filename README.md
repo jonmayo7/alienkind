@@ -2,7 +2,7 @@
 
 **The partnership architecture that runs across every AI substrate.**
 
-OpenClaw, Codex, Claude Code, direct API, local compute — point any of them at the same identity kernel, hooks, memory, and data core, and you have a persistent partner that survives substrate changes.
+OpenClaw, Claude Code, direct API, local compute — point any of them at the same identity kernel, hooks, memory, and data core, and you have a persistent partner that survives substrate changes.
 
 > Eat the agents. Keep the partnership.
 
@@ -26,7 +26,7 @@ A persistent partner needs five things. Most projects ship one or two and stop. 
 2. **Security organ** — Hooks that block memory exfiltration, gate sensitive writes, and make the privacy boundary enforceable rather than aspirational.
 3. **Memory & evolution** — Conversations persist to a data core (your Supabase, your SQLite, your file). Corrections flow back to the identity kernel. Nightly synthesis rewrites orientation from behavioral data, not from declarations.
 4. **Autonomous daemon** — Scheduled jobs the partner runs on its own: nightly evolution, morning brief, channel listeners. AlienKind ships the prompt templates (the partnership-architecture half); you pick the runner (cron + your substrate). Optional but recommended.
-5. **Multi-substrate runtime** — A provider-agnostic chat loop that points at Claude Code, Codex, OpenAI, OpenRouter, or any local OpenAI-compatible endpoint. The partner doesn't know which substrate it's running on. Neither do you, after a while.
+5. **Multi-substrate runtime** — A provider-agnostic chat loop that points at Claude Code, Anthropic API, OpenAI, OpenRouter, or any OpenAI-compatible endpoint (Ollama covers local). The partner doesn't know which substrate it's running on. Neither do you, after a while.
 
 The architecture is the contract. Any compliant substrate becomes a body for the same partner.
 
@@ -34,14 +34,14 @@ The architecture is the contract. Any compliant substrate becomes a body for the
 
 ## Tier 1: out-of-the-box
 
-The default path requires no special hardware. If you have a Claude Code subscription (or an OpenRouter free tier, or a Codex subscription), you have what you need.
+The default path requires no special hardware. If you have a Claude Code subscription, an Anthropic or OpenAI key, or an OpenRouter free tier, you have what you need.
 
 ```
 ┌─────────────────────────────────────────────────────┐
 │  Always-on host (your laptop, or a $5/mo VM)        │
 │   └─ AlienKind: kernel + hooks + daemon jobs        │
 │       └─ Substrate: Claude Code subscription        │
-│           or Codex / OpenRouter / direct API        │
+│           or Anthropic / OpenAI / OpenRouter / API  │
 │       └─ Data core: Supabase (free tier or Pro)     │
 └─────────────────────────────────────────────────────┘
 ```
@@ -68,14 +68,14 @@ The empty middle is a tier none of those projects occupy: **the contract that le
 
 ## Status
 
-**Draft, May 2026.** Architecture stable. Tier 1 reference implementation working end-to-end (chat loop, three enforcement hooks, graceful-degradation portable layer, identity kernel, conversations data core, nightly identity-sync prompt). The repo is intentionally small — every file has earned its place.
+**Draft, May 2026.** Architecture stable. Tier 1 reference implementation working end-to-end (chat loop, five enforcement hooks, graceful-degradation portable layer, identity kernel, conversations data core, nightly identity-sync prompt). The repo is intentionally small — every file has earned its place.
 
 What ships in the reference implementation:
-- Multi-substrate chat loop (`scripts/chat.ts`) — Anthropic / OpenAI / OpenRouter / generic gateway
-- Three enforcement hooks — `log-conversation`, `correction-to-character`, `memory-firewall` (BLOCKING)
+- Multi-substrate chat loop (`scripts/chat.ts`) — Claude Code, Anthropic API, OpenAI, OpenRouter, or any OpenAI-compatible endpoint (incl. Ollama for local)
+- Five enforcement hooks — `log-conversation`, `correction-to-ledger`, `memory-firewall` (BLOCKING), `conflict-guard`, `build-cycle`
 - Portable storage layer (`scripts/lib/portable.ts`) — Supabase → SQLite → file
 - 4-file identity kernel templates
-- Migration 001 for the conversations data core
+- Three SQL migrations: 001 conversations (required), 002 learning-ledger (optional), 003 consciousness-entries (optional)
 - Nightly identity-sync prompt template (runner is your-substrate-of-choice)
 - 3-command setup wizard (`npm run setup`)
 
