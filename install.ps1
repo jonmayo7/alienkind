@@ -22,6 +22,12 @@
 
 $ErrorActionPreference = "Stop"
 
+# Default Windows ExecutionPolicy is Restricted, which blocks loading of
+# child .ps1 files (e.g. npm.ps1 when we install Claude Code globally).
+# Process-scope bypass affects only this session — does not change the
+# machine policy or persist after the terminal closes.
+try { Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force } catch {}
+
 $RepoUrl  = if ($env:ALIENKIND_REPO) { $env:ALIENKIND_REPO } else { "https://github.com/jonmayo7/alienkind.git" }
 $TargetDir = if ($env:ALIENKIND_DIR) { $env:ALIENKIND_DIR } else { Join-Path $env:USERPROFILE "alienkind" }
 $SkipClaude = $env:SKIP_CLAUDE -eq "1"
