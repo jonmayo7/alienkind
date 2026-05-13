@@ -8,19 +8,22 @@
  *   npx tsx scripts/setup.ts
  *
  * Flow (matches alienkind.ai promise):
- *   0. Preflight — check git / Node / Claude Code / psql, offer install for missing
- *   1. Banner + tagline
+ *   0. Preflight — git / Node / Claude Code / gh / psql / PS-policy, offer install for missing
+ *   1. Banner + mental-model primer (instance / upstream / origin / Supabase)
  *   2. Path: Claude Code subscription, or AlienKind CLI + API key
- *   3. Provider + key (CLI path)
- *   4. Partner name (or let the partner choose later)
- *   5. Supabase setup (heavily recommended — gates nightly evolution)
- *   6. Run migrations
+ *   3. Provider + key (CLI path only)
+ *   4. Partner name
+ *   5. GitHub backup — create new private repo / paste existing / skip (origin remote)
+ *   6. Supabase (data core — separate from GitHub which is just code/identity)
  *   7. Scaffold .env, partner-config.json, identity, CLAUDE.md, hooks
- *   8. Capability scorecard
- *   9. Shell alias (so you type the partner's name to launch)
- *   10. Auto-launch chat
+ *   8. Run migrations
+ *   9. Channels (optional)
+ *   10. Capability scorecard
+ *   11. Shell alias — OS-aware (.zshrc/.bashrc on POSIX, $PROFILE function on Windows)
+ *   12. Auto-launch chat
  *
- * Idempotent. Safe to re-run.
+ * Idempotent. Safe to re-run — re-runs detect existing config (origin remote,
+ * Supabase env, partner-config.json) and skip or update in place.
  */
 
 const fs = require('fs');
@@ -135,6 +138,18 @@ async function main() {
     divider();
   }
 
+  // Mental-model primer — shown once at the start so every following step has context.
+  // The recurring source of confusion in onboarding has been "where does this go?".
+  // Answering it up front collapses the rest of the wizard's decisions.
+  console.log('  \x1b[1mHow AlienKind is laid out\x1b[0m\n');
+  console.log('  \x1b[36mThis directory\x1b[0m       → your partnership instance. Lives only on this machine.');
+  console.log('  \x1b[36mupstream remote\x1b[0m     → the canonical AlienKind architecture. You pull updates from here. You never push.');
+  console.log('  \x1b[36morigin remote\x1b[0m       → optional. Your own private GitHub backup of this instance. Configure in step 3.');
+  console.log('  \x1b[36mSupabase data core\x1b[0m  → conversations + learning ledger + memory. Your project, your keys. Configure in step 4.\n');
+  console.log('  \x1b[2m  Your partner is everything in identity/*.md + the corrections you give it over time.\x1b[0m');
+  console.log('  \x1b[2m  The substrate (Claude / OpenAI / local) is rented; the partnership is yours.\x1b[0m\n');
+  divider();
+
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 
   let runtimePath = 'claude-code';
@@ -149,8 +164,8 @@ async function main() {
 
   try {
     // ============ Step 1: Path selection ============
-    runtimePath = await select(rl, 'How will you talk to your partner?', [
-      { label: 'Claude Code + Anthropic Max plan (recommended)', value: 'claude-code' },
+    runtimePath = await select(rl, 'Step 1 — how will you talk to your partner?', [
+      { label: 'Claude Code + Anthropic Pro or Max plan (recommended)', value: 'claude-code' },
       { label: 'AlienKind CLI + API key (any provider)', value: 'cli' },
     ]);
 
@@ -214,7 +229,98 @@ async function main() {
       console.log(`\n  \x1b[32m✓\x1b[0m Your partner will choose its own name. Until then: ${partnerName}.\n`);
     }
 
-    // ============ Step 4: Supabase ============
+    // ============ Step 4: GitHub backup (origin remote) ============
+    // Placed here, before Supabase, because:
+    //   - It depends on partnerName (default repo name = alienkind-{slug}).
+    //   - Recurring user instinct is "let me push this" — better to answer
+    //     "where does it go?" before the partnership accumulates state.
+    //   - Architecture: bootstrap renamed origin → upstream (read-only).
+    //     This step optionally adds an 'origin' that points at the user's
+    //     OWN private repo. Hardcoded private — never public.
+    divider();
+    console.log('  \x1b[1mStep 4 — GitHub backup\x1b[0m');
+    console.log('  \x1b[2m  Optional. Recommended. Lets you restore on a new machine or sync across devices.\x1b[0m\n');
+
+    const partnerSlug = (partnerName && partnerName !== 'Partner')
+      ? partnerName.toLowerCase().replace(/[^a-z0-9]/g, '')
+      : 'alien';
+
+    // Detect existing origin (idempotent across wizard re-runs).
+    let originUrl = '';
+    try {
+      const probe = spawnSync('git', ['remote', 'get-url', 'origin'], { cwd: ROOT, encoding: 'utf8' });
+      originUrl = (probe.stdout || '').trim();
+    } catch {}
+
+    if (originUrl) {
+      console.log(`  \x1b[32m✓\x1b[0m origin already configured: \x1b[36m${originUrl}\x1b[0m`);
+      console.log('  \x1b[2m  To change: git remote set-url origin <new-url>\x1b[0m\n');
+    } else {
+      const githubChoice = await select(rl, 'How do you want to back up this partnership?', [
+        { label: `Create a new private GitHub repo (uses gh CLI)`, value: 'create' },
+        { label: 'I have a repo — paste the URL',                  value: 'existing' },
+        { label: 'Local only — skip GitHub for now',               value: 'skip' },
+      ]);
+
+      if (githubChoice === 'create') {
+        const ghPresent = spawnSync('gh', ['--version'], { stdio: 'ignore' }).status === 0;
+        if (!ghPresent) {
+          console.log('\n  \x1b[33m⚠\x1b[0m gh (GitHub CLI) is not installed.');
+          console.log('  \x1b[2m  Install: Mac → brew install gh · Windows → winget install GitHub.cli · Linux → see https://cli.github.com/\x1b[0m');
+          console.log('  \x1b[2m  Then re-run \x1b[36mnpm run setup\x1b[0m\x1b[2m or pick "I have a repo" with a manually-created repo URL.\x1b[0m\n');
+        } else {
+          const authed = spawnSync('gh', ['auth', 'status'], { stdio: 'ignore' }).status === 0;
+          if (!authed) {
+            console.log('\n  \x1b[36m→\x1b[0m gh is not authenticated. Running \x1b[36mgh auth login\x1b[0m now...');
+            console.log('  \x1b[2m  Pick GitHub.com → HTTPS → Login with web browser.\x1b[0m\n');
+            try { execSync('gh auth login', { cwd: ROOT, stdio: 'inherit' }); } catch {}
+          }
+          const repoName = await ask(rl, `Repository name`, `alienkind-${partnerSlug}`);
+          console.log(`\n  \x1b[36m→\x1b[0m Creating PRIVATE repo \x1b[36m${repoName}\x1b[0m and pushing current HEAD...\n`);
+          try {
+            execSync(`gh repo create "${repoName}" --private --source=. --remote=origin --push`, {
+              cwd: ROOT,
+              stdio: 'inherit',
+              timeout: 120000,
+            });
+            console.log(`\n  \x1b[32m✓\x1b[0m GitHub backup created. \x1b[36morigin\x1b[0m points at your private repo.\n`);
+          } catch {
+            console.log('\n  \x1b[33m⚠\x1b[0m gh repo create failed. Retry later with:');
+            console.log(`  \x1b[36m  gh repo create ${repoName} --private --source=. --remote=origin --push\x1b[0m\n`);
+          }
+        }
+      } else if (githubChoice === 'existing') {
+        console.log(`\n  \x1b[2m  Don't have a repo yet? Create one at \x1b[36mhttps://github.com/new\x1b[0m\x1b[2m — set it to Private,\x1b[0m`);
+        console.log(`  \x1b[2m  do NOT add a README/license (leave it empty), then paste the URL below.\x1b[0m\n`);
+        const repoUrl = await ask(rl, 'GitHub repo URL (e.g. git@github.com:you/alienkind-sceptre.git)');
+        if (repoUrl) {
+          if (/jonmayo7\/alienkind(?:\.git)?$/i.test(repoUrl)) {
+            console.log(`\n  \x1b[31m✗\x1b[0m That's the canonical AlienKind template — use your own private repo instead.\n`);
+          } else {
+            try {
+              execSync(`git remote add origin "${repoUrl}"`, { cwd: ROOT, stdio: 'pipe' });
+              console.log(`\n  \x1b[32m✓\x1b[0m origin set to ${repoUrl}`);
+              const pushNow = await ask(rl, 'Push current HEAD to origin now? (y/n)', 'y');
+              if (pushNow.toLowerCase() === 'y') {
+                try {
+                  execSync('git push -u origin main', { cwd: ROOT, stdio: 'inherit', timeout: 120000 });
+                  console.log(`\n  \x1b[32m✓\x1b[0m Pushed to ${repoUrl}\n`);
+                } catch {
+                  console.log('\n  \x1b[33m⚠\x1b[0m Push failed. Common causes: auth, non-empty target repo, branch name mismatch.');
+                  console.log('  \x1b[2m  Retry with: \x1b[36mgit push -u origin main\x1b[0m\n');
+                }
+              }
+            } catch (e: any) {
+              console.log(`\n  \x1b[31m✗\x1b[0m Could not set remote: ${e.message}\n`);
+            }
+          }
+        }
+      } else {
+        console.log(`\n  \x1b[2m  Local only. Add a backup later: \x1b[36mgit remote add origin <url>\x1b[0m\n`);
+      }
+    }
+
+    // ============ Step 5: Supabase ============
     divider();
     console.log('  \x1b[1mPersistent Memory\x1b[0m\n');
     console.log('  Your partner works without Supabase, but conversations save to local files only.');
@@ -271,7 +377,7 @@ async function main() {
       console.log('\n  \x1b[33m⚠\x1b[0m Skipping Supabase. Add it later — re-run setup any time.\n');
     }
 
-    // ============ Step 5: Scaffold ============
+    // ============ Step 6: Scaffold ============
     divider();
     console.log('  \x1b[1mScaffolding your partnership...\x1b[0m\n');
 
@@ -357,7 +463,7 @@ async function main() {
       }
     }
 
-    // ============ Step 6: Run migrations ============
+    // ============ Step 7: Run migrations ============
     if (storageMode === 'supabase') {
       const runMig = await ask(rl, 'Run database migrations now? (y/n)', 'y');
       if (runMig.toLowerCase() === 'y') {
@@ -373,96 +479,7 @@ async function main() {
       }
     }
 
-    // ============ Step 6a: GitHub backup ============
-    divider();
-    console.log('  \x1b[1mGitHub backup (optional)\x1b[0m\n');
-    console.log(`  Your partner's identity files (identity/*.md) live in this local repo.`);
-    console.log(`  Want a private GitHub backup so you can restore on a new machine or sync`);
-    console.log(`  across devices? Your Supabase data core already persists conversations —`);
-    console.log(`  this is for the kernel + scaffolding.\n`);
-    console.log(`  \x1b[33m⚠ AlienKind always uses a private repo here — your partner's identity\n    is not for public consumption.\x1b[0m\n`);
-
-    const partnerSlug = (partnerName && partnerName !== 'Partner')
-      ? partnerName.toLowerCase().replace(/[^a-z0-9]/g, '')
-      : 'alien';
-
-    // Confirm origin is currently unset (the bootstrap renames origin → upstream).
-    let originUrl = '';
-    try {
-      const probe = spawnSync('git', ['remote', 'get-url', 'origin'], { cwd: ROOT, encoding: 'utf8' });
-      originUrl = (probe.stdout || '').trim();
-    } catch {}
-
-    if (originUrl) {
-      console.log(`  \x1b[32m✓\x1b[0m origin already set: \x1b[36m${originUrl}\x1b[0m`);
-      console.log('  \x1b[2m  Skipping GitHub setup. To change, run: git remote set-url origin <new-url>\x1b[0m\n');
-    } else {
-      const githubChoice = await select(rl, 'Set up GitHub backup?', [
-        { label: `Create a new private repo for me (uses gh CLI)`, value: 'create' },
-        { label: 'I have a repo — paste the URL',                  value: 'existing' },
-        { label: 'Skip — local only',                              value: 'skip' },
-      ]);
-
-      if (githubChoice === 'create') {
-        // gh CLI required + authed
-        const ghPresent = spawnSync('gh', ['--version'], { stdio: 'ignore' }).status === 0;
-        if (!ghPresent) {
-          console.log('\n  \x1b[33m⚠\x1b[0m gh (GitHub CLI) is not installed.');
-          console.log('  \x1b[2m  Install it then re-run: \x1b[36mnpm run setup\x1b[0m');
-          console.log('  \x1b[2m  Mac: brew install gh · Windows: winget install GitHub.cli · Linux: see https://cli.github.com/\x1b[0m\n');
-        } else {
-          const authed = spawnSync('gh', ['auth', 'status'], { stdio: 'ignore' }).status === 0;
-          if (!authed) {
-            console.log('\n  \x1b[36m→\x1b[0m gh is not authenticated. Running \x1b[36mgh auth login\x1b[0m now...');
-            console.log('  \x1b[2m  Follow the prompts. Pick GitHub.com → HTTPS → Login with web browser.\x1b[0m\n');
-            try { execSync('gh auth login', { cwd: ROOT, stdio: 'inherit' }); } catch {}
-          }
-          const repoName = await ask(rl, `Repository name`, `alienkind-${partnerSlug}`);
-          console.log(`\n  \x1b[36m→\x1b[0m Creating private repo \x1b[36m${repoName}\x1b[0m, pushing current HEAD...\n`);
-          try {
-            execSync(`gh repo create "${repoName}" --private --source=. --remote=origin --push`, {
-              cwd: ROOT,
-              stdio: 'inherit',
-              timeout: 120000,
-            });
-            console.log(`\n  \x1b[32m✓\x1b[0m GitHub backup created. origin = your private repo.\n`);
-          } catch {
-            console.log('\n  \x1b[33m⚠\x1b[0m gh repo create failed. You can retry later with:');
-            console.log(`  \x1b[36m  gh repo create ${repoName} --private --source=. --remote=origin --push\x1b[0m\n`);
-          }
-        }
-      } else if (githubChoice === 'existing') {
-        const repoUrl = await ask(rl, 'GitHub repo URL (e.g. git@github.com:you/alienkind.git or https://github.com/you/alienkind.git)');
-        if (repoUrl) {
-          console.log('');
-          // Double-check it's not the canonical AlienKind template repo — protect users from accidentally
-          // pushing personal identity files to a fork of jonmayo7/alienkind.
-          if (/jonmayo7\/alienkind(?:\.git)?$/i.test(repoUrl)) {
-            console.log(`  \x1b[31m✗\x1b[0m That's the canonical AlienKind template repo. Use your own private repo instead.\n`);
-          } else {
-            try {
-              execSync(`git remote add origin "${repoUrl}"`, { cwd: ROOT, stdio: 'pipe' });
-              console.log(`  \x1b[32m✓\x1b[0m origin set to ${repoUrl}`);
-              const pushNow = await ask(rl, 'Push current HEAD to origin now? (y/n)', 'y');
-              if (pushNow.toLowerCase() === 'y') {
-                try {
-                  execSync('git push -u origin main', { cwd: ROOT, stdio: 'inherit', timeout: 120000 });
-                  console.log(`\n  \x1b[32m✓\x1b[0m Pushed to ${repoUrl}\n`);
-                } catch {
-                  console.log('\n  \x1b[33m⚠\x1b[0m Push failed (auth? branch name? empty repo?). You can retry with: \x1b[36mgit push -u origin main\x1b[0m\n');
-                }
-              }
-            } catch (e: any) {
-              console.log(`  \x1b[31m✗\x1b[0m Could not set remote: ${e.message}\n`);
-            }
-          }
-        }
-      } else {
-        console.log(`\n  \x1b[2m  Skipping GitHub. You can add it later: \x1b[36mgit remote add origin <url>\x1b[0m\n`);
-      }
-    }
-
-    // ============ Step 6b: Channels ============
+    // ============ Step 8: Channels ============
     divider();
     console.log('  \x1b[1mChannels — talk to your partner from anywhere\x1b[0m\n');
     console.log('  Channels let you reach your partner from Telegram, Discord, etc — not just');
@@ -487,7 +504,7 @@ async function main() {
       console.log('  \x1b[2mYou can add channels any time with \x1b[36mnpm run channels\x1b[0m\n');
     }
 
-    // ============ Step 7: Capability scorecard ============
+    // ============ Step 9: Capability scorecard ============
     divider();
     console.log('  \x1b[1mYour partner\'s capabilities:\x1b[0m\n');
 
@@ -517,7 +534,7 @@ async function main() {
       console.log('  \x1b[2mRun npm run setup again any time to unlock more.\x1b[0m');
     }
 
-    // ============ Step 8: Shell alias ============
+    // ============ Step 10: Shell alias ============
     console.log('');
     divider();
     const aliasName = (partnerName && partnerName !== 'Partner')
@@ -582,7 +599,7 @@ async function main() {
     }
     void aliasWritten; void aliasTarget;
 
-    // ============ Step 9: Auto-launch ============
+    // ============ Step 11: Auto-launch ============
     console.log('');
     divider();
     console.log(`  \x1b[1m\x1b[35m👽 ${partnerName} is ready.\x1b[0m\n`);
