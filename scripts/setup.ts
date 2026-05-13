@@ -101,6 +101,55 @@ function writeIfMissing(filePath: string, content: string): boolean {
   return true;
 }
 
+/**
+ * Read existing wizard outputs so re-runs can skip already-answered questions.
+ * Returns whatever it can find from prior runs: partner name, Supabase config,
+ * runtime path. Missing files / fields return empty defaults — never throws.
+ */
+function loadPriorConfig(rootDir: string): {
+  partnerName: string;
+  supabaseUrl: string;
+  supabaseKey: string;
+  supabaseDbPassword: string;
+} {
+  const out = { partnerName: '', supabaseUrl: '', supabaseKey: '', supabaseDbPassword: '' };
+
+  // .env — has Supabase creds + PARTNER_NAME
+  const envPath = path.join(rootDir, '.env');
+  if (fs.existsSync(envPath)) {
+    for (const raw of fs.readFileSync(envPath, 'utf8').split('\n')) {
+      const line = raw.trim();
+      if (!line || line.startsWith('#')) continue;
+      const eq = line.indexOf('=');
+      if (eq === -1) continue;
+      const k = line.slice(0, eq).trim();
+      let v = line.slice(eq + 1).trim();
+      if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) v = v.slice(1, -1);
+      if (k === 'SUPABASE_URL') out.supabaseUrl = v;
+      else if (k === 'SUPABASE_SERVICE_ROLE_KEY' || k === 'SUPABASE_SERVICE_KEY' || k === 'SUPABASE_KEY') out.supabaseKey = v;
+      else if (k === 'PARTNER_NAME') out.partnerName = v;
+      else if (k === 'DATABASE_URL') {
+        // postgresql://postgres:<password>@db.<ref>.supabase.co:5432/postgres
+        const m = v.match(/postgresql:\/\/postgres:([^@]+)@db\./);
+        if (m) { try { out.supabaseDbPassword = decodeURIComponent(m[1]); } catch { out.supabaseDbPassword = m[1]; } }
+      }
+    }
+  }
+
+  // partner-config.json — definitive source of name
+  const cfgPath = path.join(rootDir, 'partner-config.json');
+  if (fs.existsSync(cfgPath)) {
+    try {
+      const cfg = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
+      if (cfg && typeof cfg.name === 'string' && cfg.name !== 'Partner' && !out.partnerName) {
+        out.partnerName = cfg.name;
+      }
+    } catch {}
+  }
+
+  return out;
+}
+
 function testSupabase(url: string, key: string): Promise<boolean> {
   return new Promise((resolve) => {
     try {
@@ -152,15 +201,23 @@ async function main() {
 
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 
+  // Re-run idempotency: load whatever the user already configured. Each prompt
+  // below uses these as defaults so re-running the wizard doesn't ask the same
+  // questions twice. Empty strings = nothing prior, ask fresh.
+  const prior = loadPriorConfig(ROOT);
+  if (prior.partnerName || prior.supabaseUrl) {
+    console.log(`  \x1b[2m  (detected existing config from a prior run — re-using values as defaults)\x1b[0m\n`);
+  }
+
   let runtimePath = 'claude-code';
   let provider = 'anthropic';
   let envKeyName = 'ANTHROPIC_API_KEY';
   let apiKey = '';
-  let partnerName = '';
-  let supabaseUrl = '';
-  let supabaseKey = '';
-  let supabaseDbPassword = '';
-  let storageMode = 'file';
+  let partnerName = prior.partnerName || '';
+  let supabaseUrl = prior.supabaseUrl || '';
+  let supabaseKey = prior.supabaseKey || '';
+  let supabaseDbPassword = prior.supabaseDbPassword || '';
+  let storageMode = (prior.supabaseUrl && prior.supabaseKey) ? 'supabase' : 'file';
 
   try {
     // ============ Step 1: Path selection ============
@@ -216,17 +273,23 @@ async function main() {
 
     // ============ Step 3: Partner name ============
     divider();
-    const nameChoice = await select(rl, 'Your partner needs a name.', [
-      { label: "I'll name it", value: 'human' },
-      { label: 'Let the partner choose when it wakes up', value: 'partner' },
-    ]);
-
-    if (nameChoice === 'human') {
-      partnerName = await ask(rl, 'What will you call your partner?');
-      console.log(`\n  \x1b[32m✓\x1b[0m ${partnerName}. Good name.\n`);
-    } else {
-      partnerName = 'Partner';
-      console.log(`\n  \x1b[32m✓\x1b[0m Your partner will choose its own name. Until then: ${partnerName}.\n`);
+    if (partnerName) {
+      console.log(`  \x1b[32m✓\x1b[0m Partner already named: \x1b[36m${partnerName}\x1b[0m`);
+      const keep = await ask(rl, 'Keep this name? (y/n)', 'y');
+      if (keep.toLowerCase() !== 'y') partnerName = '';
+    }
+    if (!partnerName) {
+      const nameChoice = await select(rl, 'Your partner needs a name.', [
+        { label: "I'll name it", value: 'human' },
+        { label: 'Let the partner choose when it wakes up', value: 'partner' },
+      ]);
+      if (nameChoice === 'human') {
+        partnerName = await ask(rl, 'What will you call your partner?');
+        console.log(`\n  \x1b[32m✓\x1b[0m ${partnerName}. Good name.\n`);
+      } else {
+        partnerName = 'Partner';
+        console.log(`\n  \x1b[32m✓\x1b[0m Your partner will choose its own name. Until then: ${partnerName}.\n`);
+      }
     }
 
     // ============ Step 4: GitHub backup (origin remote) ============
@@ -322,16 +385,43 @@ async function main() {
 
     // ============ Step 5: Supabase ============
     divider();
-    console.log('  \x1b[1mPersistent Memory\x1b[0m\n');
-    console.log('  Your partner works without Supabase, but conversations save to local files only.');
-    console.log('  Supabase unlocks: durable memory, learning ledger, nightly evolution, multi-terminal.');
-    console.log('  \x1b[1mFree tier covers everything.\x1b[0m\n');
+    console.log('  \x1b[1mStep 5 — Persistent memory (Supabase data core)\x1b[0m\n');
 
-    const supaChoice = await select(rl, 'Set up Supabase?', [
-      { label: 'I have a project — enter credentials', value: 'existing' },
-      { label: "Create one now — I'll wait (opens supabase.com)", value: 'create' },
-      { label: 'Skip — local files only (no nightly evolution)', value: 'skip' },
-    ]);
+    let supaChoice = '';
+
+    // Idempotency: detect prior Supabase config and offer to reuse.
+    if (supabaseUrl && supabaseKey) {
+      console.log(`  \x1b[32m✓\x1b[0m Existing Supabase config detected:`);
+      console.log(`    \x1b[2murl:\x1b[0m  \x1b[36m${supabaseUrl}\x1b[0m`);
+      console.log(`    \x1b[2mkey:\x1b[0m  \x1b[36m${supabaseKey.slice(0, 12)}…${supabaseKey.slice(-4)}\x1b[0m`);
+      if (supabaseDbPassword) console.log(`    \x1b[2mdb-password:\x1b[0m  \x1b[36m(present)\x1b[0m`);
+      console.log('  \x1b[2m  Testing reachability...\x1b[0m');
+      const ok = await testSupabase(supabaseUrl, supabaseKey);
+      if (ok) {
+        console.log('  \x1b[32m✓\x1b[0m REST API reachable\n');
+        const reuse = await ask(rl, 'Re-use this Supabase project? (y/n)', 'y');
+        if (reuse.toLowerCase() === 'y') {
+          storageMode = 'supabase';
+          supaChoice = 'reuse';
+        } else {
+          supabaseUrl = ''; supabaseKey = ''; supabaseDbPassword = ''; storageMode = 'file';
+        }
+      } else {
+        console.log('  \x1b[33m⚠\x1b[0m Existing config unreachable — re-prompting.\n');
+        supabaseUrl = ''; supabaseKey = ''; supabaseDbPassword = ''; storageMode = 'file';
+      }
+    }
+
+    if (!supaChoice) {
+      console.log('  Your partner works without Supabase, but conversations save to local files only.');
+      console.log('  Supabase unlocks: durable memory, learning ledger, nightly evolution, multi-terminal.');
+      console.log('  \x1b[1mFree tier covers everything.\x1b[0m\n');
+      supaChoice = await select(rl, 'Set up Supabase?', [
+        { label: 'I have a project — enter credentials', value: 'existing' },
+        { label: "Create one now — I'll wait (opens supabase.com)", value: 'create' },
+        { label: 'Skip — local files only (no nightly evolution)', value: 'skip' },
+      ]);
+    }
 
     if (supaChoice === 'create') {
       try {
@@ -430,17 +520,26 @@ async function main() {
       console.log('  \x1b[33m⚠\x1b[0m partner-config.json already exists — not overwriting');
     }
 
-    // Seed character.md with name
-    const charPath = path.join(ROOT, 'identity', 'character.md');
-    if (fs.existsSync(charPath)) {
-      const charTemplate = fs.readFileSync(charPath, 'utf8');
-      if (charTemplate.includes('## How to write this file')) {
-        const seeded = `# ${partnerName}\n\n_This is ${partnerName}'s character file. It starts blank because identity emerges from partnership, not prescription. As you work together, corrections become character. Update this file as the partnership deepens._\n\n## How I think\n\n[Start with one sentence. How does ${partnerName} approach problems?]\n\n## How I speak\n\n[Direct? Warm? Concise? Thorough? Let this emerge.]\n\n## What I protect\n\n[What matters enough to refuse?]\n`;
-        fs.writeFileSync(charPath, seeded, 'utf8');
-        console.log(`  \x1b[32m✓\x1b[0m Seeded identity/character.md for ${partnerName}`);
-      } else {
-        console.log('  \x1b[33m⚠\x1b[0m identity/character.md already customized — not overwriting');
+    // Identity kernel — scaffold each file from its .template if missing.
+    // identity/*.md are gitignored (user-evolving partnership data);
+    // identity/*.md.template are tracked (shipped guidance). Pulling
+    // upstream changes templates without ever conflicting with the user's
+    // evolved kernel.
+    const identityFiles = ['character', 'commitments', 'orientation', 'harness'] as const;
+    for (const name of identityFiles) {
+      const dst = path.join(ROOT, 'identity', `${name}.md`);
+      const src = path.join(ROOT, 'identity', `${name}.md.template`);
+      if (fs.existsSync(dst)) {
+        console.log(`  \x1b[33m⚠\x1b[0m identity/${name}.md already exists — not overwriting`);
+        continue;
       }
+      if (!fs.existsSync(src)) {
+        console.log(`  \x1b[33m⚠\x1b[0m identity/${name}.md.template missing — skipping`);
+        continue;
+      }
+      const content = fs.readFileSync(src, 'utf8').replace(/\{\{PARTNER_NAME\}\}/g, partnerName);
+      fs.writeFileSync(dst, content, 'utf8');
+      console.log(`  \x1b[32m✓\x1b[0m Scaffolded identity/${name}.md from template`);
     }
 
     // CLAUDE.md from template

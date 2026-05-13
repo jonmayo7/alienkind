@@ -12,3 +12,11 @@ data/
 .claude/settings.local.json
 partner-config.json
 CLAUDE.md
+
+# Identity kernel — scaffolded from identity/*.md.template by the wizard on
+# first run, then evolved through partnership. Each user's instance is unique;
+# we ship .template files and never track the user-edited *.md files.
+identity/character.md
+identity/commitments.md
+identity/orientation.md
+identity/harness.md
