@@ -8,6 +8,7 @@
  *   npx tsx scripts/setup.ts
  *
  * Flow (matches alienkind.ai promise):
+ *   0. Preflight — check git / Node / Claude Code / psql, offer install for missing
  *   1. Banner + tagline
  *   2. Path: Claude Code subscription, or AlienKind CLI + API key
  *   3. Provider + key (CLI path)
@@ -28,6 +29,7 @@ const os = require('os');
 const readline = require('readline');
 const https = require('https');
 const { execSync, spawnSync } = require('child_process');
+const { runPreflight } = require('./lib/preflight');
 
 const ROOT = path.resolve(__dirname, '..');
 
@@ -120,6 +122,18 @@ async function main() {
   console.log(ALIEN_BANNER);
   console.log(`  \x1b[2m${randomTagline()}\x1b[0m\n`);
   divider();
+
+  // ============ Step 0: Preflight ============
+  // Skip with SKIP_PREFLIGHT=1 (e.g. inside CI or bootstrap scripts that already verified).
+  if (process.env.SKIP_PREFLIGHT !== '1') {
+    console.log('  \x1b[1mChecking your environment...\x1b[0m');
+    const { ok } = await runPreflight('fix');
+    if (!ok) {
+      console.log('\n  \x1b[31m✗\x1b[0m Required tools are still missing. Fix above issues and re-run \x1b[36mnpm run setup\x1b[0m.\n');
+      process.exit(1);
+    }
+    divider();
+  }
 
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 

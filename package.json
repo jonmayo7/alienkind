@@ -9,6 +9,7 @@
   },
   "scripts": {
     "setup": "npx tsx scripts/setup.ts",
+    "doctor": "npx tsx scripts/tools/doctor.ts",
     "chat": "npx tsx scripts/chat.ts",
     "channels": "npx tsx scripts/tools/add-channel.ts",
     "update": "npx tsx scripts/tools/update.ts",
