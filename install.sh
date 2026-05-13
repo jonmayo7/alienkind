@@ -168,7 +168,11 @@ clone_repo() {
   if [ -d "$TARGET_DIR/.git" ]; then
     ok "Repo exists at $TARGET_DIR"
     if confirm "Pull latest changes?"; then
-      (cd "$TARGET_DIR" && git pull --ff-only) || warn "git pull failed — continuing with existing checkout"
+      # Use upstream if origin was already renamed (idempotent for re-runs).
+      local remote
+      remote="$(cd "$TARGET_DIR" && (git remote get-url upstream 2>/dev/null && echo upstream) || (git remote get-url origin 2>/dev/null && echo origin) | tail -1)"
+      remote="${remote:-upstream}"
+      (cd "$TARGET_DIR" && git pull --ff-only "$remote" main) || warn "git pull failed — continuing with existing checkout"
     fi
     return 0
   fi
@@ -178,7 +182,12 @@ clone_repo() {
   fi
   say "Cloning $REPO_URL → $TARGET_DIR"
   git clone "$REPO_URL" "$TARGET_DIR"
-  ok "Cloned"
+  # Rename origin → upstream so the user's local clone never tries to push
+  # to the canonical AlienKind repo. Pulling updates still works via
+  # 'git pull upstream main'. If the user wants their own GitHub backup,
+  # they can `git remote add origin <their-repo>` later.
+  (cd "$TARGET_DIR" && git remote rename origin upstream 2>/dev/null) || true
+  ok "Cloned (origin renamed → upstream; no push remote by default)"
 }
 
 run_setup() {

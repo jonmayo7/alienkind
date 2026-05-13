@@ -148,7 +148,13 @@ function Clone-Repo {
     OK "Repo exists at $TargetDir"
     if (Confirm-Or-Abort "Pull latest changes?") {
       Push-Location $TargetDir
-      try { git pull --ff-only } catch { Warn "git pull failed — continuing with existing checkout" }
+      try {
+        # Prefer 'upstream' (post-rename), fall back to 'origin' (legacy clones).
+        $remote = "upstream"
+        $haveUpstream = (git remote get-url upstream 2>$null)
+        if (-not $haveUpstream) { $remote = "origin" }
+        git pull --ff-only $remote main
+      } catch { Warn "git pull failed — continuing with existing checkout" }
       Pop-Location
     }
     return
@@ -159,7 +165,14 @@ function Clone-Repo {
   }
   Say "Cloning $RepoUrl -> $TargetDir"
   git clone $RepoUrl $TargetDir
-  OK "Cloned"
+  # Rename origin -> upstream so the user's local clone never tries to push
+  # to the canonical AlienKind repo. Pulling updates still works via
+  # 'git pull upstream main'. If the user wants their own GitHub backup,
+  # they can `git remote add origin <their-repo>` later.
+  Push-Location $TargetDir
+  try { git remote rename origin upstream 2>$null } catch {}
+  Pop-Location
+  OK "Cloned (origin renamed -> upstream; no push remote by default)"
 }
 
 function Run-Setup {
