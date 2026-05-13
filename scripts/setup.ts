@@ -431,33 +431,67 @@ async function main() {
     // ============ Step 8: Shell alias ============
     console.log('');
     divider();
-    const shell = process.env.SHELL || '/bin/zsh';
-    const rcFile = shell.includes('zsh') ? '~/.zshrc' : '~/.bashrc';
-    const rcFilePath = rcFile.replace('~', os.homedir());
     const aliasName = (partnerName && partnerName !== 'Partner')
       ? partnerName.toLowerCase().replace(/[^a-z0-9]/g, '')
       : 'alien';
-    const launchCmd = runtimePath === 'claude-code'
-      ? `cd ${ROOT} && claude`
-      : `cd ${ROOT} && npm run chat`;
-    const aliasCmd = `alias ${aliasName}="${launchCmd}"`;
+    const isWin = process.platform === 'win32';
 
     console.log('  \x1b[1mShortcut\x1b[0m\n');
     console.log(`  Type \x1b[36m${aliasName}\x1b[0m in any terminal to talk to your partner.\n`);
 
     let aliasWritten = false;
-    try {
-      const existingRc = fs.existsSync(rcFilePath) ? fs.readFileSync(rcFilePath, 'utf8') : '';
-      const cleanedRc = existingRc.replace(/\n# AlienKind — talk to your partner\nalias \w+="[^"]*"\n?/g, '');
-      const newRc = cleanedRc.trimEnd() + `\n\n# AlienKind — talk to your partner\n${aliasCmd}\n`;
-      fs.writeFileSync(rcFilePath, newRc, 'utf8');
-      aliasWritten = true;
-      console.log(`  \x1b[32m✓\x1b[0m Shell alias added to ${rcFile}`);
-      console.log(`  \x1b[2m  (open a new terminal, or run: source ${rcFile})\x1b[0m`);
-    } catch {
-      console.log(`  \x1b[31m✗\x1b[0m Could not write to ${rcFile}. Add this manually:\n`);
-      console.log(`    \x1b[33m${aliasCmd}\x1b[0m`);
+    let aliasTarget = '';
+    let aliasCmd = '';
+
+    if (isWin) {
+      // Windows: append a function to the PowerShell $PROFILE so `aliasName` works
+      // from PowerShell + Windows Terminal. We resolve $PROFILE by asking PowerShell.
+      const launchCmd = runtimePath === 'claude-code'
+        ? `Set-Location '${ROOT}'; claude`
+        : `Set-Location '${ROOT}'; npm run chat`;
+      aliasCmd = `function ${aliasName} { ${launchCmd} }`;
+      try {
+        const profileProbe = spawnSync('powershell', ['-NoProfile', '-Command', '$PROFILE'], { encoding: 'utf8' });
+        const profilePath = (profileProbe.stdout || '').trim();
+        if (!profilePath) throw new Error('could not resolve $PROFILE');
+        fs.mkdirSync(path.dirname(profilePath), { recursive: true });
+        const existing = fs.existsSync(profilePath) ? fs.readFileSync(profilePath, 'utf8') : '';
+        const cleaned = existing.replace(/\r?\n# AlienKind — talk to your partner\r?\nfunction \w+ \{[^}]*\}\r?\n?/g, '');
+        const next = cleaned.trimEnd() + `\r\n\r\n# AlienKind — talk to your partner\r\n${aliasCmd}\r\n`;
+        fs.writeFileSync(profilePath, next, 'utf8');
+        aliasWritten = true;
+        aliasTarget = profilePath;
+        console.log(`  \x1b[32m✓\x1b[0m PowerShell function added to $PROFILE`);
+        console.log(`  \x1b[2m  (${profilePath})\x1b[0m`);
+        console.log(`  \x1b[2m  Open a new PowerShell window, or run: . $PROFILE\x1b[0m`);
+      } catch (e: any) {
+        console.log(`  \x1b[31m✗\x1b[0m Could not write PowerShell profile (${e.message}). Add this manually to $PROFILE:\n`);
+        console.log(`    \x1b[33m${aliasCmd}\x1b[0m`);
+      }
+    } else {
+      // POSIX shells (zsh / bash)
+      const shell = process.env.SHELL || '/bin/zsh';
+      const rcFile = shell.includes('zsh') ? '~/.zshrc' : '~/.bashrc';
+      const rcFilePath = rcFile.replace('~', os.homedir());
+      const launchCmd = runtimePath === 'claude-code'
+        ? `cd ${ROOT} && claude`
+        : `cd ${ROOT} && npm run chat`;
+      aliasCmd = `alias ${aliasName}="${launchCmd}"`;
+      try {
+        const existingRc = fs.existsSync(rcFilePath) ? fs.readFileSync(rcFilePath, 'utf8') : '';
+        const cleanedRc = existingRc.replace(/\n# AlienKind — talk to your partner\nalias \w+="[^"]*"\n?/g, '');
+        const newRc = cleanedRc.trimEnd() + `\n\n# AlienKind — talk to your partner\n${aliasCmd}\n`;
+        fs.writeFileSync(rcFilePath, newRc, 'utf8');
+        aliasWritten = true;
+        aliasTarget = rcFilePath;
+        console.log(`  \x1b[32m✓\x1b[0m Shell alias added to ${rcFile}`);
+        console.log(`  \x1b[2m  (open a new terminal, or run: source ${rcFile})\x1b[0m`);
+      } catch {
+        console.log(`  \x1b[31m✗\x1b[0m Could not write to ${rcFile}. Add this manually:\n`);
+        console.log(`    \x1b[33m${aliasCmd}\x1b[0m`);
+      }
     }
+    void aliasWritten; void aliasTarget;
 
     // ============ Step 9: Auto-launch ============
     console.log('');
