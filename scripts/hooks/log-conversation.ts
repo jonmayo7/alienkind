@@ -40,7 +40,7 @@ function loadEnv(): Record<string, string> {
     if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
       val = val.slice(1, -1);
     }
-    env[key] = val.replace(/[\r\n  ]+/g, '');
+    env[key] = val.replace(/[\r\n\u2028\u2029]+/g, '');
   }
   return env;
 }
