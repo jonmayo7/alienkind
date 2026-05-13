@@ -164,6 +164,13 @@ function checkClaude() {
   return { present: true, version: v, ok: true, detail: `claude ${v ?? '(present)'}` };
 }
 
+function checkGh() {
+  if (!which('gh')) return { present: false, version: null, ok: false, detail: 'gh (GitHub CLI) not found (optional)' };
+  const r = run('gh', ['--version']);
+  const v = r.stdout.match(/\d+\.\d+\.\d+/)?.[0] || null;
+  return { present: true, version: v, ok: true, detail: `gh ${v ?? '(present)'}` };
+}
+
 function checkPsql() {
   if (!which('psql')) return { present: false, version: null, ok: false, detail: 'psql not found (optional)' };
   const r = run('psql', ['--version']);
@@ -257,6 +264,21 @@ function psqlInstall(os: OSInfo): string | null {
   }
 }
 
+function ghInstall(os: OSInfo): string | null {
+  switch (os.manager) {
+    case 'brew':   return 'brew install gh';
+    case 'apt':    return 'sudo apt-get update && sudo apt-get install -y gh';
+    case 'dnf':    return 'sudo dnf install -y gh';
+    case 'pacman': return 'sudo pacman -S --noconfirm github-cli';
+    case 'zypper': return 'sudo zypper install -y gh';
+    case 'apk':    return 'sudo apk add --no-cache github-cli';
+    case 'winget': return 'winget install -e --id GitHub.cli --accept-source-agreements --accept-package-agreements';
+    case 'scoop':  return 'scoop install gh';
+    case 'choco':  return 'choco install gh -y';
+    default: return null;
+  }
+}
+
 // ────────────────────────────────────────────────────────────────────
 // Requirement registry
 // ────────────────────────────────────────────────────────────────────
@@ -266,6 +288,7 @@ export const REQUIREMENTS: Requirement[] = [
   { name: 'git',      label: 'git',                                   required: true,  check: checkGit,              installCmd: gitInstall },
   { name: 'claude',   label: 'Claude Code CLI',                       required: false, check: checkClaude,           installCmd: claudeInstall },
   { name: 'psql',     label: 'psql (Postgres client)',                required: false, check: checkPsql,             installCmd: psqlInstall },
+  { name: 'gh',       label: 'gh (GitHub CLI)',                       required: false, check: checkGh,               installCmd: ghInstall },
   // Required on Windows only (no-op elsewhere). Set CurrentUser RemoteSigned so
   // npm.ps1 and other PowerShell-wrapped tooling loads without per-session bypass.
   { name: 'ps-policy', label: 'PowerShell ExecutionPolicy (Windows)', required: true,  check: checkPowershellPolicy, installCmd: powershellPolicyFix },

@@ -373,6 +373,95 @@ async function main() {
       }
     }
 
+    // ============ Step 6a: GitHub backup ============
+    divider();
+    console.log('  \x1b[1mGitHub backup (optional)\x1b[0m\n');
+    console.log(`  Your partner's identity files (identity/*.md) live in this local repo.`);
+    console.log(`  Want a private GitHub backup so you can restore on a new machine or sync`);
+    console.log(`  across devices? Your Supabase data core already persists conversations —`);
+    console.log(`  this is for the kernel + scaffolding.\n`);
+    console.log(`  \x1b[33m⚠ AlienKind always uses a private repo here — your partner's identity\n    is not for public consumption.\x1b[0m\n`);
+
+    const partnerSlug = (partnerName && partnerName !== 'Partner')
+      ? partnerName.toLowerCase().replace(/[^a-z0-9]/g, '')
+      : 'alien';
+
+    // Confirm origin is currently unset (the bootstrap renames origin → upstream).
+    let originUrl = '';
+    try {
+      const probe = spawnSync('git', ['remote', 'get-url', 'origin'], { cwd: ROOT, encoding: 'utf8' });
+      originUrl = (probe.stdout || '').trim();
+    } catch {}
+
+    if (originUrl) {
+      console.log(`  \x1b[32m✓\x1b[0m origin already set: \x1b[36m${originUrl}\x1b[0m`);
+      console.log('  \x1b[2m  Skipping GitHub setup. To change, run: git remote set-url origin <new-url>\x1b[0m\n');
+    } else {
+      const githubChoice = await select(rl, 'Set up GitHub backup?', [
+        { label: `Create a new private repo for me (uses gh CLI)`, value: 'create' },
+        { label: 'I have a repo — paste the URL',                  value: 'existing' },
+        { label: 'Skip — local only',                              value: 'skip' },
+      ]);
+
+      if (githubChoice === 'create') {
+        // gh CLI required + authed
+        const ghPresent = spawnSync('gh', ['--version'], { stdio: 'ignore' }).status === 0;
+        if (!ghPresent) {
+          console.log('\n  \x1b[33m⚠\x1b[0m gh (GitHub CLI) is not installed.');
+          console.log('  \x1b[2m  Install it then re-run: \x1b[36mnpm run setup\x1b[0m');
+          console.log('  \x1b[2m  Mac: brew install gh · Windows: winget install GitHub.cli · Linux: see https://cli.github.com/\x1b[0m\n');
+        } else {
+          const authed = spawnSync('gh', ['auth', 'status'], { stdio: 'ignore' }).status === 0;
+          if (!authed) {
+            console.log('\n  \x1b[36m→\x1b[0m gh is not authenticated. Running \x1b[36mgh auth login\x1b[0m now...');
+            console.log('  \x1b[2m  Follow the prompts. Pick GitHub.com → HTTPS → Login with web browser.\x1b[0m\n');
+            try { execSync('gh auth login', { cwd: ROOT, stdio: 'inherit' }); } catch {}
+          }
+          const repoName = await ask(rl, `Repository name`, `alienkind-${partnerSlug}`);
+          console.log(`\n  \x1b[36m→\x1b[0m Creating private repo \x1b[36m${repoName}\x1b[0m, pushing current HEAD...\n`);
+          try {
+            execSync(`gh repo create "${repoName}" --private --source=. --remote=origin --push`, {
+              cwd: ROOT,
+              stdio: 'inherit',
+              timeout: 120000,
+            });
+            console.log(`\n  \x1b[32m✓\x1b[0m GitHub backup created. origin = your private repo.\n`);
+          } catch {
+            console.log('\n  \x1b[33m⚠\x1b[0m gh repo create failed. You can retry later with:');
+            console.log(`  \x1b[36m  gh repo create ${repoName} --private --source=. --remote=origin --push\x1b[0m\n`);
+          }
+        }
+      } else if (githubChoice === 'existing') {
+        const repoUrl = await ask(rl, 'GitHub repo URL (e.g. git@github.com:you/alienkind.git or https://github.com/you/alienkind.git)');
+        if (repoUrl) {
+          console.log('');
+          // Double-check it's not the canonical AlienKind template repo — protect users from accidentally
+          // pushing personal identity files to a fork of jonmayo7/alienkind.
+          if (/jonmayo7\/alienkind(?:\.git)?$/i.test(repoUrl)) {
+            console.log(`  \x1b[31m✗\x1b[0m That's the canonical AlienKind template repo. Use your own private repo instead.\n`);
+          } else {
+            try {
+              execSync(`git remote add origin "${repoUrl}"`, { cwd: ROOT, stdio: 'pipe' });
+              console.log(`  \x1b[32m✓\x1b[0m origin set to ${repoUrl}`);
+              const pushNow = await ask(rl, 'Push current HEAD to origin now? (y/n)', 'y');
+              if (pushNow.toLowerCase() === 'y') {
+                try {
+                  execSync('git push -u origin main', { cwd: ROOT, stdio: 'inherit', timeout: 120000 });
+                  console.log(`\n  \x1b[32m✓\x1b[0m Pushed to ${repoUrl}\n`);
+                } catch {
+                  console.log('\n  \x1b[33m⚠\x1b[0m Push failed (auth? branch name? empty repo?). You can retry with: \x1b[36mgit push -u origin main\x1b[0m\n');
+                }
+              }
+            } catch (e: any) {
+              console.log(`  \x1b[31m✗\x1b[0m Could not set remote: ${e.message}\n`);
+            }
+          }
+        }
+      } else {
+        console.log(`\n  \x1b[2m  Skipping GitHub. You can add it later: \x1b[36mgit remote add origin <url>\x1b[0m\n`);
+      }
+    }
+
     // ============ Step 6b: Channels ============
     divider();
     console.log('  \x1b[1mChannels — talk to your partner from anywhere\x1b[0m\n');
