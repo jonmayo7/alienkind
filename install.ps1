@@ -23,10 +23,20 @@
 $ErrorActionPreference = "Stop"
 
 # Default Windows ExecutionPolicy is Restricted, which blocks loading of
-# child .ps1 files (e.g. npm.ps1 when we install Claude Code globally).
-# Process-scope bypass affects only this session — does not change the
-# machine policy or persist after the terminal closes.
-try { Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force } catch {}
+# child .ps1 files (e.g. npm.ps1 when we install Claude Code globally,
+# or $PROFILE when the wizard writes the partner-launch function).
+#
+# Two layers:
+#   1. Process-scope bypass = covers the rest of THIS install.ps1 run.
+#   2. CurrentUser RemoteSigned = persistent for the user's account.
+#      Microsoft's recommended developer-workstation default. No admin
+#      required. Means the user never hits this fault class again —
+#      not from us, not from any future Node / Python / dev tooling.
+#
+# Both wrapped in try/catch in case enterprise GPO blocks even
+# CurrentUser changes (rare). The Process bypass is a safety net.
+try { Set-ExecutionPolicy -Scope Process     -ExecutionPolicy Bypass       -Force } catch {}
+try { Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned -Force } catch {}
 
 $RepoUrl  = if ($env:ALIENKIND_REPO) { $env:ALIENKIND_REPO } else { "https://github.com/jonmayo7/alienkind.git" }
 $TargetDir = if ($env:ALIENKIND_DIR) { $env:ALIENKIND_DIR } else { Join-Path $env:USERPROFILE "alienkind" }
