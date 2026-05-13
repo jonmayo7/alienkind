@@ -171,6 +171,31 @@ function checkPsql() {
   return { present: true, version: v, ok: true, detail: `psql ${v ?? '(present)'}` };
 }
 
+// Windows-only: detect Restricted ExecutionPolicy that would break npm.ps1 loads.
+// On non-Windows or when PowerShell isn't available, this is a no-op (returns ok).
+function checkPowershellPolicy() {
+  if (process.platform !== 'win32') {
+    return { present: true, version: null, ok: true, detail: 'PowerShell ExecutionPolicy (n/a on this OS)' };
+  }
+  if (!which('powershell') && !which('pwsh')) {
+    return { present: false, version: null, ok: true, detail: 'PowerShell not found (skipping policy check)' };
+  }
+  const ps = which('pwsh') ? 'pwsh' : 'powershell';
+  const r = run(ps, ['-NoProfile', '-Command', 'Get-ExecutionPolicy -Scope CurrentUser']);
+  const policy = (r.stdout || '').trim() || 'Unknown';
+  // Restricted blocks .ps1 loads (npm.ps1, etc). AllSigned also blocks unsigned scripts.
+  // RemoteSigned / Unrestricted / Bypass all permit npm.ps1 to run.
+  const blocking = /^(Restricted|AllSigned)$/i.test(policy);
+  return {
+    present: true,
+    version: policy,
+    ok: !blocking,
+    detail: blocking
+      ? `PowerShell ExecutionPolicy is ${policy} — blocks npm.ps1 and other tooling`
+      : `PowerShell ExecutionPolicy: ${policy}`,
+  };
+}
+
 // ────────────────────────────────────────────────────────────────────
 // Per-OS install commands
 // ────────────────────────────────────────────────────────────────────
@@ -210,6 +235,13 @@ function claudeInstall(_os: OSInfo): string {
   return 'npm install -g @anthropic-ai/claude-code';
 }
 
+function powershellPolicyFix(_os: OSInfo): string {
+  // RemoteSigned is the Microsoft-recommended default for developer workstations:
+  // local scripts run unsigned, remote scripts need a signature. Persists across
+  // sessions (CurrentUser scope), so the user never sees this again.
+  return 'powershell -NoProfile -Command "Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned -Force"';
+}
+
 function psqlInstall(os: OSInfo): string | null {
   switch (os.manager) {
     case 'brew':   return 'brew install libpq && brew link --force libpq';
@@ -230,10 +262,13 @@ function psqlInstall(os: OSInfo): string | null {
 // ────────────────────────────────────────────────────────────────────
 
 export const REQUIREMENTS: Requirement[] = [
-  { name: 'node',   label: `Node.js ≥${MIN_NODE_MAJOR}`,   required: true,  check: checkNode,   installCmd: nodeInstall },
-  { name: 'git',    label: 'git',                          required: true,  check: checkGit,    installCmd: gitInstall },
-  { name: 'claude', label: 'Claude Code CLI',              required: false, check: checkClaude, installCmd: claudeInstall },
-  { name: 'psql',   label: 'psql (Postgres client)',       required: false, check: checkPsql,   installCmd: psqlInstall },
+  { name: 'node',     label: `Node.js ≥${MIN_NODE_MAJOR}`,            required: true,  check: checkNode,             installCmd: nodeInstall },
+  { name: 'git',      label: 'git',                                   required: true,  check: checkGit,              installCmd: gitInstall },
+  { name: 'claude',   label: 'Claude Code CLI',                       required: false, check: checkClaude,           installCmd: claudeInstall },
+  { name: 'psql',     label: 'psql (Postgres client)',                required: false, check: checkPsql,             installCmd: psqlInstall },
+  // Required on Windows only (no-op elsewhere). Set CurrentUser RemoteSigned so
+  // npm.ps1 and other PowerShell-wrapped tooling loads without per-session bypass.
+  { name: 'ps-policy', label: 'PowerShell ExecutionPolicy (Windows)', required: true,  check: checkPowershellPolicy, installCmd: powershellPolicyFix },
 ];
 
 // ────────────────────────────────────────────────────────────────────
