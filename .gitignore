@@ -18,5 +18,6 @@ CLAUDE.md
 # we ship .template files and never track the user-edited *.md files.
 identity/character.md
 identity/commitments.md
+identity/tenets.md
 identity/orientation.md
 identity/harness.md

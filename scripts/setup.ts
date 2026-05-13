@@ -525,7 +525,7 @@ async function main() {
     // identity/*.md.template are tracked (shipped guidance). Pulling
     // upstream changes templates without ever conflicting with the user's
     // evolved kernel.
-    const identityFiles = ['character', 'commitments', 'orientation', 'harness'] as const;
+    const identityFiles = ['character', 'commitments', 'tenets', 'orientation', 'harness'] as const;
     for (const name of identityFiles) {
       const dst = path.join(ROOT, 'identity', `${name}.md`);
       const src = path.join(ROOT, 'identity', `${name}.md.template`);

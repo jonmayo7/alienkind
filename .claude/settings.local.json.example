@@ -1,5 +1,15 @@
 {
   "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx tsx scripts/hooks/register-terminal.ts"
+          }
+        ]
+      }
+    ],
     "UserPromptSubmit": [
       {
         "hooks": [
@@ -10,6 +20,10 @@
           {
             "type": "command",
             "command": "npx tsx scripts/hooks/correction-to-ledger.ts"
+          },
+          {
+            "type": "command",
+            "command": "npx tsx scripts/hooks/mycelium-awareness.ts"
           }
         ]
       }
